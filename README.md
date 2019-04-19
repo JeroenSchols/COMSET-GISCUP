@@ -6,7 +6,7 @@ This project provides the COMSET simulator described in the <a href="https://sig
 
 At the beginning of a simulation, a map is created from an input OSM JSON map file and cropped by an input bounding polygon. Resources (passengers) are read from an input <a href="https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page"> TLC Trip Record Data Yellow</a> data file<sup>1</sup>. Each resource corresponds to one trip record in the file. Resources are cropped as well by the input bounding polygon so that only those with both pickup location and dropoff location inside the bounding polygon are kept. A certain number of agents (taxicabs) are deployed at random locations on the map. 
 
-The simulation is event driven. In <b>COMSETsystem.Simulator</b> there is a priority queue called events, ordered by time, such that the event that has the smallest time will be processed earliest. Thus there isn’t a global variable time; the simulator just goes from event to event (we can know what time is it by checking the time of the event currently being processed).
+The simulation is event driven. In <b>COMSETsystem.Simulator</b> there is a priority queue called events, ordered by time, such that the event that has the smallest time will be processed earliest. Thus there isn’t a global variable time; the simulator just goes from event to event (we can know what time it is by checking the time of the event currently being processed).
 
 Concerning the assignment of resources to agents, resources get assigned to the nearest agent if this agent can get to the resource in less than this resource’s <b>ResourceMaximumLifeTime</b>. Assignments are performed by the callback methods of <b>COMSETsystem.ResourceEvent</b> and <b>COMSETsystem.AgentEvent</b>. These callback methods collectively assume the responsibility of the <b>Assignment Authority</b> module described in <a href="https://sigspatial2019.sigspatial.org/giscup2019/problem"> 2019 GISCUP Problem Definition</a>.
 
@@ -39,7 +39,7 @@ To run COMSET, the main class is Main. The configurable system parameters are de
 
 <b>mvn exec:java -Dexec.mainClass="Main"</b>
 
-With the configuration file coming up with the system, the above command will run simulation on the Manhattan road network with 5000 agents using the naive random-destination search strategy. The resources are the trip records for June 1, 2016 starting from 8:00am until 10:00pm. The simulation should be finished in a few minutes, and you should get something like the following:
+With the configuration file coming up with the system, the above command will run simulation on the Manhattan road network with 5000 agents using the naive random-destination search strategy. The resources are the trip records for June 1st, 2016 starting from 8:00am until 10:00pm. The simulation should be finished in a few minutes, and you should get something like the following:
 
 average agent search time: 484 seconds<br>
 average resource wait time: 283 seconds<br>
@@ -57,10 +57,10 @@ The only way to add a search strategy to COMSET is to build a sub-class of <b>CO
 To run COMSET with a search strategy (i.e., a sub-class of <b>COMSETsystem.BaseAgent</b>), supply the sub-class name through the <b>comset.agent_class</b> parameter defined in <b>etc/configure.properties</b>. The binding to the search strategy occurs at run time; there is no need to change any code of COMSET itself.
 
 ## Submission
-A contestant should submit the entire COMSET system including the proposed soluation implemented as a sub-class of COMSETsystem.BaseAgent. Store this sub-class in the <b>UserExamples</b> folder or another folder created by the particpant. There should not be any modifications to the COMSET code base as released at GitHub. A contestant may modify the COMSET code for debugging purposes during the development of their solution. However, when submitting the solution, the COMSET code should be exactly the same as released at GitHub. The only file that a contestant is allowed to modify is <b>etc/configure.properties</b>. A contestant should set <b>comset.aget_class</b> to point to the proposed solution and may add properties that are needed by the solution. 
+A contestant should submit the entire COMSET system including the proposed solution implemented as a sub-class of COMSETsystem.BaseAgent. Store this sub-class in the <b>UserExamples</b> folder or another folder created by the participant. There should not be any modifications to the COMSET code base as released at GitHub. A contestant may modify the COMSET code for debugging purposes during the development of their solution. However, when submitting the solution, the COMSET code should be exactly the same as released at GitHub. The only file that a contestant is allowed to modify is <b>etc/configure.properties</b>. A contestant should set <b>comset.agent_class</b> to point to the proposed solution and may add properties that are needed by the solution. 
 
 ## Travel Speeds of Agents
-In COMSET, each road segment has a pre-defined constant travel speed independent of the time of a day and how many agents are traveling on it. The travel speed at a road segment is based on the road segment's speed limit and is calibrated by the TLC Trip Record data to accommdate for average traffic condition and turn delays in the studied area. The calibration goes as follows. 
+In COMSET, each road segment has a pre-defined constant travel speed independent of the time of a day and how many agents are traveling on it. The travel speed at a road segment is based on the road segment's speed limit and is calibrated by the TLC Trip Record data to accommodate for average traffic condition and turn delays in the studied area. The calibration goes as follows. 
 
 1. Compute the average trip duration of all trips recorded in the TLC Trip Record data; call it the <i>TLC_average_trip_duration</i>. 
 2. For each trip, compute the shortest travel time from the pickup location of the trip to the dropoff location using speed limits.
