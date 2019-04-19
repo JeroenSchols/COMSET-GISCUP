@@ -1,6 +1,6 @@
 # COMSET
 
-This project provides the COMSET simulator described in the <a href="https://sigspatial2019.sigspatial.org/giscup2019/problem"> 2019 GISCUP Problem Definition </a>. COMSET simulates crowdsourced taxicabs (called <i>agents</i>) searching for customers (called <i>resources</i>) to pick up in a city. The simulator serves as a standard testbed such that CUP contestants can develop and test their own search algorithms. It will also be the testbed for the evaluation of submissions.
+This project provides the COMSET simulator described in the <a href="https://sigspatial2019.sigspatial.org/giscup2019/problem"> 2019 GISCUP Problem Definition</a>. COMSET simulates crowdsourced taxicabs (called <i>agents</i>) searching for customers (called <i>resources</i>) to pick up in a city. The simulator serves as a standard testbed such that CUP contestants can develop and test their own search algorithms. It will also be the testbed for the evaluation of submissions.
 
 ## Overall Logic
 
