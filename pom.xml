@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>simulation</groupId>
+    <artifactId>COMSET</artifactId>
+    <version>1.0</version>
+    <packaging>jar</packaging>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kynosarges</groupId>
+            <artifactId>tektosyne</artifactId>
+            <version>6.2.0</version>
+            <type>jar</type>
+        </dependency>
+        <!-- For displaying the progress bar -->
+        <dependency>
+            <groupId>me.tongfei</groupId>
+            <artifactId>progressbar</artifactId>
+            <version>0.7.3</version>
+        </dependency>
+        <!-- For ImmutableList -->
+        <dependency>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+          <version>27.1-jre</version>
+        </dependency>
+        <!-- For computing the time zone of a map -->
+        <dependency>
+            <groupId>net.iakovlev</groupId>
+            <artifactId>timeshape</artifactId>
+            <version>2018d.6</version>
+        </dependency>
+        <!-- For suppressing warning messages due to timeshape -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.5</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <sourceDirectory>${basedir}/src</sourceDirectory>
+        <scriptSourceDirectory>${basedir}/src/scripts</scriptSourceDirectory>
+        <testSourceDirectory>${basedir}/src/test</testSourceDirectory>
+        <outputDirectory>${basedir}/target/classes</outputDirectory>
+        <testOutputDirectory>${basedir}/target/test-classes</testOutputDirectory>
+    </build>
+</project>
