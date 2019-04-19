@@ -29,6 +29,10 @@ Netbeans usually suports it right away. In intellij you can just follow the foll
 
 https://www.jetbrains.com/help/idea/maven-support.html
 
+In Eclipse you can just follow the following link.
+
+https://www.lagomframework.com/documentation/1.4.x/java/EclipseMavenInt.html
+
 ### Installing, building, and running COMSET
 
 To install COMSET, clone the <a href="https://github.com/Chessnl/COMSET">project</a> from GitHub. 
