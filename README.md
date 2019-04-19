@@ -25,7 +25,7 @@ The simulator provides a class called <b>COMSETsystem.BaseAgent</b> which define
 COMSETsystem requires JAVA 8 or up.
 
 When you clone the project Maven should be supported. If it is not, that is no problem, as it is quite easy.
-Netbeans usually suports it right away. In intellij you can just follow the following link.
+Netbeans usually suports it right away. In Intellij you can just follow the following link.
 
 https://www.jetbrains.com/help/idea/maven-support.html
 
