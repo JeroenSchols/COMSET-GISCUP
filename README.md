@@ -35,7 +35,7 @@ https://www.lagomframework.com/documentation/1.4.x/java/EclipseMavenInt.html
 
 ### Installing, building, and running COMSET
 
-To install COMSET, clone the <a href="https://github.com/Chessnl/COMSET">project</a> from GitHub. 
+To install COMSET, <a href="https://github.com/Chessnl/COMSET-GISCUP/archive/V1.0.zip">download</a> from GitHub and unzip. 
 
 Run "<b>mvn install</b>" or "<b>mvn package</b>" to build.
 
