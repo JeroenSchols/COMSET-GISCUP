@@ -151,7 +151,7 @@ public class AgentEvent extends Event {
 				if (travelTime != Long.MAX_VALUE) {
 					// if the resource is reachable before expiration
 					long arriveTime = time + travelTime;
-					if (arriveTime + simulator.ResourceMaximumLifeTime <= res.expirationTime && arriveTime < earliest) {
+					if (arriveTime <= res.expirationTime && arriveTime < earliest) {
 						earliest = arriveTime;
 						bestResource = res;
 					}
