@@ -2,6 +2,8 @@ import COMSETsystem.BaseAgent;
 import COMSETsystem.Simulator;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.logging.LogManager;
 import java.util.Random;
 import java.util.Properties;
@@ -17,6 +19,15 @@ public class Main {
 
 		String configFile = "etc/config.properties";
 		try {
+		    if (args.length > 0) {
+		        if (Files.exists(Paths.get(args[0]))) {
+                    configFile = args[0];
+                } else {
+                    System.out.println("The provided configuration file path is invalid.");
+                    System.exit(1);
+                }
+            }
+
             Properties prop = new Properties();
             prop.load(new FileInputStream(configFile));
 
