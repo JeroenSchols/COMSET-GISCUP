@@ -96,7 +96,8 @@ public class Main {
 				LogManager.getLogManager().reset();
 			}
 			
-			simulator.configure(mapJSONFile, datasetFile, numberOfAgents, boundingPolygonKMLFile, resourceMaximumLifeTime, agentPlacementSeed, speedReduction);
+			simulator.configure(mapJSONFile, datasetFile, numberOfAgents, boundingPolygonKMLFile,
+                    resourceMaximumLifeTime, agentPlacementSeed, speedReduction);
 
 			simulator.run();
 
