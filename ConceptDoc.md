@@ -1,12 +1,13 @@
 # GISCUP 2020 Concept Design
 ## Background
 In 2020 GISCUP will build upon GISCUP 2019.
-Specifically GISCUP 2020 extends the original, several new twists:
+Specifically GISCUP 2020 extends the original, with several new twists:
 
-* Management of an entire fleet of taxis,
-i.e. a user provided **`Fleet Manager`** that determines an empty taxi's cruising path,
+* **Management of an entire fleet of taxis**,
+i.e. a contestant-provided **`Fleet Manager`** that determines an empty taxi's cruising path,
 assigns customers to taxi's, directs the taxi to pick-up and to drop-off.
-* Dynamic Travel Times. The travel time through each segment can vary
+The manager will control the agent at a more granular level than in 2019.
+* **Dynamic Travel Times**. The travel time through each segment can vary
 probabilistically as a function of time-of-day
 and is determined by a traffic model.
 * Failures. Taxis may fail at any time. _**UNDER DISCUSSION**_
@@ -22,38 +23,44 @@ Here, we use the synonyms interchangeably.
 
 ## Simulation in GISCUP 2019
 
+GISCUP 2019's simulator is a standard event simulator that maintains a priority
+queue of future events ordered by increasing time.
+Each simulator step retrieves the next scheduled event, advances simulated time to its
+scheduled time, and triggers the event.
 The simulation consists of two varieties of events implemented by the classes
 `AgentEvent` and `ResourceEvent`.
 An `AgentEvent` implements its associated `Agent`'s behavior;
-a `ResourceEvent` implements a customer's behavior or states.
+a `ResourceEvent` implements a customer's behavior.
 
 ### Types of `AgentEvent`
-Two `AgentEvent` types models the behavior of an agent.
+Two `AgentEvent` types models the behavior of an agent. Each AgentEvent is
+associated with an agent, represented by an instance of a
+ contestant-supplied subclass of `BaseAgent`. The agent performs
+route planning.
 
-1. **`DROPPING_OFF`** This is the initial state of an Agent and
-the state when the agent drops off a resource (customer).
-In this state, the `AgentEvent` tries to search for a new resource
-to assign to its agent.
-If the search fails the agent then goes into cruising mode.
+1. **`DROPPING_OFF`** This represents the event of droppping off
+a resource at its destination, and then searching for another resource to
+service. If the search fails the agent then goes into cruising mode.
+Because searching for a resource should be the first thing an empty agent
+should do, every agent begins with a `DROPPING_OFF` event.
 
-2. **`INTERSECTION_REACHED`** This models the cruising state of
-an agent.
-It calls its associated agent for a cruising path and travels each road
-segment of the path.
-Cruising is implemented as a sequence of **`INTERSECTION_REACHED`** events,
-one for each of the road intersections in an agent's cruising path.
+2. **`INTERSECTION_REACHED`**
+This represents the event of reaching a road intersection.
+An agent's cruising path is manifested by a sequence of `INTERSECTION_REACHED` events,
+one for each intersection in its path.
+Interrupting an agent from cruising to pick up a resource is implemented by removing
+an agent's scheduled `INTERSECTION_REACHED` event, and scheduling a
+`DROPPING_OFF` event for the agent.
 
 ### States of `ResourceEvent`
-Two `ResourceEvent` are also used to model a resource or a customer.
+Two `ResourceEvent` types are used to model a resource or a customer.
 Not there is no corresponding `Resource` class.
 
 1. `BECOME_AVAILABLE` represents the event of a resource looking for a ride.
-The handler searches for the *closest* agent, one can reach the
+The handler searches for the *closest* cruising agent, one that can reach the
 pick up point the soonest.
-Once identified the agent is removed from the simulation, thereby canceling
-its travel to its current planned road segment.
-The handler then directs the agent to pick-up the resource by returning
-an `AgentEvent` of type `DROPPING_OFF`.
+Once identified the agent is interrrupted by descheduling its next
+`INTERSECTION_REACHED` event and scheduling a `DROPPING_OFF` event
 
     **Note:** When the corresponding `DROPPING_OFF` event is handled,
     it searches for the nearest resource, i.e. the one above.
@@ -135,4 +142,4 @@ removed from the system.
 1. Move all planning into a new `BaseFleetManager` class, and supply fleet managers that models current
 random walk and random destination agent.
 1. Introduce `TRAVELLING` event type to simulate cruising.
-1. Introduce other even types.
+1. Introduce other evet types.
