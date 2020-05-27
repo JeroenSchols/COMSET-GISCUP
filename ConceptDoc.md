@@ -1,7 +1,7 @@
 # GISCUP 2020 Concept Design
 ## Background
-The GISCUP 2020 builds upon GISCUP 2019.
-Specifically GISCUP 2020 adds to the original, several new twists:
+In 2020 GISCUP will build upon GISCUP 2019.
+Specifically GISCUP 2020 extends the original, several new twists:
 
 * Management of an entire fleet of taxis,
 i.e. a user provided **`Fleet Manager`** that determines an empty taxi's cruising path,
@@ -9,19 +9,20 @@ assigns customers to taxi's, directs the taxi to pick-up and to drop-off.
 * Dynamic Travel Times. The travel time through each segment can vary
 probabilistically as a function of time-of-day
 and is determined by a traffic model.
-* Failures. Taxis may fail at any time.
+* Failures. Taxis may fail at any time. _**UNDER DISCUSSION**_
 
 For more details, see [GISCUP 2020 Problem Definition](https://docs.google.com/document/d/e/2PACX-1vQ6PL6krQtLjtWs8pI3UKI_NhNuFr_Ecl_Kfk77Yt3ZLzrf2lWt6A1UUCgAbf3JMgnXR9VhfWXJCtab/pub)
 
 This document outlines GISCUP 2020's conceptual differences from GISCUP 2019.
-We do not intend to cover all of 2019's functionality.
-We supply only enough details to highlight the key differences.
+We do not intend to cover all of 2019's functionality but to
+supply enough details to highlight the key differences.
 
-The code refers to taxis as agents, and customers as resources.
+In the code and here, the term agent is synonymous with taxes; resource, with customers.
+Here, we use the synonyms interchangeably.
 
 ## Simulation in GISCUP 2019
 
-The simulation consists of two types of events implemented by the classes
+The simulation consists of two varieties of events implemented by the classes
 `AgentEvent` and `ResourceEvent`.
 An `AgentEvent` implements its associated `Agent`'s behavior;
 a `ResourceEvent` implements a customer's behavior or states.
