@@ -25,14 +25,15 @@ The simulation consists of two types of events implemented by the classes
 An `AgentEvent` implements its associated `Agent`'s behavior;
 a `ResourceEvent` implements a customer's behavior or states.
 
-### States of `AgentEvent`
-Two `AgentEvent` states models the behavior of an agent.
+### Types of `AgentEvent`
+Two `AgentEvent` types models the behavior of an agent.
 
 1. **`DROPPING_OFF`** This is the initial state of an Agent and
 the state when the agent drops off a resource (customer).
 In this state, the `AgentEvent` tries to search for a new resource
 to assign to its agent.
 If the search fails the agent then goes into cruising mode.
+
 2. **`INTERSECTION_REACHED`** This models the cruising state of
 an agent.
 It calls its associated agent for a cruising path and travels each road
@@ -41,10 +42,23 @@ Cruising is implemented as a sequence of **`INTERSECTION_REACHED`** events,
 one for each of the road intersections in an agent's cruising path.
 
 ## States of `ResourceEvent`
+Two `ResourceEvent` are also used to model a resource or a customer.
+Not there is no corresponding `Resource` class.
 
-When a resource becomes available, it searches for the best agent/agentEvent.
-Removes it from the event queue and then set it to DROP_OFF state.
-Then the DROP_OFF handler will match it up with the resource.
+1. `BECOME_AVAILABLE` represents the event of a resource looking for a ride.
+The handler searches for the *closest* agent, one can reach the
+pick up point the soonest.
+Once identified the agent is removed from the simulation, thereby canceling
+its travel to its current planned road segment.
+The handler then directs the agent to pick-up the resource by returning
+an `AgentEvent` of type `DROPPING_OFF`.
+
+    **Note:** When the corresponding `DROPPING_OFF` event is handled,
+    it searches for the nearest resource, i.e. the one above.
+
+2. `EXPIRED` represents a resource in which all agents cannot reach it
+before its maxiumum life time expires.
+Contestants are penalized for expired resources.
 
 ### Problems
 There is no explicit state for *cruising mode*.
