@@ -3,8 +3,11 @@
 The GISCUP 2020 builds upon GISCUP 2019.
 Specifically GISCUP 2020 adds to the original, several new twists:
 
-* Management of an entire fleet of taxis, i.e. a user provided **`Fleet Manager`**
-* Dynamic Travel Times. The travel time through each segment is modeled based on an internal traffic model
+* Management of an entire fleet of taxis,
+i.e. a user provided **`Fleet Manager`** that determines an empty taxi's cruising path,
+assigns customers to taxi's, directs the taxi to pick-up and to drop-off.
+* Dynamic Travel Times. The travel time through each segment can vary as a function of time-of-day
+and is determined by a traffic model.
 * Failures. Taxis may fail at any time.
 
 For more details, see [GISCUP 2020 Problem Definition](https://docs.google.com/document/d/e/2PACX-1vQ6PL6krQtLjtWs8pI3UKI_NhNuFr_Ecl_Kfk77Yt3ZLzrf2lWt6A1UUCgAbf3JMgnXR9VhfWXJCtab/pub)
@@ -13,26 +16,31 @@ This document outlines GISCUP 2020's conceptual differences from GISCUP 2019.
 We do not intend to cover all of 2019's functionality.
 We supply only enough details to highlight the key differences.
 
-## Notes
-Here we list some of the things we would like to do the 
-GISCUP 2019 code in order to implement
-the new features proposed in GISCUP 2020.
-* Fleet Manager
-* Dynamic Travel Time
-* Failures
-## Changes for Classes `Agent` and `AgentEvent`
-There are only two types of agent events, handled in the
-class `AgentEvent`.
+The code refers to taxis as agents, and customers as resources.
+
+## Event Simulation in GISCUP 2019
+
+The simulation consists of two types of events implemented by the classes
+`AgentEvent` and `ResourceEvent`.
+An `AgentEvent` implements its associated `Agent`'s behavior;
+a `ResourceEvent` implements a customer's behavior or states.
+
+### States of `AgentEvent`
+Two `AgentEvent` states models the behavior of an agent.
 
 1. **`DROPPING_OFF`** This is the initial state of an Agent and
 the state when the agent drops off a resource (customer).
-The handler in `AgentEvent` tries to search for a new resource
-and
-assign to the agent.
-If the search fails, the agent then goes into cruising mode.
-2. **`INTERSECTION_REACHED`** The handler for this event asks
-the
-agent for the next intersection and travels there.
+In this state, the `AgentEvent` tries to search for a new resource
+to assign to its agent.
+If the search fails the agent then goes into cruising mode.
+2. **`INTERSECTION_REACHED`** This models the cruising state of
+an agent.
+It calls its associated agent for a cruising path and travels each road
+segment of the path.
+Cruising is implemented as a sequence of **`INTERSECTION_REACHED`** events,
+one for each of the road intersections in an agent's cruising path.
+
+## States of `ResourceEvent`
 
 When a resource becomes available, it searches for the best agent/agentEvent.
 Removes it from the event queue and then set it to DROP_OFF state.
@@ -44,7 +52,7 @@ Instead it is represented by the agent have a route.
 It seems the route is abandoned once if a resource is assigned
 to an agent.
 
-### Proosal
+### Proposal
 **A clearer separation of concerns is needed for `AgentEvent`
 and `Agent`.**
 This is so that we can have the Fleet Manager do more of the
