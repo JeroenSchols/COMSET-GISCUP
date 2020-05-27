@@ -1,4 +1,18 @@
-# GISCUP 2020 Design Doc
+# GISCUP 2020 Concept Design
+## Background
+The GISCUP 2020 builds upon GISCUP 2019.
+Specifically GISCUP 2020 adds to the original, several new twists:
+
+* Management of an entire fleet of taxis, i.e. a user provided **`Fleet Manager`**
+* Dynamic Travel Times. The travel time through each segment is modeled based on an internal traffic model
+* Failures. Taxis may fail at any time.
+
+For more details, see [GISCUP 2020 Problem Definition](https://docs.google.com/document/d/e/2PACX-1vQ6PL6krQtLjtWs8pI3UKI_NhNuFr_Ecl_Kfk77Yt3ZLzrf2lWt6A1UUCgAbf3JMgnXR9VhfWXJCtab/pub)
+
+This document outlines GISCUP 2020's conceptual differences from GISCUP 2019.
+We do not intend to cover all of 2019's functionality.
+We supply only enough details to highlight the key differences.
+
 ## Notes
 Here we list some of the things we would like to do the 
 GISCUP 2019 code in order to implement
