@@ -41,7 +41,7 @@ segment of the path.
 Cruising is implemented as a sequence of **`INTERSECTION_REACHED`** events,
 one for each of the road intersections in an agent's cruising path.
 
-## States of `ResourceEvent`
+### States of `ResourceEvent`
 Two `ResourceEvent` are also used to model a resource or a customer.
 Not there is no corresponding `Resource` class.
 
@@ -59,6 +59,14 @@ an `AgentEvent` of type `DROPPING_OFF`.
 2. `EXPIRED` represents a resource in which all agents cannot reach it
 before its maxiumum life time expires.
 Contestants are penalized for expired resources.
+
+### Representation of an Agent
+An agent is represented by two classes `AgentEvent` and `Agent`.
+The event class models the behavior.
+The contestants supplies their own `Agent` class by deriving the
+abstract class `BaseAgent`.
+The supplied class plans cruising roues to maximize the likelihood of
+an available agent to serve a resource with minimal waiting time.
 
 ### Problems
 There is no explicit state for *cruising mode*.
