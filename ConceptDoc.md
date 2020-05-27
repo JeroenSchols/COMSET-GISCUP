@@ -6,7 +6,8 @@ Specifically GISCUP 2020 adds to the original, several new twists:
 * Management of an entire fleet of taxis,
 i.e. a user provided **`Fleet Manager`** that determines an empty taxi's cruising path,
 assigns customers to taxi's, directs the taxi to pick-up and to drop-off.
-* Dynamic Travel Times. The travel time through each segment can vary as a function of time-of-day
+* Dynamic Travel Times. The travel time through each segment can vary
+probabilistically as a function of time-of-day
 and is determined by a traffic model.
 * Failures. Taxis may fail at any time.
 
@@ -18,7 +19,7 @@ We supply only enough details to highlight the key differences.
 
 The code refers to taxis as agents, and customers as resources.
 
-## Event Simulation in GISCUP 2019
+## Simulation in GISCUP 2019
 
 The simulation consists of two types of events implemented by the classes
 `AgentEvent` and `ResourceEvent`.
@@ -68,41 +69,69 @@ abstract class `BaseAgent`.
 The supplied class plans cruising roues to maximize the likelihood of
 an available agent to serve a resource with minimal waiting time.
 
-### Problems
-There is no explicit state for *cruising mode*.
-Instead it is represented by the agent have a route.
-It seems the route is abandoned once if a resource is assigned
-to an agent.
+## Simulation in GISCUP 2020
 
-### Proposal
-**A clearer separation of concerns is needed for `AgentEvent`
-and `Agent`.**
-This is so that we can have the Fleet Manager do more of the
-work.
-First, the fleet manager performs resource assignment, and
-route planning.
-So what are the hooks for fleet manager.
-It should be called to assign a resource.
-It should be called to find a route.
-The `AgentEvent` should just execute the moves.
-#### Questions
-##### What should the states be?
-* Agent has no customer, and is cruising
-* Agent has no customer, and on its way to pick up customer
-* Agent has a customer, and is on the way to drop off customer
+### Fleet Management
 
-##### Where should the state resides?
-* In the `AgentEvent` class? with calls into Agent?
-* Agent should then call the Fleet Manager?  But why?
-Maybe we should just have AgentEvent and no Agent Class.
+In 2020 we introduce the concept of fleet management as represented by
+a contestant supplied Fleet Manager class, derived from the abstract
+class `BaseFleetManager`.
+This class provides route planning and resource assignment.
+In 2020 the fleet manager will have to plan all routes to take into
+account dynamic travel time.
+The fleet manager can reconsiders each agent's route at each intersection.
 
-##### What should the AgentEvent class do?
-* It should just do the movement?
-* Maybe it should just be the same as the agent
+### More Granular Route Simulation
 
-## Change Plan
-Note each step has to be protected with tests.
-* Introduce a Fleet Manager that will take care of all\
-the existing state changes. Dpn't really need agent class anymore
-* Add new states
-* That's it.
+In 2019 simulation of the in-service agent is lumped, i.e.
+the route from pick-up to drop-off is not fully simulated.
+Instead the simulator just jumps time forward for the agent
+from pick-up to drop-off, where time is the travel time of
+the shortest path between pick-up and drop-off.
+In 2020 simulation of all travels will be simulated road segment 
+by road segment to
+implement dynamic travel time.
+
+### Proposals for Implementation
+
+#### Remove `BaseAgent`
+Much of `BaseAgent`'s functionality will have been supplanted by
+`BaseFleetManager`.
+We will identify an agent to the Flee tManager by index.
+Most of an agent's behavior will be modeled by the Fleet Manger.
+
+#### Add more refined types of events in `AgentEvent`
+
+Introduced new event types will represent the following cases:
+
+* `TRAVELLING` Whether an agent is empty or not, its travels will
+be simulated. When an empty agent reaches the road segment on which its assigned
+resource is to be picked-up, its next event will be of type `PICK_UP`.
+Or when an non-empty agent reach the road segment
+on which its associating resource is to be dropped-off,
+its next event will be of type `DROP_OFF`
+
+* `PICK_UP` The agent travels to its designated pick up point on the segment
+and *picks up* the resource, and its next event will be of type `TRAVELLING`
+
+* `DROP_OFF` The agent travels to its designated rop off point on the segment
+and *drops off* the resource, and its next event will be of type `TRAVELLING`
+
+#### Add corresponding event types for `ResourceEvent`
+
+* `AVAILABLE` To handle this event call the Fleet Manager to assign the
+resource to an agent. It will repeated call for assignment at some set
+interval (maybe 10 minutes) until assigned.
+
+* `PICK_UP` The resource is waiting to be picked up.
+
+* `DROP_OFF` The resource is dropped off, compute a service time, and is
+removed from the system.
+
+## Implementation Plan
+
+1. Write Unit Tests for existing GISCUP 2019. This is an ideal way to but we might not have time for this.
+1. Move all planning into a new `BaseFleetManager` class, and supply fleet managers that models current
+random walk and random destination agent.
+1. Introduce `TRAVELLING` event type to simulate cruising.
+1. Introduce other even types.
