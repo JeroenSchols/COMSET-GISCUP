@@ -1,5 +1,5 @@
-#GISCUP 2020 Design Doc
-##Notes
+# GISCUP 2020 Design Doc
+## Notes
 Here we list some of the things we would like to do the 
 GISCUP 2019 code in order to implement
 the new features proposed in GISCUP 2020.
