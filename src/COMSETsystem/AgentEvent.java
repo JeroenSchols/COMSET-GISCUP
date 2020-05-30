@@ -8,8 +8,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author TijanaKlimovic
- */
-/**
+ *
  * The AgentEvent class represents a moment an agent is going to perform an
  * action in the simmulation, such as becoming empty and picking up a
  * resource, or driving to some other Intersection. 
@@ -54,33 +53,26 @@ public class AgentEvent extends Event {
 	/**
 	 * Constructor for class AgentEvent.
 	 *
-	 * @param time when this agent starts search.
 	 * @param loc this agent's location when it becomes empty.
 	 */
 	public AgentEvent(LocationOnRoad loc, long startedSearch, Simulator simulator) {
-		super(startedSearch, simulator);
+		super(startedSearch);
+		this.simulator = simulator;
+		this.agent = MakeAgent(simulator);
 		this.loc = loc;
 		this.startSearchTime = startedSearch;
 		this.eventCause = DROPPING_OFF; // The introduction of an agent is considered a drop-off event.
-		simulator.emptyAgents.add(this); 
-		try {
-			Constructor<? extends BaseAgent> cons = simulator.agentClass.getConstructor(Long.TYPE, CityMap.class);
-			agent = cons.newInstance(id, simulator.mapForAgents);
-		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-			e.printStackTrace();
-		}		
 	}
 
-	/**
-	 * Initializes the agent corresponding to this AgentEvent.
-	 */
-	public void initAgent() {
+	private BaseAgent MakeAgent(Simulator simulator) {
+		BaseAgent our_agent = null;
 		try {
 			Constructor<? extends BaseAgent> cons = simulator.agentClass.getConstructor(Long.TYPE, CityMap.class);
-			agent = cons.newInstance(id, simulator.mapForAgents);
+			our_agent = cons.newInstance(id, simulator.mapForAgents);
 		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
+		return our_agent;
 	}
 
 	@Override
@@ -202,10 +194,9 @@ public class AgentEvent extends Event {
 
 		// no resources have been assigned to the agent 
 		// so if the agent was not empty, make it empty for other resources
-		if (!simulator.emptyAgents.contains(this)) {
-			// "Label" the agent as empty.
-			simulator.emptyAgents.add(this);
-		}
+		// "Label" the agent as empty.
+		simulator.emptyAgents.add(this);
+
 		// move to the end intersection of the current road
 		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
 		LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);

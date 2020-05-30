@@ -122,10 +122,11 @@ public class Simulator {
 	 * @param totalAgents The total number of agents to deploy
 	 * @param boundingPolygonKMLFile The KML file defining a bounding polygon of the simulated area
 	 * @param maximumLifeTime The maximum life time of a resource
-	 * @param agentPlacementSeed The see for the random number of generator when placing the agents
-	 * @param speedRudction The speed reduction to accommodate traffic jams and turn delays
+	 * @param agentPlacementRandomSeed The see for the random number of generator when placing the agents
+	 * @param speedReduction The speed reduction to accommodate traffic jams and turn delays
 	 */
-	public void configure(String mapJSONFile, String resourceFile, Long totalAgents, String boundingPolygonKMLFile, Long maximumLifeTime, long agentPlacementRandomSeed, double speedReduction) {
+	public void configure(String mapJSONFile, String resourceFile, Long totalAgents, String boundingPolygonKMLFile,
+						  Long maximumLifeTime, long agentPlacementRandomSeed, double speedReduction) {
 
 		this.mapJSONFile = mapJSONFile;
 
@@ -402,6 +403,13 @@ public class Simulator {
 	 */
 	public TreeSet<AgentEvent> getEmptyAgents() {
 		return emptyAgents;
+	}
+
+	/**
+	 * @param agent Add this agent to the set of empty agents
+	 */
+	public void addEmptyAgent(AgentEvent agent) {
+		this.emptyAgents.add(agent);
 	}
 
 	/**
