@@ -46,11 +46,16 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.5</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>RELEASE</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>${basedir}/src</sourceDirectory>
-        <scriptSourceDirectory>${basedir}/src/scripts</scriptSourceDirectory>
-        <testSourceDirectory>${basedir}/src/test</testSourceDirectory>
+        <testSourceDirectory>${basedir}/test</testSourceDirectory>
         <outputDirectory>${basedir}/target/classes</outputDirectory>
         <testOutputDirectory>${basedir}/target/test-classes</testOutputDirectory>
     </build>

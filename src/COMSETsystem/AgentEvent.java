@@ -1,7 +1,5 @@
 package COMSETsystem;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,21 +56,10 @@ public class AgentEvent extends Event {
 	public AgentEvent(LocationOnRoad loc, long startedSearch, Simulator simulator) {
 		super(startedSearch);
 		this.simulator = simulator;
-		this.agent = MakeAgent(simulator);
+		this.agent = simulator.MakeAgent(this.id);
 		this.loc = loc;
 		this.startSearchTime = startedSearch;
 		this.eventCause = DROPPING_OFF; // The introduction of an agent is considered a drop-off event.
-	}
-
-	private BaseAgent MakeAgent(Simulator simulator) {
-		BaseAgent our_agent = null;
-		try {
-			Constructor<? extends BaseAgent> cons = simulator.agentClass.getConstructor(Long.TYPE, CityMap.class);
-			our_agent = cons.newInstance(id, simulator.mapForAgents);
-		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-			e.printStackTrace();
-		}
-		return our_agent;
 	}
 
 	@Override
