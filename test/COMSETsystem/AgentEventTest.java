@@ -20,7 +20,7 @@ public class AgentEventTest {
     @Mock Road mockRoad;
 
     /**
-     * Tests that the initial state of an Agent is in DROPPING_OFF
+     * Tests that the initial state of an Agent is DROPPING_OFF
      * @throws Exception from spyEvent.Trigger if any
      */
     @Test
