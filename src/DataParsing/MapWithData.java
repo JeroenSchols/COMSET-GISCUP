@@ -182,6 +182,7 @@ public class MapWithData {
             }
 			LocationOnRoad locationOnRoad = new LocationOnRoad(road, travelTimeFromStartIntersection);
 			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator);
+			simulator.addEmptyAgent(ev);
 			events.add(ev);
 			agents.add(ev.agent);
 		}
