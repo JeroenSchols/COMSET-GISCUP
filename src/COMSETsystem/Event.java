@@ -3,8 +3,7 @@ package COMSETsystem;
 /**
  *
  * @author TijanaKlimovic
- */
-/**
+ *
  * The Event class represents an event which is something that is happening in
  * the simulation. In this case we have agent events and resource events which
  * will be described in their respective class. An event most importantly has
@@ -28,7 +27,6 @@ public abstract class Event implements Comparable<Event> {
 	/**
 	 * Constructor for class Event
 	 *
-	 * @param id the unique id among all events
 	 * @param time core to this class, indicates when this event will trigger.
 	 * @param simulator a reference to simulator
 	 */
@@ -36,6 +34,16 @@ public abstract class Event implements Comparable<Event> {
 		this.id = maxId++;
 		this.time = time;
 		this.simulator = simulator;
+	}
+
+	/**
+	 * Constructor for class Event.  Allow subclasses to set simulator.
+	 *
+	 * @param time core to this class, indicates when this event will trigger.
+	 */
+	Event(long time) {
+		this.id = maxId++;
+		this.time = time;
 	}
 
 	/**
