@@ -152,14 +152,14 @@ public class AgentEvent extends Event {
 				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "wait time = " + waitTime + " seconds.", this);
 				Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Next trigger time = " + time, this);
 				return this;
-			} else {
-				// Let agent plan a search route after the current dropoff.
-				LocationOnRoad locAgentCopy = simulator.agentCopy(loc);
-				agent.planSearchRoute(locAgentCopy, time);
 			}
 		}
 
-		// no resources have been assigned to the agent 
+		// Let agent plan a search route after the current dropoff.
+		LocationOnRoad locAgentCopy = simulator.agentCopy(loc);
+		agent.planSearchRoute(locAgentCopy, time);
+
+		// no resources have been assigned to the agent
 		// so if the agent was not empty, make it empty for other resources
 		// "Label" the agent as empty.
 		simulator.emptyAgents.add(this);
