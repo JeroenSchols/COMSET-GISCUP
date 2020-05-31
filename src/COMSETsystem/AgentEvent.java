@@ -113,8 +113,8 @@ public class AgentEvent extends Event {
 		// Check if there are resources waiting to be picked up by an agent.
 		if (simulator.waitingResources.size() > 0) {
 			// get the closest resource that will not expire before the agent reaches it
-			PickUp pickUp = new PickUp().invoke(simulator, loc);
-			ResourceEvent bestResource = pickUp.getBestResource();
+			PickUp pickUp = new PickUp().FindBestResource(simulator, loc);
+			ResourceEvent bestResource = pickUp.getResource();
 			long earliest = pickUp.getEarliest();
 
 			// if a a waiting resource is reachable in time by this agent make an assignment
@@ -186,19 +186,19 @@ public class AgentEvent extends Event {
 	}
 
 	private class PickUp {
-		private ResourceEvent bestResource;
+		private ResourceEvent resource;
 		private long earliest;
 
-		public ResourceEvent getBestResource() {
-			return bestResource;
+		public ResourceEvent getResource() {
+			return resource;
 		}
 
 		public long getEarliest() {
 			return earliest;
 		}
 
-		public PickUp invoke(Simulator simulator, final LocationOnRoad agentLoc) {
-			bestResource = null;
+		public PickUp FindBestResource(Simulator simulator, final LocationOnRoad agentLoc) {
+			resource = null;
 			earliest = Long.MAX_VALUE;
 			for (ResourceEvent res : simulator.waitingResources) {
 				// If res is in waitingResources, then it must have not expired yet
@@ -217,7 +217,7 @@ public class AgentEvent extends Event {
 					long arriveTime = time + travelTime;
 					if (arriveTime <= res.expirationTime && arriveTime < earliest) {
 						earliest = arriveTime;
-						bestResource = res;
+						resource = res;
 					}
 				}
 			}
