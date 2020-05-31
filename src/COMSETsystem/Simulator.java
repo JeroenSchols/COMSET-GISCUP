@@ -57,6 +57,12 @@ public class Simulator {
 	// Full path to a KML defining the bounding polygon to crop the map
 	protected String boundingPolygonKMLFile;
 
+	// The beginning time of the simulation
+	protected long simulationStartTime;
+
+	// The current Simulation Time
+	protected long simulationTime;
+
 	// The simulation end time is the expiration time of the last resource.
 	protected long simulationEndTime; 
 
@@ -188,13 +194,13 @@ public class Simulator {
 		}
 		try (ProgressBar pb = new ProgressBar("Progress:", 100, ProgressBarStyle.ASCII)) {
 			assert events.peek() != null;
-			long beginTime = events.peek().time;
-			while (true) {
+			simulationStartTime = simulationTime = events.peek().time;
+			while (simulationTime <= simulationEndTime) {
 				assert events.peek() != null;
-				if (!(events.peek().time <= simulationEndTime))
-					break;
+				simulationTime = events.peek().time;
 				Event toTrigger = events.poll();
-				pb.stepTo((long)(((float)(toTrigger.time - beginTime)) / (simulationEndTime - beginTime) * 100.0));
+				pb.stepTo((long)(((float)(toTrigger.time - simulationStartTime))
+						/ (simulationEndTime - simulationStartTime) * 100.0));
 				Event e = toTrigger.trigger();
 				if (e != null) { 
 					events.add(e);

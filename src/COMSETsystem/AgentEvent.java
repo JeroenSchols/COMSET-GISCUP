@@ -113,7 +113,7 @@ public class AgentEvent extends Event {
 		// Check if there are resources waiting to be picked up by an agent.
 		if (simulator.waitingResources.size() > 0) {
 			// get the closest resource that will not expire before the agent reaches it
-			PickUp pickUp = new PickUp().FindBestResource(simulator, loc);
+			PickUp pickUp = FindEarliestPickup(simulator, loc);
 			ResourceEvent bestResource = pickUp.getResource();
 			long earliest = pickUp.getEarliest();
 
@@ -185,21 +185,10 @@ public class AgentEvent extends Event {
 		this.eventCause = eventCause;
 	}
 
-	private class PickUp {
-		private ResourceEvent resource;
-		private long earliest;
-
-		public ResourceEvent getResource() {
-			return resource;
-		}
-
-		public long getEarliest() {
-			return earliest;
-		}
-
-		public PickUp FindBestResource(Simulator simulator, final LocationOnRoad agentLoc) {
-			resource = null;
-			earliest = Long.MAX_VALUE;
+	public static PickUp FindEarliestPickup(Simulator simulator, final LocationOnRoad agentLoc) {
+		if (simulator.waitingResources.size() > 0) {
+			ResourceEvent resource = null;
+			long earliest = Long.MAX_VALUE;
 			for (ResourceEvent res : simulator.waitingResources) {
 				// If res is in waitingResources, then it must have not expired yet
 				// testing null pointer exception
@@ -214,14 +203,35 @@ public class AgentEvent extends Event {
 
 				if (travelTime != Long.MAX_VALUE) {
 					// if the resource is reachable before expiration
-					long arriveTime = time + travelTime;
+					long arriveTime = simulator.simulationTime + travelTime;
 					if (arriveTime <= res.expirationTime && arriveTime < earliest) {
 						earliest = arriveTime;
 						resource = res;
 					}
 				}
 			}
-			return this;
+			return new PickUp(resource, earliest);
+		} else {
+			return new PickUp(null, 0);
 		}
+	}
+
+	protected static class PickUp {
+		private final ResourceEvent resource;
+		private final long earliest;
+
+		public PickUp(ResourceEvent resource, long time) {
+			this.resource = resource;
+			this.earliest = time;
+		}
+
+		public ResourceEvent getResource() {
+			return resource;
+		}
+
+		public long getEarliest() {
+			return earliest;
+		}
+
 	}
 }
