@@ -110,9 +110,9 @@ public class AgentEvent extends Event {
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
         // Only check the following when an agent drops off a resource.
 
-        PickUp pickUp = FindEarliestPickup(simulator, loc);
+        Simulator.PickUp pickUp = simulator.FindEarliestPickup(loc);
         ResourceEvent bestResource = pickUp.getResource();
-        long earliest = pickUp.getEarliest();
+        long earliest = pickUp.getTime();
 
         // if a a waiting resource is reachable in time by this agent make an assignment
         if (bestResource != null) {
@@ -182,61 +182,4 @@ public class AgentEvent extends Event {
         this.eventCause = eventCause;
     }
 
-    /**
-     * Get the closest resource that will not expire before the agent reaches it
-     *
-     * @param simulator the simulator we are running under
-     * @param agentLoc  Location of agent.
-     * @return PickUp instance with ResourceAgent and time of pickup, or empty PickUp
-     */
-    public PickUp FindEarliestPickup(Simulator simulator, final LocationOnRoad agentLoc) {
-        // Check if there are resources waiting to be picked up by an agent.
-        if (simulator.waitingResources.size() > 0) {
-            ResourceEvent resource = null;
-            long earliest = Long.MAX_VALUE;
-            for (ResourceEvent res : simulator.waitingResources) {
-                // If res is in waitingResources, then it must have not expired yet
-                // testing null pointer exception
-                long travelTime = Long.MAX_VALUE;
-                if (agentLoc == null) {
-                    System.out.println("loc is null");
-                } else if (res.pickupLoc == null) {
-                    System.out.println("res.loc is null");
-                } else {
-                    travelTime = simulator.map.travelTimeBetween(agentLoc, res.pickupLoc);
-                }
-
-                if (travelTime != Long.MAX_VALUE) {
-                    // if the resource is reachable before expiration
-                    long arriveTime = simulator.simulationTime + travelTime;
-                    if (arriveTime <= res.expirationTime && arriveTime < earliest) {
-                        earliest = arriveTime;
-                        resource = res;
-                    }
-                }
-            }
-            return new PickUp(resource, earliest);
-        } else {
-            return new PickUp(null, 0);
-        }
-    }
-
-    protected static class PickUp {
-        private final ResourceEvent resource;
-        private final long earliest;
-
-        public PickUp(ResourceEvent resource, long time) {
-            this.resource = resource;
-            this.earliest = time;
-        }
-
-        public ResourceEvent getResource() {
-            return resource;
-        }
-
-        public long getEarliest() {
-            return earliest;
-        }
-
-    }
 }

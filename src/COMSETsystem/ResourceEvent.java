@@ -138,7 +138,12 @@ public class ResourceEvent extends Event {
 			}
 		}
 
-		if (earliest > availableTime + simulator.ResourceMaximumLifeTime) {
+		// the first disjunct is redundant because it implies the second disjunct. But adding here
+		// for clarification, since without it, it's not obvious that the dereference of bestAgent in the else
+		// clause is safe.
+		if (bestAgent == null || earliest > availableTime + simulator.ResourceMaximumLifeTime) {
+			// Adding to waitingResources will make it available for agents to service when they drop off their
+			// current resource.
 			simulator.waitingResources.add(this);
 			this.time += simulator.ResourceMaximumLifeTime;
 			this.eventCause = EXPIRED;
@@ -146,7 +151,6 @@ public class ResourceEvent extends Event {
 			return this;
 		} else { // make assignment
 			// update the statistics       	
-			assert bestAgent != null;
 			long cruiseTime = time - bestAgent.startSearchTime;
 			long approachTime = earliest - time;
 			long searchTime = cruiseTime + approachTime;

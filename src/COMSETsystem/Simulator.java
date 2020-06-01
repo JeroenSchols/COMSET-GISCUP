@@ -216,6 +216,63 @@ public class Simulator {
 	}
 
 	/**
+	 * Get the closest resource that will not expire before the agent reaches it
+	 *
+	 * @param agentLoc  Location of agent.
+	 * @return PickUp instance with ResourceAgent and time of pickup, or empty PickUp
+	 */
+	public PickUp FindEarliestPickup(final LocationOnRoad agentLoc) {
+		// Check if there are resources waiting to be picked up by an agent.
+		if (waitingResources.size() > 0) {
+			ResourceEvent resource = null;
+			long earliest = Long.MAX_VALUE;
+			for (ResourceEvent res : waitingResources) {
+				// If res is in waitingResources, then it must have not expired yet
+				// testing null pointer exception
+				long travelTime = Long.MAX_VALUE;
+				if (agentLoc == null) {
+					System.out.println("loc is null");
+				} else if (res.pickupLoc == null) {
+					System.out.println("res.loc is null");
+				} else {
+					travelTime = map.travelTimeBetween(agentLoc, res.pickupLoc);
+				}
+
+				if (travelTime != Long.MAX_VALUE) {
+					// if the resource is reachable before expiration
+					long arriveTime = simulationTime + travelTime;
+					if (arriveTime <= res.expirationTime && arriveTime < earliest) {
+						earliest = arriveTime;
+						resource = res;
+					}
+				}
+			}
+			return new PickUp(resource, earliest);
+		} else {
+			return new PickUp(null, 0);
+		}
+	}
+
+	protected static class PickUp {
+		private final ResourceEvent resource;
+		private final long time;
+
+		public PickUp(ResourceEvent resource, long time) {
+			this.resource = resource;
+			this.time = time;
+		}
+
+		public ResourceEvent getResource() {
+			return resource;
+		}
+
+		public long getTime() {
+			return time;
+		}
+
+	}
+
+	/**
 	 * This class is used to give a performance report and the score. It prints
 	 * the total running time of the simulation, the used memory and the score.
 	 * It uses Runtime which allows the application to interface with the

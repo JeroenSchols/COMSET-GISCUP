@@ -24,7 +24,7 @@ public class AgentEventTest {
     @Mock ResourceEvent mockResourceEvent;
     @Mock LocationOnRoad mockLocationOnRoad;
     @Mock Road mockRoad;
-    @Mock AgentEvent.PickUp mockNoPickUp;
+    @Mock Simulator.PickUp mockNoPickUp;
 
     @Before
     public void BeforeEachTest() {
@@ -56,7 +56,7 @@ public class AgentEventTest {
         mockLocationOnRoad.road = mockRoad;
         mockRoad.travelTime = 200001;
         AgentEvent spyEvent = spy(new AgentEvent(mockLocationOnRoad, 100, mockSimulator));
-        doReturn(mockNoPickUp).when(spyEvent).FindEarliestPickup(mockSimulator, mockLocationOnRoad);
+        doReturn(mockNoPickUp).when(mockSimulator).FindEarliestPickup(mockLocationOnRoad);
 
         // Run code under test
         Event nextEvent = spyEvent.trigger();
@@ -90,15 +90,15 @@ public class AgentEventTest {
                 CUSTOMER_TRIP_TIME, mockSimulator);
 
         // Setup Mock Pickup
-        AgentEvent.PickUp mockActualPickUp = mock(AgentEvent.PickUp.class);
+        Simulator.PickUp mockActualPickUp = mock(Simulator.PickUp.class);
         doReturn(customer).when(mockActualPickUp).getResource();
-        doReturn(TIME_TO_PICKUP_CUSTOMER).when(mockActualPickUp).getEarliest();
+        doReturn(TIME_TO_PICKUP_CUSTOMER).when(mockActualPickUp).getTime();
 
         mockLocationOnRoad.travelTimeFromStartIntersection = 1000;
         mockLocationOnRoad.road = mockRoad;
         mockRoad.travelTime = 200001;
         AgentEvent spyEvent = spy(new AgentEvent(mockLocationOnRoad, 100, mockSimulator));
-        doReturn(mockActualPickUp).when(spyEvent).FindEarliestPickup(mockSimulator, mockLocationOnRoad);
+        doReturn(mockActualPickUp).when(mockSimulator).FindEarliestPickup(mockLocationOnRoad);
 
         // Run code under test
         Event nextEvent = spyEvent.trigger();
