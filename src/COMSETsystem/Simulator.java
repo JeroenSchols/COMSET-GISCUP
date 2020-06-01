@@ -339,7 +339,7 @@ public class Simulator {
 	/**
 	 * Compares agent events
 	 */
-	class AgentEventComparator implements Comparator<AgentEvent> {
+	static class AgentEventComparator implements Comparator<AgentEvent> {
 
 		/**
 		 * Checks if two agentEvents are the same by checking their ids.
