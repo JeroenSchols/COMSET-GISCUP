@@ -136,6 +136,16 @@ interval (maybe 10 minutes) until assigned.
 * `DROP_OFF` The resource is dropped off, compute a service time, and is
 removed from the system.
 
+#### Dynamic Traffic Speeds
+The travel speed at a road segment will be updated every Q minutes (e.g., N=15) during a simulation. The travel speed is computed based on the road segment's speed limit and the TLC Trip Record data to reflect the traffic condition over the time of a day. The calibration goes as follows.
+
+1. Compute the average trip duration of all trips recorded in the TLC Trip Record data that fall into the current Q-minute interval; call it the `TLC_average_trip_duration`.
+2. For each trip, compute the shortest travel time from the pickup location of the trip to the dropoff location using speed limits.
+3. Compute the average shortest travel time of all trips; call it the `map_average_trip_duration`.
+4. For each road segment, `travel_speed = speed_limit * ((map_average_trip_duration)/(TLC_average_trip_duration))`.
+
+In other words, we adjust the travel speeds so that the average trip time produced by COMSET is consistent with tachat by the real data.
+
 ## Implementation Plan
 
 1. Write Unit Tests for existing GISCUP 2019. This is an ideal way to but we might not have time for this.
