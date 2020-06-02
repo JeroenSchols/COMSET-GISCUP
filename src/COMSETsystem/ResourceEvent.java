@@ -6,8 +6,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author TijanaKlimovic
- */
-/**
+ *
  * The ResourceEvent class represents the moment a resource becomes available or expired in
  * the simulation. Therefore there are two cases in which a ResourceEvent object is triggered:
  * 
@@ -57,6 +56,26 @@ public class ResourceEvent extends Event {
 	}
 
 	/**
+	 * Constructor for ResourceEvent that overrides tripTime. Makes it easier to test.
+	 *
+	 * @param availableTime time when this agent is introduced to the system.
+	 * @param pickupLoc this resource's location when it becomes available.
+	 * @param dropoffLoc this resource's destination location.
+	 * @param tripTime the time it takes to go from pickUpLoc and dropoffLoc
+	 * @param simulator the simulator object.
+	 */
+	protected ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long tripTime,
+						 Simulator simulator) {
+		super(availableTime, simulator);
+		this.pickupLoc = pickupLoc;
+		this.dropoffLoc = dropoffLoc;
+		this.availableTime = availableTime;
+		this.eventCause = BECOME_AVAILABLE;
+		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
+		this.tripTime = tripTime;
+	}
+
+	/**
 	 * Whenever a resource arrives/becomes available an event corresponding to
 	 * it gets triggered. When it triggers it checks for all the active agents
 	 * which agent can get to the resource the fastest. The closest agent is
@@ -68,9 +87,9 @@ public class ResourceEvent extends Event {
 	 * agent from the PriorityQueue and from activeAgents.
 	 */
 	@Override
-	Event trigger() throws Exception {
+	Event trigger() {
 
-		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+Long.toString(id) + " triggered at time " + time, this);
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id + " triggered at time " + time, this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + this.pickupLoc + "," + this.dropoffLoc, this);
 		if (simulator.map == null) {
 			System.out.println("map is null in resource");
@@ -79,8 +98,7 @@ public class ResourceEvent extends Event {
 			System.out.println("intersection is null");
 		}
 		if (eventCause == BECOME_AVAILABLE) {
-			Event e = becomeAvailableHandler();
-			return e;
+			return becomeAvailableHandler();
 		} else {
 			expireHandler();
 			return null;
@@ -120,7 +138,12 @@ public class ResourceEvent extends Event {
 			}
 		}
 
-		if (earliest > availableTime + simulator.ResourceMaximumLifeTime) {
+		// the first disjunct is redundant because it implies the second disjunct. But adding here
+		// for clarification, since without it, it's not obvious that the dereference of bestAgent in the else
+		// clause is safe.
+		if (bestAgent == null || earliest > availableTime + simulator.ResourceMaximumLifeTime) {
+			// Adding to waitingResources will make it available for agents to service when they drop off their
+			// current resource.
 			simulator.waitingResources.add(this);
 			this.time += simulator.ResourceMaximumLifeTime;
 			this.eventCause = EXPIRED;

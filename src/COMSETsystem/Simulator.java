@@ -57,6 +57,12 @@ public class Simulator {
 	// Full path to a KML defining the bounding polygon to crop the map
 	protected String boundingPolygonKMLFile;
 
+	// The beginning time of the simulation
+	protected long simulationStartTime;
+
+	// The current Simulation Time
+	protected long simulationTime;
+
 	// The simulation end time is the expiration time of the last resource.
 	protected long simulationEndTime; 
 
@@ -188,13 +194,13 @@ public class Simulator {
 		}
 		try (ProgressBar pb = new ProgressBar("Progress:", 100, ProgressBarStyle.ASCII)) {
 			assert events.peek() != null;
-			long beginTime = events.peek().time;
-			while (true) {
+			simulationStartTime = simulationTime = events.peek().time;
+			while (simulationTime <= simulationEndTime) {
 				assert events.peek() != null;
-				if (!(events.peek().time <= simulationEndTime))
-					break;
+				simulationTime = events.peek().time;
 				Event toTrigger = events.poll();
-				pb.stepTo((long)(((float)(toTrigger.time - beginTime)) / (simulationEndTime - beginTime) * 100.0));
+				pb.stepTo((long)(((float)(toTrigger.time - simulationStartTime))
+						/ (simulationEndTime - simulationStartTime) * 100.0));
 				Event e = toTrigger.trigger();
 				if (e != null) { 
 					events.add(e);
@@ -207,6 +213,63 @@ public class Simulator {
 		System.out.println("Simulation finished.");
 
 		score.end();
+	}
+
+	/**
+	 * Get the closest resource that will not expire before the agent reaches it
+	 *
+	 * @param agentLoc  Location of agent.
+	 * @return PickUp instance with ResourceAgent and time of pickup, or empty PickUp
+	 */
+	public PickUp FindEarliestPickup(final LocationOnRoad agentLoc) {
+		// Check if there are resources waiting to be picked up by an agent.
+		if (waitingResources.size() > 0) {
+			ResourceEvent resource = null;
+			long earliest = Long.MAX_VALUE;
+			for (ResourceEvent res : waitingResources) {
+				// If res is in waitingResources, then it must have not expired yet
+				// testing null pointer exception
+				long travelTime = Long.MAX_VALUE;
+				if (agentLoc == null) {
+					System.out.println("loc is null");
+				} else if (res.pickupLoc == null) {
+					System.out.println("res.loc is null");
+				} else {
+					travelTime = map.travelTimeBetween(agentLoc, res.pickupLoc);
+				}
+
+				if (travelTime != Long.MAX_VALUE) {
+					// if the resource is reachable before expiration
+					long arriveTime = simulationTime + travelTime;
+					if (arriveTime <= res.expirationTime && arriveTime < earliest) {
+						earliest = arriveTime;
+						resource = res;
+					}
+				}
+			}
+			return new PickUp(resource, earliest);
+		} else {
+			return new PickUp(null, 0);
+		}
+	}
+
+	protected static class PickUp {
+		private final ResourceEvent resource;
+		private final long time;
+
+		public PickUp(ResourceEvent resource, long time) {
+			this.resource = resource;
+			this.time = time;
+		}
+
+		public ResourceEvent getResource() {
+			return resource;
+		}
+
+		public long getTime() {
+			return time;
+		}
+
 	}
 
 	/**
@@ -333,7 +396,7 @@ public class Simulator {
 	/**
 	 * Compares agent events
 	 */
-	class AgentEventComparator implements Comparator<AgentEvent> {
+	static class AgentEventComparator implements Comparator<AgentEvent> {
 
 		/**
 		 * Checks if two agentEvents are the same by checking their ids.
