@@ -19,6 +19,8 @@ public abstract class Event implements Comparable<Event> {
 	// A reference to the Simulator
 	Simulator simulator;
 
+	FleetManager fleetManager;
+
 	/* An id that is unique among all events regardless of whether agent or resource.
 	 * To facilitate solving ties of trigger time.
 	 */
@@ -30,10 +32,11 @@ public abstract class Event implements Comparable<Event> {
 	 * @param time core to this class, indicates when this event will trigger.
 	 * @param simulator a reference to simulator
 	 */
-	Event(long time, Simulator simulator) {
+	Event(long time, Simulator simulator, FleetManager fleetManager) {
 		this.id = maxId++;
 		this.time = time;
 		this.simulator = simulator;
+		this.fleetManager = fleetManager;
 	}
 
 	/**
@@ -52,6 +55,10 @@ public abstract class Event implements Comparable<Event> {
 	 * @return new Event if needed
 	 */
 	abstract Event trigger() throws Exception;
+
+	public long getId() {
+		return id;
+	}
 
 	/**
 	 * To be used by the PriorityQueue to order the Events

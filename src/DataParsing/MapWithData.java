@@ -5,9 +5,7 @@ import COMSETsystem.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.PriorityQueue;
-import java.util.Random;
+import java.util.*;
 
 import org.apache.log4j.jmx.Agent;
 
@@ -64,7 +62,7 @@ public class MapWithData {
 	 * be created.
 	 * @return long the latest resource time
 	 */
-	public long createMapWithData(Simulator simulator) {
+	public long createMapWithData(Simulator simulator, FleetManager fleetManager) {
  
 		CSVNewYorkParser parser = new CSVNewYorkParser(resourceFile, zoneId);
 		ArrayList<Resource> resourcesParsed = parser.parse();
@@ -74,7 +72,7 @@ public class MapWithData {
 				LocationOnRoad pickupMatch = mapMatch(resource.getPickupLon(), resource.getPickupLat());
 				LocationOnRoad dropoffMatch = mapMatch(resource.getDropoffLon(), resource.getDropoffLat());
 
-				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), simulator);
+				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), simulator, fleetManager);
 				events.add(ev);
 
 				//  track earliestResourceTime and latestResourceTime
@@ -167,27 +165,54 @@ public class MapWithData {
 	 *
 	 * @param simulator a reference to the simulator object
 	 */
-	public ArrayList<BaseAgent> placeAgentsRandomly(Simulator simulator) {
-		ArrayList<BaseAgent> agents = new ArrayList<BaseAgent>();
-		long deployTime = earliestResourceTime - 1; 
+	public void placeAgentsRandomly(Simulator simulator, FleetManager fleetManager) {
+		long deployTime = earliestResourceTime - 1;
 
 		Random generator = new Random(agentPlacementRandomSeed);
+		Set<Long> initAgents = new HashSet<>();
 		for (int i = 0; i < simulator.totalAgents(); i++) {
 			Road road = map.roads().get(generator.nextInt(map.roads().size()));
-            long travelTimeFromStartIntersection;
-            if (road.travelTime != 0) {
-                travelTimeFromStartIntersection = (long) (generator.nextInt((int) road.travelTime));
-            } else {
-                travelTimeFromStartIntersection = 0L;
-            }
+			long travelTimeFromStartIntersection;
+			if (road.travelTime != 0L) {
+				travelTimeFromStartIntersection = (long) (generator.nextInt((int) road.travelTime));
+			} else {
+				travelTimeFromStartIntersection = 0L;
+			}
 			LocationOnRoad locationOnRoad = new LocationOnRoad(road, travelTimeFromStartIntersection);
-			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator);
+			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator, fleetManager);
+			initAgents.add(ev.getId());
 			simulator.addEmptyAgent(ev);
 			events.add(ev);
-			agents.add(ev.agent);
 		}
-		return agents;
+		fleetManager.agentsCreated(initAgents);
 	}
+
+	/**
+	 * Creates agent events that are randomly placed on map.
+	 *
+	 * @param simulator a reference to the simulator object
+	 */
+//	public ArrayList<BaseAgent> placeAgentsRandomly(Simulator simulator) {
+//		ArrayList<BaseAgent> agents = new ArrayList<BaseAgent>();
+//		long deployTime = earliestResourceTime - 1;
+//
+//		Random generator = new Random(agentPlacementRandomSeed);
+//		for (int i = 0; i < simulator.totalAgents(); i++) {
+//			Road road = map.roads().get(generator.nextInt(map.roads().size()));
+//            long travelTimeFromStartIntersection;
+//            if (road.travelTime != 0) {
+//                travelTimeFromStartIntersection = (long) (generator.nextInt((int) road.travelTime));
+//            } else {
+//                travelTimeFromStartIntersection = 0L;
+//            }
+//			LocationOnRoad locationOnRoad = new LocationOnRoad(road, travelTimeFromStartIntersection);
+//			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator);
+//			simulator.addEmptyAgent(ev);
+//			events.add(ev);
+//			agents.add(ev.agent);
+//		}
+//		return agents;
+//	}
 
 	/**
 	 * 
