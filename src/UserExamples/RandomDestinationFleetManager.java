@@ -26,25 +26,25 @@ public class RandomDestinationFleetManager extends FleetManager {
     }
 
     @Override
-    public AgentAction onResourceAvailabilityChange(long resourceId, ResourceState state, long agentId,
-                                                             LocationOnRoad location, long time, long expiredTime) {
-        resourceLocation.put(resourceId, location);
+    public AgentAction onResourceAvailabilityChange(Resource resource, ResourceState state, LocationOnRoad currentLoc,
+                                                    long time) {
+        resourceLocation.put(resource.id, currentLoc);
 
         AgentAction action = AgentAction.doNothing();
 
         if (state == ResourceState.AVAILABLE) {
-            Long assignedAgent = getNearestAvailableAgent(location, time);
+            Long assignedAgent = getNearestAvailableAgent(currentLoc, time);
             if (assignedAgent != null) {
-                agentAssignment.put(assignedAgent, resourceId);
+                agentAssignment.put(assignedAgent, resource.id);
                 agentRoutes.put(assignedAgent, new LinkedList<>());
                 availableAgent.remove(assignedAgent);
-                action = AgentAction.assignTo(assignedAgent, resourceId);
+                action = AgentAction.assignTo(assignedAgent, resource.id);
             } else {
-                waitingRes.add(resourceId);
+                waitingRes.add(resource.id);
             }
         } else if (state == ResourceState.DROPPED_OFF) {
             if (waitingRes.isEmpty()) {
-                availableAgent.add(agentId);
+                availableAgent.add(resource.assignedAgentId);
             } else {
                 Long assignedRes = null;
                 for (Long resId : waitingRes) {
@@ -55,55 +55,53 @@ public class RandomDestinationFleetManager extends FleetManager {
 
                 if (assignedRes != null) {
                     waitingRes.remove(assignedRes);
-                    agentAssignment.put(agentId, assignedRes);
-                    agentRoutes.put(agentId, new LinkedList<>());
-                    action = AgentAction.assignTo(agentId, assignedRes);
+                    agentAssignment.put(resource.assignedAgentId, assignedRes);
+                    agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
+                    action = AgentAction.assignTo(resource.assignedAgentId, assignedRes);
                 }
             }
         } else if (state == ResourceState.EXPIRED) {
-            if (agentId != -1) {
-                agentAssignment.remove(agentId);
-                availableAgent.add(agentId);
-                agentRoutes.put(agentId, new LinkedList<>());
+            if (resource.assignedAgentId != -1) {
+                agentAssignment.remove(resource.assignedAgentId);
+                availableAgent.add(resource.assignedAgentId);
+                agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
             } else {
-                waitingRes.remove(resourceId);
+                waitingRes.remove(resource.id);
             }
-            expiredRes.add(resourceId);
+            expiredRes.add(resource.id);
         } else if (state == ResourceState.PICKED_UP) {
-            agentRoutes.put(agentId, new LinkedList<>());
-            pickedUpRes.add(resourceId);
+            agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
+            pickedUpRes.add(resource.id);
         }
 
         return action;
     }
 
     @Override
-    public Intersection onReachIntersection(long agentId, long time, LocationOnRoad road) {
-        agentLocation.put(agentId, road);
+    public Intersection onReachIntersection(long agentId, long time, LocationOnRoad currentLoc) {
+        agentLocation.put(agentId, currentLoc);
         LinkedList<Intersection> route = agentRoutes.getOrDefault(agentId, new LinkedList<>());
 
         if (route.isEmpty()) {
-            route = planRoute(agentId, road);
+            route = planRoute(agentId, currentLoc);
             agentRoutes.put(agentId, route);
         }
 
-        Intersection nextIntersection = route.poll();
-        return nextIntersection;
+        return route.poll();
     }
 
     @Override
-    public Intersection onReachIntersectionWithResource(long agentId, long resourceId, long time, LocationOnRoad road) {
-        agentLocation.put(agentId, road);
+    public Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc, Resource resource) {
+        agentLocation.put(agentId, currentLoc);
 
         LinkedList<Intersection> route = agentRoutes.getOrDefault(agentId, new LinkedList<>());
 
         if (route.isEmpty()) {
-            route = planRouteToTarget(resourceId, road);
+            route = planRouteToTarget(resource.pickupLoc, resource.dropOffLoc);
             agentRoutes.put(agentId, route);
         }
 
-        Intersection nextIntersection = route.poll();
-        return nextIntersection;
+        return route.poll();
     }
 
     Long getNearestAvailableAgent(LocationOnRoad resourceLocation, long time) {
@@ -142,10 +140,9 @@ public class RandomDestinationFleetManager extends FleetManager {
         }
     }
 
-    private LinkedList<Intersection> planRouteToTarget(long resId, LocationOnRoad currentLocation) {
-        LocationOnRoad resLocation = resourceLocation.get(resId);
-        Intersection sourceIntersection = currentLocation.road.to;
-        Intersection destinationIntersection = resLocation.road.from;
+    private LinkedList<Intersection> planRouteToTarget(LocationOnRoad source, LocationOnRoad destination) {
+        Intersection sourceIntersection = source.road.to;
+        Intersection destinationIntersection = destination.road.from;
         LinkedList<Intersection> shortestTravelTimePath = map.shortestTravelTimePath(sourceIntersection,
                 destinationIntersection);
         shortestTravelTimePath.poll(); // Ensure that route.get(0) != currentLocation.road.to.
@@ -175,6 +172,5 @@ public class RandomDestinationFleetManager extends FleetManager {
 
     public RandomDestinationFleetManager(CityMap map) {
         super(map);
-
     }
 }

@@ -21,11 +21,11 @@ public abstract class FleetManager {
 
     public abstract void onMapStateChanged(Road road, MapState state);
 
-    public abstract AgentAction onResourceAvailabilityChange(long resourceId, ResourceState state, long agentId, LocationOnRoad location, long time, long expiredTime);
+    public abstract AgentAction onResourceAvailabilityChange(Resource resource, ResourceState state, LocationOnRoad currentLoc, long time);
 
-    public abstract Intersection onReachIntersection(long agentId, long time, LocationOnRoad location);
+    public abstract Intersection onReachIntersection(long agentId, long time, LocationOnRoad currentLoc);
 
-    public abstract Intersection onReachIntersectionWithResource(long agentId, long resourceId, long time, LocationOnRoad road);
+    public abstract Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc, Resource resource);
 
     public FleetManager(CityMap map) {
         this.map = map;
