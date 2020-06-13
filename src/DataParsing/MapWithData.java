@@ -7,8 +7,6 @@ import java.io.FileWriter;
 import java.time.ZoneId;
 import java.util.*;
 
-import org.apache.log4j.jmx.Agent;
-
 /**
  * The MapWithData class is responsible for loading a resource dataset file,
  * map matching resources, and create a list of resource events.  
@@ -42,7 +40,7 @@ public class MapWithData {
 	 * Constructor of MapWithData
 	 * @param map reference to the map
 	 * @param resourceFile full path to the resource file
-	 * @param agentPlacementRandomSeed
+	 * @param agentPlacementRandomSeed Seed for randome number that generates agent placements
 	 */
 	public MapWithData(CityMap map, String resourceFile, long agentPlacementRandomSeed) {
 		this.map = map;
@@ -94,13 +92,10 @@ public class MapWithData {
 
 	/**
 	 * Match a point to the closest location on the map
-	 * @param longitude
-	 * @param latitude
-	 * @return
 	 */
 	public LocationOnRoad mapMatch(double longitude, double latitude) {
 		Link link = map.getNearestLink(longitude, latitude);
-		double xy[] = map.projector().fromLatLon(latitude, longitude);
+		double [] xy = map.projector().fromLatLon(latitude, longitude);
 		double [] snapResult = snap(link.from.getX(), link.from.getY(), link.to.getX(), link.to.getY(), xy[0], xy[1]);
 		double distanceFromStartVertex = this.distance(snapResult[0], snapResult[1], link.from.getX(), link.from.getY());
 		long travelTimeFromStartVertex = Math.round(distanceFromStartVertex / link.length * link.travelTime);
@@ -176,7 +171,7 @@ public class MapWithData {
 			Road road = map.roads().get(generator.nextInt(map.roads().size()));
 			long travelTimeFromStartIntersection;
 			if (road.travelTime != 0L) {
-				travelTimeFromStartIntersection = (long) (generator.nextInt((int) road.travelTime));
+				travelTimeFromStartIntersection = generator.nextInt((int) road.travelTime);
 			} else {
 				travelTimeFromStartIntersection = 0L;
 			}
@@ -190,11 +185,11 @@ public class MapWithData {
 		fleetManager.agentsCreated(initAgents);
 	}
 
-	/**
-	 * Creates agent events that are randomly placed on map.
-	 *
-	 * @param simulator a reference to the simulator object
-	 */
+//	/**
+//	 * Creates agent events that are randomly placed on map.
+//	 *
+//	 * @param simulator a reference to the simulator object
+//	 */
 //	public ArrayList<BaseAgent> placeAgentsRandomly(Simulator simulator) {
 //		ArrayList<BaseAgent> agents = new ArrayList<BaseAgent>();
 //		long deployTime = earliestResourceTime - 1;
