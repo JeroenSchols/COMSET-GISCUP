@@ -6,10 +6,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.xml.stream.Location;
-
-import java.util.TreeSet;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
@@ -35,35 +31,37 @@ public class AgentEventTest {
     FleetManager mockFleetManager;
     @Mock
     AssignmentManager mockAssignmentManager;
+    private SimpleMap testMap = new SimpleMap();
 
     @Before
     public void BeforeEachTest() {
-
     }
 
     /**
      * Tests that the initial state of an Agent is INTERSECTION_REACHED and navigate is called.
+     * Traveling from intersection 1 -> intersection 2 -> intersection 3
      *
      * @throws Exception from spyEvent.Trigger if any
      */
     @Test
     public void testTrigger_initialState() throws Exception {
-        AgentEvent spyEvent = spy(new AgentEvent(mockLocationOnRoad, 100, mockSimulator, mockFleetManager));
-        doReturn(mockEvent).when(spyEvent).navigate();
-        assertEquals(AgentEvent.State.INTERSECTION_REACHED, spyEvent.state);
-        assertEquals(mockEvent, spyEvent.trigger());
+        LocationOnRoad locAtReachedIntersection = new LocationOnRoad(testMap.road1, testMap.road1.travelTime);
+        AgentEvent agentEvent = new AgentEvent(locAtReachedIntersection,
+                100, mockSimulator, mockFleetManager);
+        when(mockFleetManager.onReachIntersection(eq(agentEvent.id), anyLong(), anyObject()))
+                .thenReturn(testMap.intersection3);
+        assertEquals(AgentEvent.State.INTERSECTION_REACHED, agentEvent.state);
+        assertEquals(agentEvent, agentEvent.trigger());
     }
 
     @Test
     public void testNavigate_withPickUp() throws Exception {
-        SimpleMap map = new SimpleMap();
-
-        LocationOnRoad locationOnRoad = spy(new LocationOnRoad(map.road1, 10L));
-        doReturn("123,456").when(locationOnRoad).toString();
+        LocationOnRoad locationOnRoad = spy(new LocationOnRoad(testMap.road1, testMap.road1.travelTime));
+        when(locationOnRoad.toString()).thenReturn("123,45t");
 
         ResourceEvent resource = new ResourceEvent(
-                new LocationOnRoad(map.road2, 20L),
-                new LocationOnRoad(map.road2, 10L),
+                new LocationOnRoad(testMap.road2, 20L),
+                new LocationOnRoad(testMap.road2, 10L),
                 100L,
                 1000L,
                 mockSimulator,
@@ -80,24 +78,33 @@ public class AgentEventTest {
 
     @Test
     public void testTwoRoadsIntesecting() {
-        SimpleMap map = new SimpleMap();
-        assertEquals(map.intersection1, map.road1.from);
-        assertEquals(map.intersection2, map.road1.to);
-        assertEquals(map.road1.to, map.road2.from);
-        assertEquals(map.intersection3, map.road2.to);
+        assertEquals(testMap.intersection1, testMap.road1.from);
+        assertEquals(testMap.intersection2, testMap.road1.to);
+        assertEquals(testMap.road1.to, testMap.road2.from);
+        assertEquals(testMap.intersection3, testMap.road2.to);
     }
 
     private static class SimpleMap {
 
+        private final Vertex vertex1;
+        private final Vertex vertex2;
+        private final Vertex vertex3;
+        private final Link link1to2;
+        private final Link link2to3;
         private final Intersection intersection1;
         private final Intersection intersection2;
         private final Intersection intersection3;
         private final Road road1;
         private final Road road2;
 
-        private static Intersection makeIntersection(final double longitude, final double latitude, final int id) {
-            Vertex vertex1 = new Vertex(longitude, latitude, id, id, id);
-            return new Intersection(vertex1);
+        private static Vertex makeVertex(final double longitude, final double latitude, final int id) {
+            return new Vertex(longitude, latitude, id, id, id);
+        }
+
+        private static Intersection makeIntersection(Vertex vertex) {
+            Intersection intersection = new Intersection(vertex);
+            vertex.intersection = intersection;
+            return intersection;
         }
 
         private static Road makeRoad(Intersection intersection1, Intersection intersection2, long travelTime) {
@@ -112,11 +119,18 @@ public class AgentEventTest {
 
 
         public SimpleMap(){
-            intersection1 = makeIntersection(100.0, 100.0, 1);
-            intersection2 = makeIntersection(100.0, 101.0, 2);
-            intersection3 = makeIntersection(100.0, 102.0, 3);
+            vertex1 = makeVertex(100.0, 100.0, 1);
+            vertex2 = makeVertex(100.0, 101.0, 2);
+            vertex3 = makeVertex(100.0, 102.0, 3);
+            link1to2 = new Link(vertex1, vertex2, 1000, 50);
+            link2to3 = new Link(vertex2, vertex3, 1200, 60);
+            intersection1 = makeIntersection(vertex1);
+            intersection2 = makeIntersection(vertex2);
+            intersection3 = makeIntersection(vertex3);
             road1 = makeRoad(intersection1, intersection2, 10L);
             road2 = makeRoad(intersection2, intersection3, 20L);
+            road1.addLink(link1to2);
+            road2.addLink(link2to3);
         }
     }
 }
