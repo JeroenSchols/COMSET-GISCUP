@@ -38,6 +38,8 @@ public class Simulator {
 	// The event queue.
 	protected PriorityQueue<Event> events = new PriorityQueue<>();
 
+	protected AssignmentManager assignmentManager = new AssignmentManager();
+
 	// The set of empty agents.
 	protected TreeSet<AgentEvent> emptyAgents = new TreeSet<>(new AgentEventComparator());
 
@@ -102,7 +104,9 @@ public class Simulator {
 	ArrayList<BaseAgent> agents;
 
 	// A class that extends BaseAgent and implements a search routing strategy
-	protected final Class<? extends BaseAgent> agentClass;
+	protected final Class<? extends FleetManager> agentClass;
+
+	protected FleetManager fleetManager;
 
 	/**
 	 * Constructor of the class Main. This is made such that the type of
@@ -112,7 +116,7 @@ public class Simulator {
 	 * @param agentClass the agent class that is going to be used in this
 	 * simulation.
 	 */
-	public Simulator(Class<? extends BaseAgent> agentClass) {
+	public Simulator(Class<? extends FleetManager> agentClass) {
 		this.agentClass = agentClass;
 	}
 
@@ -167,13 +171,15 @@ public class Simulator {
 		// map match resources
 		System.out.println("Loading and map-matching resources...");
 
+		fleetManager = createFleetManager();
+
 		// The simulation end time is the expiration time of the last resource.
 		// which is return by createMapWithData
-		this.simulationEndTime = mapWD.createMapWithData(this);
+		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager, assignmentManager);
 
 		// Deploy agents at random locations of the map.
 		System.out.println("Randomly placing " + this.totalAgents + " agents on the map...");
-		agents = mapWD.placeAgentsRandomly(this);
+		mapWD.placeAgentsRandomly(this, fleetManager, assignmentManager);
 
 		// Initialize the event queue.
 		events = mapWD.getEvents();
@@ -504,16 +510,27 @@ public class Simulator {
 		return new LocationOnRoad(roadAgentCopy, locationOnRoad.travelTimeFromStartIntersection);
 	}
 
-	public BaseAgent MakeAgent(long id) {
+	public FleetManager createFleetManager() {
 		try {
-			Constructor<? extends BaseAgent> cons = this.agentClass.getConstructor(Long.TYPE, CityMap.class);
-			return cons.newInstance(id, this.mapForAgents);
+			Constructor<? extends FleetManager> cons = this.agentClass.getConstructor(CityMap.class);
+			return cons.newInstance(this.mapForAgents);
 		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
 				InvocationTargetException e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
+
+//	public BaseAgent MakeAgent(long id) {
+//		try {
+//			Constructor<? extends BaseAgent> cons = this.agentClass.getConstructor( CityMap.class);
+//			return cons.newInstance(id, this.mapForAgents);
+//		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
+//				InvocationTargetException e) {
+//			e.printStackTrace();
+//		}
+//		return null;
+//	}
 
 
 }

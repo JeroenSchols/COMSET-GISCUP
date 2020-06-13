@@ -2,6 +2,7 @@ package COMSETsystem;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import COMSETsystem.FleetManager.ResourceState;
 
 /**
  *
@@ -16,9 +17,10 @@ import java.util.logging.Logger;
  */
 public class ResourceEvent extends Event {
 
-	// Constants representing two causes for which the ResourceEvent can be triggered.
-	public final static int BECOME_AVAILABLE = 0;
-	public final static int EXPIRED = 1;
+	enum State {
+		AVAILABLE,
+		EXPIRED
+	}
 
 	// The location at which the resource is introduced.
 	public final LocationOnRoad pickupLoc;
@@ -26,13 +28,18 @@ public class ResourceEvent extends Event {
 	public final LocationOnRoad dropoffLoc;
 
 	// The time at which the resource is introduced
-	final long availableTime; 
+	final long availableTime;
 
 	// The time at which the resource will be expired
 	final long expirationTime;
 
-	// The cause of the AgentEvent to be triggered, either BECOME_AVAILABLE or EXPIRED
-	int eventCause;
+	long pickupTime;
+
+	AgentEvent agentEvent = null;
+
+	AssignmentManager assignmentManager;
+
+	State state;
 
 	// The shortest travel time from pickupLoc to dropoffLoc
 	public long tripTime;
@@ -45,14 +52,15 @@ public class ResourceEvent extends Event {
 	 * @param dropoffLoc this resource's destination location.
 	 * @param simulator the simulator object.
 	 */
-	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, Simulator simulator) {
-		super(availableTime, simulator);
+	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long tripTime, Simulator simulator, FleetManager fleetManager, AssignmentManager assignmentManager) {
+		super(availableTime, simulator, fleetManager);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.eventCause = BECOME_AVAILABLE;
 		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
-		this.tripTime = simulator.map.travelTimeBetween(pickupLoc, dropoffLoc);
+		this.tripTime = tripTime;
+		this.state = State.AVAILABLE;
+		this.assignmentManager = assignmentManager;
 	}
 
 	/**
@@ -64,13 +72,11 @@ public class ResourceEvent extends Event {
 	 * @param tripTime the time it takes to go from pickUpLoc and dropoffLoc
 	 * @param simulator the simulator object.
 	 */
-	protected ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long tripTime,
-						 Simulator simulator) {
-		super(availableTime, simulator);
+	protected ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long tripTime, Simulator simulator) {
+		super(availableTime);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.eventCause = BECOME_AVAILABLE;
 		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
 		this.tripTime = tripTime;
 	}
@@ -88,114 +94,74 @@ public class ResourceEvent extends Event {
 	 */
 	@Override
 	Event trigger() {
-
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id + " triggered at time " + time, this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + this.pickupLoc + "," + this.dropoffLoc, this);
+
 		if (simulator.map == null) {
 			System.out.println("map is null in resource");
 		}
 		if (pickupLoc == null) {
 			System.out.println("intersection is null");
 		}
-		if (eventCause == BECOME_AVAILABLE) {
-			return becomeAvailableHandler();
-		} else {
-			expireHandler();
-			return null;
+
+		Event e = null;
+		switch (state) {
+			case AVAILABLE:
+				available();
+				e = this;
+				break;
+			case EXPIRED:
+				expire();
+				break;
 		}
 
+		return e;
 	}
 
-	/*
-	 * Handler of a BECOME_AVAILABLE event
-	 */
-	public Event becomeAvailableHandler() {
-		//total number of resources from dataset appearing through the simulation increases
+	Resource copyResource() {
+		return new Resource(id, expirationTime, agentEvent == null ? -1 : agentEvent.id, simulator.agentCopy(pickupLoc), simulator.agentCopy(dropoffLoc));
+	}
+
+	void pickup(AgentEvent agentEvent, long pickupTime) {
+		this.pickupTime = pickupTime;
+		this.agentEvent = agentEvent;
+		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.PICKED_UP, simulator.agentCopy(pickupLoc), pickupTime);
+		assignmentManager.processAgentAction(action, pickupTime);
+	}
+
+	void dropOff(long dropOffTime) {
+		long waitTime = pickupTime - availableTime;
+		long tripTime = dropOffTime - pickupTime;
+
+		simulator.totalResourceWaitTime += waitTime;
+		simulator.totalResourceTripTime += tripTime;
+		simulator.totalAssignments++;
+
+		simulator.events.remove(this);
+		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.DROPPED_OFF, simulator.agentCopy(dropoffLoc), dropOffTime);
+		assignmentManager.processAgentAction(action, dropOffTime);
+	}
+
+	private void available() {
 		++simulator.totalResources;
 
-		// finds the agent with least travel time between itself and this resource
-		AgentEvent bestAgent = null;
-		long earliest = Long.MAX_VALUE;
-		LocationOnRoad bestAgentLocationOnRoad = null;
-		for (AgentEvent agent : simulator.emptyAgents) {
-
-			// Calculate the travel time from the agent's current location to resource.
-			// Assumption: agent.time is the arrival time at the end intersection of agent.loc.road. 
-			// This assumption is true for empty agents. Notice that when agents are initially introduced
-			// to the system, they are empty and agent.time is not necessarily the time to arrive at the end intersection.
-			// However, all the agents are triggered once before the earliest resource (see MapWithData.createMapWithData).
-			// When that happens, agent.time is updated to the end intersection arrival time. 
-			// Thus the assumption is still true.
-			long travelTimeToEndIntersection = agent.time - time;
-			long travelTimeFromStartIntersection = agent.loc.road.travelTime - travelTimeToEndIntersection;
-			LocationOnRoad agentLocationOnRoad = new LocationOnRoad(agent.loc.road, travelTimeFromStartIntersection);
-			long travelTime = simulator.map.travelTimeBetween(agentLocationOnRoad, pickupLoc);
-			long arriveTime = travelTime + time;
-			if (arriveTime < earliest) {
-				bestAgent = agent;
-				earliest = arriveTime;
-				bestAgentLocationOnRoad = agentLocationOnRoad;
-			}
-		}
-
-		// the first disjunct is redundant because it implies the second disjunct. But adding here
-		// for clarification, since without it, it's not obvious that the dereference of bestAgent in the else
-		// clause is safe.
-		if (bestAgent == null || earliest > availableTime + simulator.ResourceMaximumLifeTime) {
-			// Adding to waitingResources will make it available for agents to service when they drop off their
-			// current resource.
-			simulator.waitingResources.add(this);
-			this.time += simulator.ResourceMaximumLifeTime;
-			this.eventCause = EXPIRED;
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Setup expiration event at time " + this.time, this);
-			return this;
-		} else { // make assignment
-			// update the statistics       	
-			long cruiseTime = time - bestAgent.startSearchTime;
-			long approachTime = earliest - time;
-			long searchTime = cruiseTime + approachTime;
-			long waitTime = earliest - availableTime;
-
-			simulator.totalAgentCruiseTime += cruiseTime;
-			simulator.totalAgentApproachTime += approachTime;
-			simulator.totalAgentSearchTime += searchTime;
-			simulator.totalResourceWaitTime += waitTime;
-			simulator.totalResourceTripTime += tripTime;
-			simulator.totalAssignments++;
-
-
-			// Inform the assignment to the agent.
-			bestAgent.assignedTo(bestAgentLocationOnRoad, time, id, pickupLoc, dropoffLoc);
-
-			// "Label" the agent as occupied.
-			simulator.emptyAgents.remove(bestAgent);
-
-			simulator.events.remove(bestAgent);
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Assigned to agent id = " + bestAgent.id + " currently at " + bestAgent.loc, this);
-
-			bestAgent.setEvent(earliest + tripTime, dropoffLoc, AgentEvent.DROPPING_OFF);
-
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "From agent to resource = " + approachTime + " seconds.", this);
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "From pickupLoc to dropoffLoc = " + tripTime + " seconds.", this);            
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "cruise time = " + cruiseTime + " seconds.", this);
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "approach time = " + approachTime + " seconds.", this);
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "search time = " + searchTime + " seconds.", this);
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "wait time = " + waitTime + " seconds.", this);
-			Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Next agent trigger time = " + bestAgent.time, this);
-
-			// Add the event back to the event queue.
-			return bestAgent;
-		}
+		simulator.waitingResources.add(this);
+		time = expirationTime;
+		state = State.EXPIRED;
+		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), time);
+		assignmentManager.processAgentAction(action, time);
 	}
 
-	/*
-	 * Handler of an EXPIRED event.
-	 */
-	public void expireHandler() {
-		simulator.expiredResources ++;
+	private void expire() {
+		simulator.expiredResources++;
 		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
 		simulator.waitingResources.remove(this);
-		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 
+		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED, simulator.agentCopy(pickupLoc), time);
+		assignmentManager.processAgentAction(action, time);
+		if (agentEvent != null) {
+			agentEvent.abortResource();
+		}
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 	}
 }

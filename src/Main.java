@@ -1,4 +1,5 @@
 import COMSETsystem.BaseAgent;
+import COMSETsystem.FleetManager;
 import COMSETsystem.Simulator;
 
 import java.io.IOException;
@@ -90,7 +91,7 @@ public class Main {
             }
 
             Class<?> agentClass = Class.forName(agentClassName);
-            Simulator simulator = new Simulator((Class<? extends BaseAgent>) agentClass);
+            Simulator simulator = new Simulator((Class<? extends FleetManager>) agentClass);
 
             if (!displayLogging) {
                 LogManager.getLogManager().reset();

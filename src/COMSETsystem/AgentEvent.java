@@ -28,158 +28,163 @@ import java.util.logging.Logger;
  */
 public class AgentEvent extends Event {
 
-    // Constants representing two causes for which the AgentEvent can be triggered.
-    public final static int INTERSECTION_REACHED = 0;
-    public final static int DROPPING_OFF = 1;
+	enum State {
+		INTERSECTION_REACHED,
+		PICKING_UP,
+		DROPPING_OFF
+	}
 
-    // The location at which the event is triggered.
-    LocationOnRoad loc;
+	// The location at which the event is triggered.
+	LocationOnRoad loc;
 
-    // The Agent object that the event pertains to.
-    public BaseAgent agent;
+	ResourceEvent assignedResource;
 
-    // The cause of the AgentEvent to be triggered, either INTERSECTION_REACHED or DROPPING_OFF.
-    public int eventCause;
+	boolean isPickup = false;
 
-    /*
-     * The time at which the agent started to search for a resource. This is also the
-     * time at which the agent drops off a resource.
-     */
-    long startSearchTime;
+	State state = State.INTERSECTION_REACHED;
 
-    /**
-     * Constructor for class AgentEvent.
-     *
-     * @param loc this agent's location when it becomes empty.
-     */
-    public AgentEvent(LocationOnRoad loc, long startedSearch, Simulator simulator) {
-        super(startedSearch);
-        this.simulator = simulator;
-        this.agent = simulator.MakeAgent(this.id);
-        this.loc = loc;
-        this.startSearchTime = startedSearch;
-        this.eventCause = DROPPING_OFF; // The introduction of an agent is considered a drop-off event.
-    }
+	/*
+	 * The time at which the agent started to search for a resource. This is also the
+	 * time at which the agent drops off a resource.
+	 */
+	long startSearchTime;
 
-    @Override
-    Event trigger() throws Exception {
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** AgentEvent id = " + id + " triggered at time " + time, this);
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + loc, this);
-        Event e;
-        if (eventCause == DROPPING_OFF) {
-            e = dropoffHandler();
-        } else {
-            e = intersectionReachedHandler();
-        }
-        // add this event back on the event queue
-        return e;
-    }
+	/**
+	 * Constructor for class AgentEvent.
+	 *
+	 * @param loc this agent's location when it becomes empty.
+	 */
+	public AgentEvent(LocationOnRoad loc, long startedSearch, Simulator simulator, FleetManager fleetManager) {
+		super(startedSearch + loc.road.travelTime - loc.travelTimeFromStartIntersection, simulator, fleetManager);
+		this.loc = loc;
+		this.startSearchTime = startedSearch;
+	}
 
-    /*
-     * The handler of an INTERSECTION_REACHED event.
-     */
-    Event intersectionReachedHandler() throws Exception {
-        assert loc.travelTimeFromStartIntersection == loc.road.travelTime : "Agent not at an intersection.";
+	@Override
+	Event trigger() throws Exception {
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** AgentEvent id = " + id+ " triggered at time " + time, this);
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + loc, this);
 
-        // Ask the agent to choose the next intersection to move to.
-        LocationOnRoad locAgentCopy = simulator.agentCopy(loc);
-        Intersection nextIntersection = agent.nextIntersection(locAgentCopy, time);
-        if (nextIntersection == null) {
-            throw new Exception("agent.move() did not return a next location");
-        }
+		switch (state) {
+			case INTERSECTION_REACHED:
+				navigate();
+				break;
+			case PICKING_UP:
+				pickup();
+				break;
+			case DROPPING_OFF:
+				dropOff();
+				break;
+		}
+		return this;
+	}
 
-        if (!loc.road.to.isAdjacent(nextIntersection)) {
-            throw new Exception("move not made to an adjacent location");
-        }
+	boolean hasPickupRes() {
+		return isPickup;
+	}
 
-        // set location and time of the next trigger
-        Road nextRoad = loc.road.to.roadTo(nextIntersection);
-        LocationOnRoad nextLocation = new LocationOnRoad(nextRoad, nextRoad.travelTime);
-        setEvent(time + nextRoad.travelTime, nextLocation, INTERSECTION_REACHED);
+	void assignTo(ResourceEvent resourceEvent) {
+		this.assignedResource = resourceEvent;
+	}
 
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Move to " + nextRoad.to, this);
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Next trigger time = " + time, this);
-        return this;
-    }
+	void abortResource() {
+		assignedResource = null;
+		isPickup = false;
+		state = State.INTERSECTION_REACHED;
+	}
 
-    /*
-     * The handler of a DROPPING_OFF event.
-     */
-    Event dropoffHandler() {
-        startSearchTime = time;
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
-        // Only check the following when an agent drops off a resource.
+	void navigate() throws Exception {
+		assert loc.travelTimeFromStartIntersection == loc.road.travelTime : "Agent not at an intersection.";
 
-        Simulator.PickUp pickUp = simulator.FindEarliestPickup(loc);
-        ResourceEvent bestResource = pickUp.getResource();
-        long earliest = pickUp.getTime();
+		if (isArrivingPickupLoc()) {
+			long nextEventTime = time + assignedResource.pickupLoc.travelTimeFromStartIntersection;
+			update(nextEventTime, assignedResource.pickupLoc, State.PICKING_UP);
+			return;
+		}
 
-        // if a a waiting resource is reachable in time by this agent make an assignment
-        if (bestResource != null) {
-            // update the statistics
-            long cruiseTime = time - startSearchTime;
-            long approachTime = earliest - time;
-            long searchTime = cruiseTime + approachTime;
-            long waitTime = earliest - bestResource.availableTime;
-            simulator.totalAgentCruiseTime += cruiseTime;
-            simulator.totalAgentApproachTime += approachTime;
-            simulator.totalAgentSearchTime += searchTime;
-            simulator.totalAssignments++;
-            simulator.totalResourceWaitTime += waitTime;
-            simulator.totalResourceTripTime += bestResource.tripTime;
-
-            // Inform the assignment to the agent.
-            assignedTo(loc, time, bestResource.id, bestResource.pickupLoc, bestResource.dropoffLoc);
-
-            // "Label" the agent as occupied
-            simulator.emptyAgents.remove(this);
-
-            simulator.waitingResources.remove(bestResource);
-            simulator.events.remove(bestResource); // resource is pickup and does not expire anymore.
-
-            // set time and location of the next trigger
-            setEvent(earliest + bestResource.tripTime, bestResource.dropoffLoc, DROPPING_OFF);
-
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Assigned to resource id = " + bestResource.id + " with pickupLoc at " + bestResource.pickupLoc + " and dropoffLoc at " + bestResource.dropoffLoc, this);
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "From agent to resource = " + approachTime + " seconds.", this);
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "From pickupLoc to dropoffLoc = " + (time - earliest) + " seconds.", this);
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "cruise time = " + cruiseTime + " seconds.", this);
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "approach time = " + approachTime + " seconds.", this);
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "search time = " + searchTime + " seconds.", this);
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "wait time = " + waitTime + " seconds.", this);
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Next trigger time = " + time, this);
-            return this;
-        }
+		if (isArrivingDropOffLoc()) {
+			long nextEventTime = time + assignedResource.dropoffLoc.travelTimeFromStartIntersection;
+			update(nextEventTime, assignedResource.dropoffLoc, State.DROPPING_OFF);
+			return;
+		}
 
 
-        // Let agent plan a search route after the current dropoff.
-        LocationOnRoad locAgentCopy = simulator.agentCopy(loc);
-        agent.planSearchRoute(locAgentCopy, time);
+		Intersection nextIntersection;
+		if (isPickup && assignedResource != null) {
+			nextIntersection = fleetManager.onReachIntersectionWithResource(id, time, simulator.agentCopy(loc), assignedResource.copyResource());
+		} else {
+			nextIntersection = fleetManager.onReachIntersection(id, time, simulator.agentCopy(loc));
+		}
 
-        // no resources have been assigned to the agent
-        // so if the agent was not empty, make it empty for other resources
-        // "Label" the agent as empty.
-        simulator.emptyAgents.add(this);
+		if (nextIntersection == null) {
+			throw new Exception("agent.move() did not return a next location");
+		}
 
-        // move to the end intersection of the current road
-        long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
-        LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
-        setEvent(nextEventTime, nextLoc, INTERSECTION_REACHED);
+		if (!loc.road.to.isAdjacent(nextIntersection)) {
+			throw new Exception("move not made to an adjacent location");
+		}
 
-        return this;
-    }
+		// set location and time of the next trigger
+		Road nextRoad = loc.road.to.roadTo(nextIntersection);
+		LocationOnRoad nextLocation = new LocationOnRoad(nextRoad, nextRoad.travelTime);
+		update(time + nextRoad.travelTime, nextLocation, State.INTERSECTION_REACHED);
 
-    public void assignedTo(LocationOnRoad currentLocation, long currentTime, long resourceId, LocationOnRoad resourcePickupLocation, LocationOnRoad resourceDropoffLocation) {
-        LocationOnRoad currentLocationAgentCopy = simulator.agentCopy(currentLocation);
-        LocationOnRoad resourcePickupLocationAgentCopy = simulator.agentCopy(resourcePickupLocation);
-        LocationOnRoad resourceDropoffLocationAgentCopy = simulator.agentCopy(resourceDropoffLocation);
-        agent.assignedTo(currentLocationAgentCopy, currentTime, resourceId, resourcePickupLocationAgentCopy, resourceDropoffLocationAgentCopy);
-    }
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Move to " + nextRoad.to, this);
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Next trigger time = " + time, this);
+	}
 
-    public void setEvent(long time, LocationOnRoad loc, int eventCause) {
-        this.time = time;
-        this.loc = loc;
-        this.eventCause = eventCause;
-    }
+	private boolean isArrivingPickupLoc() {
+		return !isPickup && assignedResource != null && assignedResource.pickupLoc.road.from.equals(loc.road.to);
+	}
 
+	private boolean isArrivingDropOffLoc() {
+		return isPickup && assignedResource != null && assignedResource.dropoffLoc.road.from.equals(loc.road.to);
+	}
+
+	/*
+	 * The handler of a pick up event.
+	 */
+	private void pickup() {
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Pickup at " + loc, this);
+
+		isPickup = true;
+		long searchTime = time - startSearchTime;
+
+		// TODO I believe this should be the time between when it become available and when it's picked-up.
+		//    This is not what is being computed here.
+		long waitTime = assignedResource.time - assignedResource.availableTime;
+
+		simulator.totalAgentSearchTime += searchTime;
+		simulator.totalResourceWaitTime += waitTime;
+
+		assignedResource.pickup(this, time);
+
+		// move to the end intersection of the current road
+		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
+		LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
+		update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+	}
+
+	/*
+	 * The handler of a drop off event.
+	 */
+	private void dropOff() {
+		startSearchTime = time;
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
+
+		isPickup = false;
+		assignedResource.dropOff(time);
+		assignedResource = null;
+
+		// move to the end intersection of the current road
+		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
+		LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
+		update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+	}
+
+	private void update(long time, LocationOnRoad loc, State state) {
+		this.time = time;
+		this.loc = loc;
+		this.state = state;
+	}
 }

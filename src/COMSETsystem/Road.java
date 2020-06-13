@@ -53,8 +53,10 @@ public class Road implements Comparable<Road> {
 	}
 	
 	/**
-	 * Add a link to the road
-	 * @param link
+	 * Add a link to the road and accumulate travel time as a road can consists of
+	 * multiple links. This code assume links are added in order, otherwise the beginTime
+	 * for the link will not be correct.
+	 *
 	 */
 	public void addLink(Link link) {
 		links.add(link);
@@ -71,12 +73,7 @@ public class Road implements Comparable<Road> {
 	 * @return 0 is they are the same, 1 if {@code this.id > other.id} else -1
 	 */
 	public int compareTo(Road other) {
-		if (id == other.id)
-			return 0;
-		else if (id < other.id)
-			return -1;
-		else
-			return 1;
+		return Long.compare(id, other.id);
 	}
 
 	/**
