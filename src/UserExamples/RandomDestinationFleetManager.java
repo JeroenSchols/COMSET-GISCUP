@@ -1,6 +1,7 @@
 package UserExamples;
 
 import COMSETsystem.*;
+import org.apache.log4j.jmx.Agent;
 
 import java.util.*;
 
@@ -25,18 +26,21 @@ public class RandomDestinationFleetManager extends FleetManager {
     }
 
     @Override
-    public void onResourceAvailabilityChange(long resourceId, ResourceState state, long agentId,
-                                             LocationOnRoad location, long time, long expiredTime) {
+    public AgentAction onResourceAvailabilityChange(long resourceId, ResourceState state, long agentId,
+                                                             LocationOnRoad location, long time, long expiredTime) {
         resourceLocation.put(resourceId, location);
-        if (state == ResourceState.WAITING) {
+
+        AgentAction action = AgentAction.doNothing();
+
+        if (state == ResourceState.AVAILABLE) {
             Long assignedAgent = getNearestAvailableAgent(location, time);
             if (assignedAgent != null) {
                 agentAssignment.put(assignedAgent, resourceId);
                 agentRoutes.put(assignedAgent, new LinkedList<>());
                 availableAgent.remove(assignedAgent);
+                action = AgentAction.assignTo(assignedAgent, resourceId);
             } else {
                 waitingRes.add(resourceId);
-
             }
         } else if (state == ResourceState.DROPPED_OFF) {
             if (waitingRes.isEmpty()) {
@@ -45,13 +49,15 @@ public class RandomDestinationFleetManager extends FleetManager {
                 Long assignedRes = null;
                 for (Long resId : waitingRes) {
                     assignedRes = resId;
-                    agentAssignment.put(agentId, resId);
-                    agentRoutes.put(agentId, new LinkedList<>());
+
                     break;
                 }
 
                 if (assignedRes != null) {
                     waitingRes.remove(assignedRes);
+                    agentAssignment.put(agentId, assignedRes);
+                    agentRoutes.put(agentId, new LinkedList<>());
+                    action = AgentAction.assignTo(agentId, assignedRes);
                 }
             }
         } else if (state == ResourceState.EXPIRED) {
@@ -67,6 +73,8 @@ public class RandomDestinationFleetManager extends FleetManager {
             agentRoutes.put(agentId, new LinkedList<>());
             pickedUpRes.add(resourceId);
         }
+
+        return action;
     }
 
     @Override

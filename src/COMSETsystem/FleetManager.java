@@ -11,7 +11,7 @@ public abstract class FleetManager {
     }
 
     public enum ResourceState {
-        WAITING,
+        AVAILABLE,
         PICKED_UP,
         DROPPED_OFF,
         EXPIRED
@@ -21,7 +21,7 @@ public abstract class FleetManager {
 
     public abstract void onMapStateChanged(Road road, MapState state);
 
-    public abstract void onResourceAvailabilityChange(long resourceId, ResourceState state, long agentId, LocationOnRoad location, long time, long expiredTime);
+    public abstract AgentAction onResourceAvailabilityChange(long resourceId, ResourceState state, long agentId, LocationOnRoad location, long time, long expiredTime);
 
     public abstract Intersection onReachIntersection(long agentId, long time, LocationOnRoad location);
 
@@ -29,5 +29,15 @@ public abstract class FleetManager {
 
     public FleetManager(CityMap map) {
         this.map = map;
+    }
+
+    public class AssignAction {
+        public long agentId;
+        public long resId;
+
+        public AssignAction(Long agentId, Long resId) {
+            this.agentId = agentId;
+            this.resId = resId;
+        }
     }
 }

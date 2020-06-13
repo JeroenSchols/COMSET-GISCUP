@@ -38,6 +38,8 @@ public class Simulator {
 	// The event queue.
 	protected PriorityQueue<Event> events = new PriorityQueue<>();
 
+	protected AssignmentManager assignmentManager = new AssignmentManager();
+
 	// The set of empty agents.
 	protected TreeSet<AgentEvent> emptyAgents = new TreeSet<>(new AgentEventComparator());
 
@@ -173,11 +175,11 @@ public class Simulator {
 
 		// The simulation end time is the expiration time of the last resource.
 		// which is return by createMapWithData
-		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager);
+		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager, assignmentManager);
 
 		// Deploy agents at random locations of the map.
 		System.out.println("Randomly placing " + this.totalAgents + " agents on the map...");
-		mapWD.placeAgentsRandomly(this, fleetManager);
+		mapWD.placeAgentsRandomly(this, fleetManager, assignmentManager);
 
 		// Initialize the event queue.
 		events = mapWD.getEvents();
