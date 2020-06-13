@@ -160,7 +160,7 @@ public class ResourceEvent extends Event {
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED, simulator.agentCopy(pickupLoc), time);
 		assignmentManager.processAgentAction(action, time);
 		if (agentEvent != null) {
-			agentEvent.resourceExpired();
+			agentEvent.abortResource();
 		}
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 	}

@@ -1,5 +1,6 @@
 package COMSETsystem;
 
+import javax.swing.text.html.StyleSheet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -44,24 +45,24 @@ public class AssignmentManager {
             return;
         }
 
-        if (!agentEvent.isCruising()) {
-            // TODO: Check if we need to do re-assignment
+        if (agentEvent.hasPickupRes()) {
+            System.out.println("Agent id: " + agentId + " has already picked up Res id: " + agentEvent.assignedResource.id);
+            return;
         }
 
         agentEvent.assignTo(resEvent);
     }
 
     private void processAbort(AgentAction agentAction, long currentTime) {
+        // TODO: Check if we allow contestant to this.
         long agentId = agentAction.agentId;
         AgentEvent agentEvent = agents.get(agentId);
 
-        if (agentEvent == null || agentEvent.isCruising()) {
+        if (agentEvent == null) {
             System.out.println("Invalid Abort");
             return;
         }
 
-        // TODO: Relocate the assigned resource
-
-        agentEvent.assignTo(null);
+        agentEvent.abortResource();
     }
 }

@@ -79,15 +79,15 @@ public class AgentEvent extends Event {
 		return this;
 	}
 
-	boolean isCruising() {
-		return !isPickup;
+	boolean hasPickupRes() {
+		return isPickup;
 	}
 
 	void assignTo(ResourceEvent resourceEvent) {
 		this.assignedResource = resourceEvent;
 	}
 
-	void resourceExpired() {
+	void abortResource() {
 		assignedResource = null;
 		isPickup = false;
 		state = State.INTERSECTION_REACHED;
