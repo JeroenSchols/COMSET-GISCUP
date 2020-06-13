@@ -55,7 +55,7 @@ public class AgentEvent extends Event {
 	 * @param loc this agent's location when it becomes empty.
 	 */
 	public AgentEvent(LocationOnRoad loc, long startedSearch, Simulator simulator, FleetManager fleetManager) {
-		super(startedSearch, simulator, fleetManager);
+		super(startedSearch + loc.road.travelTime - loc.travelTimeFromStartIntersection, simulator, fleetManager);
 		this.loc = loc;
 		this.startSearchTime = startedSearch;
 	}
@@ -149,6 +149,9 @@ public class AgentEvent extends Event {
 
 		isPickup = true;
 		long searchTime = time - startSearchTime;
+
+		// TODO I believe this should be the time between when it become available and when it's picked-up.
+		//    This is not what is being computed here.
 		long waitTime = assignedResource.time - assignedResource.availableTime;
 
 		simulator.totalAgentSearchTime += searchTime;
