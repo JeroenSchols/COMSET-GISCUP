@@ -71,8 +71,9 @@ public class MapWithData {
 				// map matching
 				LocationOnRoad pickupMatch = mapMatch(resource.getPickupLon(), resource.getPickupLat());
 				LocationOnRoad dropoffMatch = mapMatch(resource.getDropoffLon(), resource.getDropoffLat());
+				long tripTime = simulator.getMap().travelTimeBetween(pickupMatch, dropoffMatch);
 
-				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), simulator, fleetManager, assignmentManager);
+				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), tripTime, simulator, fleetManager, assignmentManager);
 				assignmentManager.addNewEvent(ev);
 				events.add(ev);
 

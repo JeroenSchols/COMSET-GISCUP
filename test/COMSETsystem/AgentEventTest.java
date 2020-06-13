@@ -33,6 +33,8 @@ public class AgentEventTest {
     Simulator.PickUp mockNoPickUp;
     @Mock
     FleetManager mockFleetManager;
+    @Mock
+    AssignmentManager mockAssignmentManager;
 
     @Before
     public void BeforeEachTest() {
@@ -55,22 +57,23 @@ public class AgentEventTest {
     @Test
     public void testNavigate_withPickUp() throws Exception {
         SimpleMap map = new SimpleMap();
-        LocationOnRoad locationOnRoad = new LocationOnRoad(map.road1, 10L);
 
-        // Setup waiting Resource
-        mockSimulator.waitingResources = new TreeSet<>(new Simulator.ResourceEventComparator());
+        LocationOnRoad locationOnRoad = spy(new LocationOnRoad(map.road1, 10L));
+        doReturn("123,456").when(locationOnRoad).toString();
+
         ResourceEvent resource = new ResourceEvent(
                 new LocationOnRoad(map.road2, 20L),
                 new LocationOnRoad(map.road2, 10L),
                 100L,
                 1000L,
-                mockSimulator
+                mockSimulator,
+                mockFleetManager,
+                mockAssignmentManager
         );
-        mockSimulator.waitingResources.add(resource);
 
         AgentEvent spyEvent = spy(new AgentEvent(locationOnRoad, 100, mockSimulator, mockFleetManager));
-
-        AgentEvent newEvent = (AgentEvent) spyEvent.navigate();
+        spyEvent.assignTo(resource);
+        AgentEvent newEvent = (AgentEvent) spyEvent.trigger();
 
         assertEquals(AgentEvent.State.PICKING_UP, newEvent.state);
     }

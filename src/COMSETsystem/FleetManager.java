@@ -30,14 +30,4 @@ public abstract class FleetManager {
     public FleetManager(CityMap map) {
         this.map = map;
     }
-
-    public class AssignAction {
-        public long agentId;
-        public long resId;
-
-        public AssignAction(Long agentId, Long resId) {
-            this.agentId = agentId;
-            this.resId = resId;
-        }
-    }
 }
