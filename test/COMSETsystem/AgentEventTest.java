@@ -6,8 +6,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -16,6 +15,7 @@ public class AgentEventTest {
     public static final int CUSTOMER_TRIP_TIME = 500;
     public static final long TIME_TO_PICKUP_CUSTOMER = 300L;
     public static final int TRIGGER_TIME = 100;
+    public static final int AVAILABLE_TIME = 50;
     @Mock
     Simulator mockSimulator;
     @Mock
@@ -66,6 +66,15 @@ public class AgentEventTest {
         assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime, nextEvent.time);
     }
 
+    /**
+     * Test the following sequence of events
+     * 1. Travel to intersection just before pickup
+     * 2. Travel to pickup
+     * 3. pickup
+     * 4. travel to dropoff
+     * 5. dropoff
+     * 6. back to cruising
+     */
     @Test
     public void testTrigger_pickUpAndDropOff() throws Exception {
         // Create a Resource to be picked up half way down road.
@@ -74,9 +83,9 @@ public class AgentEventTest {
         LocationOnRoad dropOffLocation = new LocationOnRoad(testMap.roadFrom4to5,
                 testMap.roadFrom4to5.travelTime/2);
         ResourceEvent customer = new ResourceEvent(pickUpLocation, dropOffLocation,
-                3600, 0, mockSimulator, mockFleetManager, mockAssignmentManager);
+                AVAILABLE_TIME, 0, mockSimulator, mockFleetManager, mockAssignmentManager);
 
-        // Create an agentEvent that has a pickup reaching intersection2
+        // Create an agentEvent that has a pickup upon reaching intersection2
         LocationOnRoad locAtReachedIntersection = new LocationOnRoad(testMap.roadFrom1to2,
                 testMap.roadFrom1to2.travelTime);
         AgentEvent agentEvent = new AgentEvent(locAtReachedIntersection, TRIGGER_TIME,
@@ -102,9 +111,8 @@ public class AgentEventTest {
 
         // Validate simulation statistics
         assertEquals(testMap.roadFrom2to3.travelTime/2, mockSimulator.totalAgentSearchTime);
-
-        // TODO This isn't compute correctly, so comment out.
-        // assertEquals(-1, mockSimulator.totalResourceWaitTime);
+        assertEquals(TRIGGER_TIME - AVAILABLE_TIME + testMap.roadFrom2to3.travelTime/2,
+                mockSimulator.totalResourceWaitTime);
 
         // Setup expectations, we expect to be called upon reaching intersection4 which is the intersection
         // just before dropping off customer
@@ -136,13 +144,18 @@ public class AgentEventTest {
 
         verify(mockSimulator, times(1)).removeEvent(customer);
         assertEquals(AgentEvent.State.INTERSECTION_REACHED, backToCruisingEvent.state);
+        assertEquals(testMap.roadFrom4to5, backToCruisingEvent.loc.road);
+        assertFalse(backToCruisingEvent.isPickup);
+        assertNull(backToCruisingEvent.assignedResource);
         assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime
                 + testMap.roadFrom4to5.travelTime, backToCruisingEvent.time);
-
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime
+                + testMap.roadFrom4to5.travelTime/2, backToCruisingEvent.startSearchTime);
 
         // Validate simulation statistics
         assertEquals(testMap.roadFrom2to3.travelTime/2 + testMap.roadFrom3to4.travelTime
-                + testMap.roadFrom4to5.travelTime/2, mockSimulator.totalResourceTripTime);    }
+                + testMap.roadFrom4to5.travelTime/2, mockSimulator.totalResourceTripTime);
+    }
 
     @Test
     public void testNavigate_withPickUp() throws Exception {

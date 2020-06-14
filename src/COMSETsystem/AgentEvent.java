@@ -118,7 +118,7 @@ public class AgentEvent extends Event {
 		}
 
 		if (nextIntersection == null) {
-			throw new Exception("agent.move() did not return a next location");
+			throw new Exception("FleetManager did not return a next location");
 		}
 
 		if (!loc.road.to.isAdjacent(nextIntersection)) {
@@ -151,9 +151,9 @@ public class AgentEvent extends Event {
 		isPickup = true;
 		long searchTime = time - startSearchTime;
 
-		// TODO I believe this should be the time between when it become available and when it's picked-up.
-		//    This is not what is being computed here.
-		long waitTime = assignedResource.time - assignedResource.availableTime;
+		// Resource had been wiating from introductionTime (i.e. when it was available) to now (time that this
+		// pickup event triggered).
+		long waitTime = time - assignedResource.availableTime;
 
 		simulator.totalAgentSearchTime += searchTime;
 		simulator.totalResourceWaitTime += waitTime;
