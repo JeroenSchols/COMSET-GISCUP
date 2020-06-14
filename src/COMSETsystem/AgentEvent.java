@@ -186,10 +186,15 @@ public class AgentEvent extends Event {
 
 		assignedResource.pickup(this, time);
 
-		// move to the end intersection of the current road
-		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
-		LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
-		update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+		if (assignedResource.dropoffLoc.road.equals(loc.road)) {
+			long nextEventTime = time + (assignedResource.dropoffLoc.travelTimeFromStartIntersection - loc.travelTimeFromStartIntersection);
+			update(nextEventTime, assignedResource.dropoffLoc, State.DROPPING_OFF);
+		} else {
+			// move to the end intersection of the current road
+			long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
+			LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
+			update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+		}
 	}
 
 	/*
