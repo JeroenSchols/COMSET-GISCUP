@@ -103,6 +103,7 @@ public class RandomDestinationFleetManager extends FleetManager {
             }
             resourceAssignment.put(resource.assignedAgentId, bestResource);
             agentLastLocation.put(resource.assignedAgentId, currentLoc);
+            agentLastAppearTime.put(resource.assignedAgentId, time);
 
 //            if (waitingRes.isEmpty()) {
 //                availableAgent.add(resource.assignedAgentId);
@@ -195,7 +196,11 @@ public class RandomDestinationFleetManager extends FleetManager {
             }
         }
 
-        return bestAgent;
+        if (earliest <= resource.expirationTime) {
+            return bestAgent;
+        } else {
+            return null;
+        }
     }
 
     Long getNearestAvailableAgent(LocationOnRoad resourceLocation, long time) {
