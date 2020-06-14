@@ -139,8 +139,10 @@ public class AgentEventTest {
         assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime
                 + testMap.roadFrom4to5.travelTime, backToCruisingEvent.time);
 
-        //
-    }
+
+        // Validate simulation statistics
+        assertEquals(testMap.roadFrom2to3.travelTime/2 + testMap.roadFrom3to4.travelTime
+                + testMap.roadFrom4to5.travelTime/2, mockSimulator.totalResourceTripTime);    }
 
     @Test
     public void testNavigate_withPickUp() throws Exception {
@@ -163,9 +165,6 @@ public class AgentEventTest {
 
         assertEquals(AgentEvent.State.PICKING_UP, newEvent.state);
 
-        // Validate simulation statistics
-        assertEquals(testMap.roadFrom2to3.travelTime/2 + testMap.roadFrom3to4.travelTime
-                + testMap.roadFrom4to5.travelTime/2, mockSimulator.totalResourceTripTime);
     }
 
     @Test

@@ -36,7 +36,7 @@ public class Simulator {
 	protected CityMap mapForAgents;
 
 	// The event queue.
-	protected PriorityQueue<Event> events = new PriorityQueue<>();
+	private PriorityQueue<Event> events = new PriorityQueue<>();
 
 	protected AssignmentManager assignmentManager = new AssignmentManager();
 
