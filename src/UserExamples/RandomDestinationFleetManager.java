@@ -10,6 +10,7 @@ public class RandomDestinationFleetManager extends FleetManager {
     Map<Long, LocationOnRoad> agentLastLocation = new HashMap<>();
     Map<Long, Resource> resourceAssignment = new HashMap<>();
     Set<Resource> waitingResources = new HashSet<>();
+    Map<Long, Random> agentRnd = new HashMap<>();
 
 
     Map<Long, LinkedList<Intersection>> agentRoutes = new HashMap<>();
@@ -243,8 +244,9 @@ public class RandomDestinationFleetManager extends FleetManager {
         return shortestTravelTimePath;
     }
 
-    LinkedList<Intersection> getRandomRoute(long agentId, LocationOnRoad currentLocation) {
-        Random random = new Random(agentId);
+    private LinkedList<Intersection> getRandomRoute(long agentId, LocationOnRoad currentLocation) {
+        Random random = agentRnd.getOrDefault(agentId, new Random(agentId));
+        agentRnd.put(agentId, random);
 
         Intersection sourceIntersection = currentLocation.road.to;
         int destinationIndex = random.nextInt(map.intersections().size());
