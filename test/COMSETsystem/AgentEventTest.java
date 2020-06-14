@@ -77,15 +77,15 @@ public class AgentEventTest {
      */
     @Test
     public void testTrigger_pickUpAndDropOff() throws Exception {
-        // Create a Resource to be picked up half way down road.
-        LocationOnRoad pickUpLocation = new LocationOnRoad(testMap.roadFrom2to3,
-                testMap.roadFrom2to3.travelTime/2);
-        LocationOnRoad dropOffLocation = new LocationOnRoad(testMap.roadFrom4to5,
-                testMap.roadFrom4to5.travelTime/2);
-        ResourceEvent customer = new ResourceEvent(pickUpLocation, dropOffLocation,
-                AVAILABLE_TIME, 0, mockSimulator, mockFleetManager, mockAssignmentManager);
+        // Create a Resource to be picked up half way down on road2to3 and to be dropped off
+        // half way down on roadFrom4to5. Agent should traverse roadFrom2to3, roadFrom3to4,
+        // and roadFrom4to5
+        ResourceEvent customer = makeCustomer(
+                new PositionOnRoad(testMap.roadFrom2to3, 0.5),
+                new PositionOnRoad(testMap.roadFrom4to5, 0.5));
 
-        // Create an agentEvent that has a pickup upon reaching intersection2
+        // Create an agentEvent that has a pickup upon reaching intersection2 the beginning of
+        // roadFrom2to3
         LocationOnRoad locAtReachedIntersection = new LocationOnRoad(testMap.roadFrom1to2,
                 testMap.roadFrom1to2.travelTime);
         AgentEvent agentEvent = new AgentEvent(locAtReachedIntersection, TRIGGER_TIME,
@@ -95,6 +95,7 @@ public class AgentEventTest {
         // Trigger the event
         AgentEvent pickUpEvent = (AgentEvent) agentEvent.trigger();
 
+        // Verify that pickup was detected with correct pickuptime.
         assertEquals(AgentEvent.State.PICKING_UP, pickUpEvent.state);
         assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime/2, pickUpEvent.time);
         assertEquals(testMap.roadFrom2to3, pickUpEvent.loc.road);
@@ -102,20 +103,24 @@ public class AgentEventTest {
         // Trigger pickup Event
         AgentEvent travelToDropoffEvent = (AgentEvent) pickUpEvent.trigger();
 
-        // Verify that event will trigger when it hits the end of the road that customer was waiting
+        // Verify returned travel event represents travel to the end of the roadFrom2to3
         assertEquals(AgentEvent.State.INTERSECTION_REACHED, travelToDropoffEvent.state);
         assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime, travelToDropoffEvent.time);
         assertEquals(testMap.roadFrom2to3, travelToDropoffEvent.loc.road);
         assertTrue(travelToDropoffEvent.isPickup);
-        assertEquals(TRIGGER_TIME + pickUpLocation.travelTimeFromStartIntersection, customer.pickupTime);
+
+        // Verify customer was picked up at half-way point of roadFrom2to3
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime/2, customer.pickupTime);
 
         // Validate simulation statistics
+        // * agent search time is the time it took to travel half o roadFrom2to3
+        // * and that customer waited from the time that agent was assigned to it (i.e. TRIGGER_TIME)
         assertEquals(testMap.roadFrom2to3.travelTime/2, mockSimulator.totalAgentSearchTime);
         assertEquals(TRIGGER_TIME - AVAILABLE_TIME + testMap.roadFrom2to3.travelTime/2,
                 mockSimulator.totalResourceWaitTime);
 
-        // Setup expectations, we expect to be called upon reaching intersection4 which is the intersection
-        // just before dropping off customer
+        // Setup expectations, we expect a call to FleetManager upon reaching end of road2to3 to
+        // get next intersection which is intersection 4, i.e. the end of roadFrom3to4.
         when(mockFleetManager.onReachIntersectionWithResource(eq(travelToDropoffEvent.id),
                 eq(TRIGGER_TIME + testMap.roadFrom2to3.travelTime), anyObject(), anyObject()))
                 .thenReturn(testMap.intersection4);
@@ -153,8 +158,39 @@ public class AgentEventTest {
                 + testMap.roadFrom4to5.travelTime/2, backToCruisingEvent.startSearchTime);
 
         // Validate simulation statistics
+        // * Trip time was time to go halfwady down roadFrom2to3, all the way on roadFrom3to4 and
+        //   halfway on roadFrom4to5
         assertEquals(testMap.roadFrom2to3.travelTime/2 + testMap.roadFrom3to4.travelTime
                 + testMap.roadFrom4to5.travelTime/2, mockSimulator.totalResourceTripTime);
+    }
+
+    private static class PositionOnRoad {
+        final Road road;
+
+        /**
+         * A floating point number from 0 to 1 that defines position on road.
+         * 0 = beginning
+         * 1 = end
+         */
+        final double roadFraction;
+
+        PositionOnRoad(Road road, double roadFraction) {
+            this.road = road;
+            this.roadFraction = roadFraction;
+        }
+    }
+
+    private static LocationOnRoad makeLocationFromPosition(PositionOnRoad position) {
+        return new LocationOnRoad(position.road,
+                (long) (position.road.travelTime * position.roadFraction));
+    }
+
+    private ResourceEvent makeCustomer(PositionOnRoad pickupPositionOnRoad,
+                                       PositionOnRoad dropoffPositionOnRoad) {
+        LocationOnRoad pickUpLocation = makeLocationFromPosition(pickupPositionOnRoad);
+        LocationOnRoad dropOffLocation = makeLocationFromPosition(dropoffPositionOnRoad);
+        return new ResourceEvent(pickUpLocation, dropOffLocation,
+                AVAILABLE_TIME, 0, mockSimulator, mockFleetManager, mockAssignmentManager);
     }
 
     @Test
