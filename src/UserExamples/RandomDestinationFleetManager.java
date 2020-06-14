@@ -91,7 +91,8 @@ public class RandomDestinationFleetManager extends FleetManager {
     }
 
     @Override
-    public Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc, Resource resource) {
+    public Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc,
+                                                        Resource resource) {
         agentLocation.put(agentId, currentLoc);
 
         LinkedList<Intersection> route = agentRoutes.getOrDefault(agentId, new LinkedList<>());
@@ -155,13 +156,13 @@ public class RandomDestinationFleetManager extends FleetManager {
         Intersection sourceIntersection = currentLocation.road.to;
         int destinationIndex = random.nextInt(map.intersections().size());
         Intersection[] intersectionArray =
-                map.intersections().values().toArray(new Intersection[map.intersections().size()]);
+                map.intersections().values().toArray(new Intersection[0]);
         Intersection destinationIntersection = intersectionArray[destinationIndex];
         if (destinationIntersection == sourceIntersection) {
             // destination cannot be the source
             // if destination is the source, choose a neighbor to be the destination
             Road[] roadsFrom =
-                    sourceIntersection.roadsMapFrom.values().toArray(new Road[sourceIntersection.roadsMapFrom.values().size()]);
+                    sourceIntersection.roadsMapFrom.values().toArray(new Road[0]);
             destinationIntersection = roadsFrom[0].to;
         }
         LinkedList<Intersection> shortestTravelTimePath = map.shortestTravelTimePath(sourceIntersection,
