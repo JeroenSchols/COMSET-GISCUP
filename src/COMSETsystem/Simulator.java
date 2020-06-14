@@ -120,6 +120,10 @@ public class Simulator {
 		this.agentClass = agentClass;
 	}
 
+	public void removeEvent(Event e) {
+		events.remove(e);
+	}
+
 	/**
 	 * Configure the simulation system including:
 	 * 

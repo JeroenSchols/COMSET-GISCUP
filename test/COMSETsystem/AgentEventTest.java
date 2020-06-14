@@ -67,7 +67,7 @@ public class AgentEventTest {
     }
 
     @Test
-    public void testTrigger_arrivingAtPickup() throws Exception {
+    public void testTrigger_pickUpAndDropOff() throws Exception {
         // Create a Resource to be picked up half way down road.
         LocationOnRoad pickUpLocation = new LocationOnRoad(testMap.roadFrom2to3,
                 testMap.roadFrom2to3.travelTime/2);
@@ -91,13 +91,13 @@ public class AgentEventTest {
         assertEquals(testMap.roadFrom2to3, pickUpEvent.loc.road);
 
         // Trigger pickup Event
-        AgentEvent nextEvent = (AgentEvent) pickUpEvent.trigger();
+        AgentEvent travelToDropoffEvent = (AgentEvent) pickUpEvent.trigger();
 
         // Verify that event will trigger when it hits the end of the road that customer was waiting
-        assertEquals(AgentEvent.State.INTERSECTION_REACHED, nextEvent.state);
-        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime, nextEvent.time);
-        assertEquals(testMap.roadFrom2to3, nextEvent.loc.road);
-        assertTrue(nextEvent.isPickup);
+        assertEquals(AgentEvent.State.INTERSECTION_REACHED, travelToDropoffEvent.state);
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime, travelToDropoffEvent.time);
+        assertEquals(testMap.roadFrom2to3, travelToDropoffEvent.loc.road);
+        assertTrue(travelToDropoffEvent.isPickup);
         assertEquals(TRIGGER_TIME + pickUpLocation.travelTimeFromStartIntersection, customer.pickupTime);
 
         // Validate simulation statistics
@@ -106,6 +106,40 @@ public class AgentEventTest {
         // TODO This isn't compute correctly, so comment out.
         // assertEquals(-1, mockSimulator.totalResourceWaitTime);
 
+        // Setup expectations, we expect to be called upon reaching intersection4 which is the intersection
+        // just before dropping off customer
+        when(mockFleetManager.onReachIntersectionWithResource(eq(travelToDropoffEvent.id),
+                eq(TRIGGER_TIME + testMap.roadFrom2to3.travelTime), anyObject(), anyObject()))
+                .thenReturn(testMap.intersection4);
+
+        // Trigger travel to DropOff's second segment
+        AgentEvent travelToDropOffEvent2 = (AgentEvent) travelToDropoffEvent.trigger();
+
+        assertEquals(AgentEvent.State.INTERSECTION_REACHED, travelToDropOffEvent2.state);
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime,
+                travelToDropOffEvent2.time);
+        assertEquals(testMap.roadFrom3to4, travelToDropOffEvent2.loc.road);
+        assertTrue(travelToDropOffEvent2.isPickup);
+
+        // Now trigger to create drop-off event
+        AgentEvent dropoffEvent = (AgentEvent) travelToDropOffEvent2.trigger();
+
+        assertEquals(AgentEvent.State.DROPPING_OFF, dropoffEvent.state);
+        assertEquals(
+                TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime
+                        + testMap.roadFrom4to5.travelTime/2,
+                dropoffEvent.time);
+        assertEquals(testMap.roadFrom4to5, dropoffEvent.loc.road);
+
+        // trigger drop-off
+        AgentEvent backToCruisingEvent = (AgentEvent) dropoffEvent.trigger();
+
+        verify(mockSimulator, times(1)).removeEvent(customer);
+        assertEquals(AgentEvent.State.INTERSECTION_REACHED, backToCruisingEvent.state);
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime
+                + testMap.roadFrom4to5.travelTime, backToCruisingEvent.time);
+
+        //
     }
 
     @Test
@@ -128,6 +162,10 @@ public class AgentEventTest {
         AgentEvent newEvent = (AgentEvent) spyEvent.trigger();
 
         assertEquals(AgentEvent.State.PICKING_UP, newEvent.state);
+
+        // Validate simulation statistics
+        assertEquals(testMap.roadFrom2to3.travelTime/2 + testMap.roadFrom3to4.travelTime
+                + testMap.roadFrom4to5.travelTime/2, mockSimulator.totalResourceTripTime);
     }
 
     @Test
@@ -201,7 +239,7 @@ public class AgentEventTest {
             roadFrom1to2.addLink(link1to2);
             roadFrom2to3.addLink(link2to3);
             roadFrom3to4.addLink(link3to4);
-            roadFrom3to4.addLink(link4to5);
+            roadFrom4to5.addLink(link4to5);
         }
     }
 }

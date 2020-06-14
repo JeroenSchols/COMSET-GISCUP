@@ -137,7 +137,7 @@ public class ResourceEvent extends Event {
 		simulator.totalResourceTripTime += tripTime;
 		simulator.totalAssignments++;
 
-		simulator.events.remove(this);
+		simulator.removeEvent(this);
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.DROPPED_OFF, simulator.agentCopy(dropoffLoc), dropOffTime);
 		assignmentManager.processAgentAction(action, dropOffTime);
 	}

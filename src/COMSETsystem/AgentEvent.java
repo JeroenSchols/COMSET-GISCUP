@@ -111,7 +111,8 @@ public class AgentEvent extends Event {
 
 		Intersection nextIntersection;
 		if (isPickup && assignedResource != null) {
-			nextIntersection = fleetManager.onReachIntersectionWithResource(id, time, simulator.agentCopy(loc), assignedResource.copyResource());
+			nextIntersection = fleetManager.onReachIntersectionWithResource(id, time, simulator.agentCopy(loc),
+					assignedResource.copyResource());
 		} else {
 			nextIntersection = fleetManager.onReachIntersection(id, time, simulator.agentCopy(loc));
 		}
