@@ -87,8 +87,19 @@ public class AgentEvent extends Event {
 		return isPickup;
 	}
 
-	void assignTo(ResourceEvent resourceEvent) {
+	void assignTo(ResourceEvent resourceEvent, long time) {
 		this.assignedResource = resourceEvent;
+
+		if (loc.road.equals(assignedResource.pickupLoc.road)) {
+
+			long currentLocTravelFromStart = loc.road.travelTime - (this.time - time);
+			if (currentLocTravelFromStart <= assignedResource.pickupLoc.travelTimeFromStartIntersection) {
+				simulator.removeEvent(this);
+				long nextEventTime = assignedResource.pickupLoc.travelTimeFromStartIntersection - currentLocTravelFromStart + time;
+				update(nextEventTime, assignedResource.pickupLoc, State.PICKING_UP);
+				simulator.getEvents().add(this);
+			}
+		}
 	}
 
 	void abortResource() {
@@ -185,7 +196,6 @@ public class AgentEvent extends Event {
 	 * The handler of a drop off event.
 	 */
 	private void dropOff() {
-		System.out.println("Agent " + id + " drop res: " + assignedResource.id);
 		startSearchTime = time;
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
 

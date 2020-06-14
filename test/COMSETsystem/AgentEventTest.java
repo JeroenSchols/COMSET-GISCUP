@@ -90,7 +90,7 @@ public class AgentEventTest {
                 testMap.roadFrom1to2.travelTime);
         AgentEvent agentEvent = new AgentEvent(locAtReachedIntersection, TRIGGER_TIME,
                 mockSimulator, mockFleetManager);
-        agentEvent.assignTo(customer);
+        agentEvent.assignTo(customer, 1);
 
         // Trigger the event
         AgentEvent pickUpEvent = (AgentEvent) agentEvent.trigger();
@@ -186,7 +186,7 @@ public class AgentEventTest {
         );
 
         AgentEvent spyEvent = spy(new AgentEvent(locationOnRoad, 100, mockSimulator, mockFleetManager));
-        spyEvent.assignTo(resource);
+        spyEvent.assignTo(resource, 1);
         AgentEvent newEvent = (AgentEvent) spyEvent.trigger();
 
         assertEquals(AgentEvent.State.PICKING_UP, newEvent.state);

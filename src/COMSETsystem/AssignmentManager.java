@@ -41,16 +41,17 @@ public class AssignmentManager {
         ResourceEvent resEvent = resources.get(resId);
 
         if (agentEvent == null || resEvent == null) {
-            System.out.println("Invalid Assignment");
+//            System.out.println("Invalid Assignment");
             return;
         }
 
         if (agentEvent.hasPickupRes()) {
-            System.out.println("Agent id: " + agentId + " has already picked up Res id: " + agentEvent.assignedResource.id);
+//            System.out.println("Agent id: " + agentId + " has already picked up Res id: " + agentEvent.assignedResource.id);
             return;
         }
 
-        agentEvent.assignTo(resEvent);
+        System.out.println("Agent " + agentId + " pick up Res " + resId);
+        agentEvent.assignTo(resEvent, currentTime);
     }
 
     private void processAbort(AgentAction agentAction, long currentTime) {
