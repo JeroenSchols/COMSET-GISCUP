@@ -141,7 +141,7 @@ public class RandomDestinationFleetManager extends FleetManager {
         }
     }
 
-    private LinkedList<Intersection> planRouteToTarget(LocationOnRoad source, LocationOnRoad destination) {
+    LinkedList<Intersection> planRouteToTarget(LocationOnRoad source, LocationOnRoad destination) {
         Intersection sourceIntersection = source.road.to;
         Intersection destinationIntersection = destination.road.from;
         LinkedList<Intersection> shortestTravelTimePath = map.shortestTravelTimePath(sourceIntersection,
