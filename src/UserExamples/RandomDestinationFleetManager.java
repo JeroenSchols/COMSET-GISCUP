@@ -149,7 +149,7 @@ public class RandomDestinationFleetManager extends FleetManager {
         return shortestTravelTimePath;
     }
 
-    private LinkedList<Intersection> getRandomRoute(long agentId, LocationOnRoad currentLocation) {
+    LinkedList<Intersection> getRandomRoute(long agentId, LocationOnRoad currentLocation) {
         Random random = new Random(agentId);
 
         Intersection sourceIntersection = currentLocation.road.to;

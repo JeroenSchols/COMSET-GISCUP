@@ -81,8 +81,8 @@ public class AgentEventTest {
         // half way down on roadFrom4to5. Agent should traverse roadFrom2to3, roadFrom3to4,
         // and roadFrom4to5
         ResourceEvent customer = makeCustomer(
-                new PositionOnRoad(testMap.roadFrom2to3, 0.5),
-                new PositionOnRoad(testMap.roadFrom4to5, 0.5));
+                SimpleMap.makeLocationFromRoad(testMap.roadFrom2to3, 0.5),
+                SimpleMap.makeLocationFromRoad(testMap.roadFrom4to5, 0.5));
 
         // Create an agentEvent that has a pickup upon reaching intersection2 the beginning of
         // roadFrom2to3
@@ -164,32 +164,9 @@ public class AgentEventTest {
                 + testMap.roadFrom4to5.travelTime/2, mockSimulator.totalResourceTripTime);
     }
 
-    private static class PositionOnRoad {
-        final Road road;
-
-        /**
-         * A floating point number from 0 to 1 that defines position on road.
-         * 0 = beginning
-         * 1 = end
-         */
-        final double roadFraction;
-
-        PositionOnRoad(Road road, double roadFraction) {
-            this.road = road;
-            this.roadFraction = roadFraction;
-        }
-    }
-
-    private static LocationOnRoad makeLocationFromPosition(PositionOnRoad position) {
-        return new LocationOnRoad(position.road,
-                (long) (position.road.travelTime * position.roadFraction));
-    }
-
-    private ResourceEvent makeCustomer(PositionOnRoad pickupPositionOnRoad,
-                                       PositionOnRoad dropoffPositionOnRoad) {
-        LocationOnRoad pickUpLocation = makeLocationFromPosition(pickupPositionOnRoad);
-        LocationOnRoad dropOffLocation = makeLocationFromPosition(dropoffPositionOnRoad);
-        return new ResourceEvent(pickUpLocation, dropOffLocation,
+    private ResourceEvent makeCustomer(LocationOnRoad pickupLocation,
+                                       LocationOnRoad dropoffLocation) {
+        return new ResourceEvent(pickupLocation, dropoffLocation,
                 AVAILABLE_TIME, 0, mockSimulator, mockFleetManager, mockAssignmentManager);
     }
 
@@ -224,70 +201,4 @@ public class AgentEventTest {
         assertEquals(testMap.intersection3, testMap.roadFrom2to3.to);
     }
 
-    private static class SimpleMap {
-
-        private final Vertex vertex1;
-        private final Vertex vertex2;
-        private final Vertex vertex3;
-        private final Vertex vertex4;
-        private final Vertex vertex5;
-        private final Link link1to2;
-        private final Link link2to3;
-        private final Link link3to4;
-        private final Link link4to5;
-        private final Intersection intersection1;
-        private final Intersection intersection2;
-        private final Intersection intersection3;
-        private final Intersection intersection4;
-        private final Intersection intersection5;
-        private final Road roadFrom1to2;
-        private final Road roadFrom2to3;
-        private final Road roadFrom3to4;
-        private final Road roadFrom4to5;
-
-        private static Vertex makeVertex(final double longitude, final double latitude, final int id) {
-            return new Vertex(longitude, latitude, id, id, id);
-        }
-
-        private static Intersection makeIntersection(Vertex vertex) {
-            Intersection intersection = new Intersection(vertex);
-            vertex.intersection = intersection;
-            return intersection;
-        }
-
-        private static Road makeRoad(Intersection intersection1, Intersection intersection2) {
-            Road r = new Road();
-            r.from = intersection1;
-            r.to = intersection2;
-            r.to.roadsMapTo.put(r.from, r);
-            r.from.roadsMapFrom.put(r.to, r);
-            return r;
-        }
-
-
-        public SimpleMap(){
-            vertex1 = makeVertex(100.0, 100.0, 1);
-            vertex2 = makeVertex(100.0, 101.0, 2);
-            vertex3 = makeVertex(100.0, 102.0, 3);
-            vertex4 = makeVertex(100.0, 103.0, 4);
-            vertex5 = makeVertex(100.0, 104.0, 5);
-            link1to2 = new Link(vertex1, vertex2, 1000, 50);
-            link2to3 = new Link(vertex2, vertex3, 1200, 60);
-            link3to4 = new Link(vertex3, vertex4, 800, 20);
-            link4to5 = new Link(vertex4, vertex5, 900, 10);
-            intersection1 = makeIntersection(vertex1);
-            intersection2 = makeIntersection(vertex2);
-            intersection3 = makeIntersection(vertex3);
-            intersection4 = makeIntersection(vertex4);
-            intersection5 = makeIntersection(vertex5);
-            roadFrom1to2 = makeRoad(intersection1, intersection2);
-            roadFrom2to3 = makeRoad(intersection2, intersection3);
-            roadFrom3to4 = makeRoad(intersection3, intersection4);
-            roadFrom4to5 = makeRoad(intersection4, intersection5);
-            roadFrom1to2.addLink(link1to2);
-            roadFrom2to3.addLink(link2to3);
-            roadFrom3to4.addLink(link3to4);
-            roadFrom4to5.addLink(link4to5);
-        }
-    }
 }
