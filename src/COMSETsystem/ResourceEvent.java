@@ -125,6 +125,7 @@ public class ResourceEvent extends Event {
 	void pickup(AgentEvent agentEvent, long pickupTime) {
 		this.pickupTime = pickupTime;
 		this.agentEvent = agentEvent;
+		simulator.removeEvent(this);
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.PICKED_UP, simulator.agentCopy(pickupLoc), pickupTime);
 		assignmentManager.processAgentAction(action, pickupTime);
 	}
@@ -137,7 +138,6 @@ public class ResourceEvent extends Event {
 		simulator.totalResourceTripTime += tripTime;
 		simulator.totalAssignments++;
 
-		simulator.removeEvent(this);
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.DROPPED_OFF, simulator.agentCopy(dropoffLoc), dropOffTime);
 		assignmentManager.processAgentAction(action, dropOffTime);
 	}
@@ -146,13 +146,14 @@ public class ResourceEvent extends Event {
 		++simulator.totalResources;
 
 		simulator.waitingResources.add(this);
-		time = expirationTime;
-		state = State.EXPIRED;
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), time);
 		assignmentManager.processAgentAction(action, time);
+		time = expirationTime;
+		state = State.EXPIRED;
 	}
 
 	private void expire() {
+		System.out.println("Resource " + id + " expired");
 		simulator.expiredResources++;
 		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
 		simulator.waitingResources.remove(this);

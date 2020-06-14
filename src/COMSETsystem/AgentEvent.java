@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 public class AgentEvent extends Event {
 
 	enum State {
+		INITIAL,
 		INTERSECTION_REACHED,
 		PICKING_UP,
 		DROPPING_OFF
@@ -41,7 +42,7 @@ public class AgentEvent extends Event {
 
 	boolean isPickup = false;
 
-	State state = State.INTERSECTION_REACHED;
+	State state = State.INITIAL;
 
 	/*
 	 * The time at which the agent started to search for a resource. This is also the
@@ -55,7 +56,7 @@ public class AgentEvent extends Event {
 	 * @param loc this agent's location when it becomes empty.
 	 */
 	public AgentEvent(LocationOnRoad loc, long startedSearch, Simulator simulator, FleetManager fleetManager) {
-		super(startedSearch + loc.road.travelTime - loc.travelTimeFromStartIntersection, simulator, fleetManager);
+		super(startedSearch, simulator, fleetManager);
 		this.loc = loc;
 		this.startSearchTime = startedSearch;
 	}
@@ -66,6 +67,9 @@ public class AgentEvent extends Event {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + loc, this);
 
 		switch (state) {
+			case INITIAL:
+				navigateToNearestIntersection();
+				break;
 			case INTERSECTION_REACHED:
 				navigate();
 				break;
@@ -134,6 +138,17 @@ public class AgentEvent extends Event {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Next trigger time = " + time, this);
 	}
 
+	private void navigateToNearestIntersection() {
+		startSearchTime = time;
+
+		fleetManager.onAgentIntroduced(id, simulator.agentCopy(loc), time);
+
+		// move to the end intersection of the current road
+		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
+		LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
+		update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+	}
+
 	private boolean isArrivingPickupLoc() {
 		return !isPickup && assignedResource != null && assignedResource.pickupLoc.road.from.equals(loc.road.to);
 	}
@@ -170,6 +185,7 @@ public class AgentEvent extends Event {
 	 * The handler of a drop off event.
 	 */
 	private void dropOff() {
+		System.out.println("Agent " + id + " drop res: " + assignedResource.id);
 		startSearchTime = time;
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
 

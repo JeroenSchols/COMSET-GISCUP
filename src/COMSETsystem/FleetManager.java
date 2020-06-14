@@ -19,6 +19,8 @@ public abstract class FleetManager {
 
     public abstract void agentsCreated(Set<Long> agentIds);
 
+    public abstract AgentAction onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time);
+
     public abstract void onMapStateChanged(Road road, MapState state);
 
     public abstract AgentAction onResourceAvailabilityChange(Resource resource, ResourceState state,
