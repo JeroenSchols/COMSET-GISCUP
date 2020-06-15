@@ -116,13 +116,14 @@ public class FleetManagerTest {
     }
 
     @Test
+    // TODO Is this test doing the right thing?
     public void test_onResourceAvailabilityChange_resourceAvailable() {
         RandomDestinationFleetManager spyFleetManager = spy(new RandomDestinationFleetManager(mockMap));
-        spyFleetManager.agentsCreated(new HashSet<>(Collections.singletonList(1L)));
+        // spyFleetManager.agentsCreated(new HashSet<>(Collections.singletonList(1L)));
         LocationOnRoad resourceWaitingLocation = SimpleMap.makeLocationFromRoad(testMap.roadFrom1to2, 0.5);
 
         // Set up return values from other class functions.
-        doReturn(1L).when(spyFleetManager).getNearestAvailableAgent(resourceWaitingLocation,
+        doReturn(1L).when(spyFleetManager).getNearestAvailableAgent(mockResource,
                 RESOURCE_AVAILALBLE_TIME);
 
         AgentAction action = spyFleetManager.onResourceAvailabilityChange(mockResource,

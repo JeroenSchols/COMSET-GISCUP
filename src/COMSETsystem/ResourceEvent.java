@@ -153,7 +153,7 @@ public class ResourceEvent extends Event {
 	}
 
 	private void expire() {
-		System.out.println("Resource " + id + " expired");
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Resource " + id + " expired");
 		simulator.expiredResources++;
 		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
 		simulator.waitingResources.remove(this);

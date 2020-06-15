@@ -2,6 +2,8 @@ package COMSETsystem;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AssignmentManager {
 
@@ -39,16 +41,14 @@ public class AssignmentManager {
         ResourceEvent resEvent = resources.get(resId);
 
         if (agentEvent == null || resEvent == null) {
-//            System.out.println("Invalid Assignment");
             return;
         }
 
         if (agentEvent.hasPickupRes()) {
-//            System.out.println("Agent id: " + agentId + " has already picked up Res id: " + agentEvent.assignedResource.id);
             return;
         }
 
-        System.out.println("Agent " + agentId + " pick up Res " + resId);
+        Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Agent " + agentId + " pick up Res " + resId);
         agentEvent.assignTo(resEvent, currentTime);
     }
 
