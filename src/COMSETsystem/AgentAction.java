@@ -32,7 +32,11 @@ public class AgentAction {
         return new AgentAction(agentId, Type.ABORT);
     }
 
-    enum Type {
+    public Type getType() {
+        return type;
+    }
+
+    public enum Type {
         NONE,
         ASSIGN,
         ABORT

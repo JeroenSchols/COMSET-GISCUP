@@ -31,7 +31,9 @@ public class RandomDestinationFleetManager extends FleetManager {
     }
 
     @Override
-    public AgentAction onResourceAvailabilityChange(Resource resource, ResourceState state, LocationOnRoad currentLoc,
+    public AgentAction onResourceAvailabilityChange(Resource resource,
+                                                    ResourceState state,
+                                                    LocationOnRoad currentLoc,
                                                     long time) {
 
         AgentAction action = AgentAction.doNothing();
@@ -167,7 +169,7 @@ public class RandomDestinationFleetManager extends FleetManager {
         }
     }
 
-    private LinkedList<Intersection> planRouteToTarget(LocationOnRoad source, LocationOnRoad destination) {
+    LinkedList<Intersection> planRouteToTarget(LocationOnRoad source, LocationOnRoad destination) {
         Intersection sourceIntersection = source.road.to;
         Intersection destinationIntersection = destination.road.from;
         LinkedList<Intersection> shortestTravelTimePath = map.shortestTravelTimePath(sourceIntersection,
