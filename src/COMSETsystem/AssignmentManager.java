@@ -1,9 +1,7 @@
 package COMSETsystem;
 
-import javax.swing.text.html.StyleSheet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 public class AssignmentManager {
 
@@ -20,7 +18,7 @@ public class AssignmentManager {
     }
 
     public void processAgentAction(AgentAction agentAction, long currentTime) {
-        switch (agentAction.type) {
+        switch (agentAction.getType()) {
             case ASSIGN:
                 processAssignment(agentAction, currentTime);
                 break;

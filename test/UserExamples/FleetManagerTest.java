@@ -8,9 +8,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -22,6 +20,7 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class FleetManagerTest {
+    public static final long RESOURCE_AVAILALBLE_TIME = 1000L;
     @Mock
     CityMap mockMap;
     @Mock
@@ -114,5 +113,22 @@ public class FleetManagerTest {
         // Check the remaining part of the route has the left over part of the route
         // Argument to containsKey and get must have long type        assertTrue(spyFleetManager.agentRoutes.containsKey(1L));
         assertEquals(testMap.intersection4, spyFleetManager.agentRoutes.get(1L).getFirst());
+    }
+
+    @Test
+    public void test_onResourceAvailabilityChange_resourceAvailable() {
+        RandomDestinationFleetManager spyFleetManager = spy(new RandomDestinationFleetManager(mockMap));
+        spyFleetManager.agentsCreated(new HashSet<>(Collections.singletonList(1L)));
+        LocationOnRoad resourceWaitingLocation = SimpleMap.makeLocationFromRoad(testMap.roadFrom1to2, 0.5);
+
+        // Set up return values from other class functions.
+        doReturn(1L).when(spyFleetManager).getNearestAvailableAgent(resourceWaitingLocation,
+                RESOURCE_AVAILALBLE_TIME);
+
+        AgentAction action = spyFleetManager.onResourceAvailabilityChange(mockResource,
+                FleetManager.ResourceState.AVAILABLE, resourceWaitingLocation, RESOURCE_AVAILALBLE_TIME);
+
+        assertEquals(AgentAction.Type.ASSIGN, action.getType());
+
     }
 }

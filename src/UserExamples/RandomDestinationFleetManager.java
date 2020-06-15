@@ -26,7 +26,9 @@ public class RandomDestinationFleetManager extends FleetManager {
     }
 
     @Override
-    public AgentAction onResourceAvailabilityChange(Resource resource, ResourceState state, LocationOnRoad currentLoc,
+    public AgentAction onResourceAvailabilityChange(Resource resource,
+                                                    ResourceState state,
+                                                    LocationOnRoad currentLoc,
                                                     long time) {
         resourceLocation.put(resource.id, currentLoc);
 
