@@ -1,5 +1,6 @@
 package COMSETsystem;
 
+import javax.management.StandardEmitterMBean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -94,10 +95,14 @@ public class AgentEvent extends Event {
 
 			long currentLocTravelFromStart = loc.road.travelTime - (this.time - time);
 			if (currentLocTravelFromStart <= assignedResource.pickupLoc.travelTimeFromStartIntersection) {
-				simulator.removeEvent(this);
-				long nextEventTime = assignedResource.pickupLoc.travelTimeFromStartIntersection - currentLocTravelFromStart + time;
+
+				long nextEventTime =
+						assignedResource.pickupLoc.travelTimeFromStartIntersection - currentLocTravelFromStart + time;
 				update(nextEventTime, assignedResource.pickupLoc, State.PICKING_UP);
-				simulator.getEvents().add(this);
+
+				if (simulator.getEvents().remove(this)) {
+					simulator.getEvents().add(this);
+				}
 			}
 		}
 	}
@@ -205,8 +210,18 @@ public class AgentEvent extends Event {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
 
 		isPickup = false;
-		assignedResource.dropOff(time);
-		assignedResource = null;
+		ResourceEvent dropOffRes = assignedResource;
+		dropOffRes.dropOff(time);
+
+		// Check if this agent has been assign a new resource
+		if (dropOffRes == assignedResource) {
+			assignedResource = null;
+		}
+
+		if (state != State.DROPPING_OFF) {
+			// This agent is assigned a new resource right after dropoff.
+			return;
+		}
 
 		// move to the end intersection of the current road
 		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;

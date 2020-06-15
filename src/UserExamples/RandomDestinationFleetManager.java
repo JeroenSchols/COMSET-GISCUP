@@ -16,7 +16,6 @@ public class RandomDestinationFleetManager extends FleetManager {
     Map<Long, LinkedList<Intersection>> agentRoutes = new HashMap<>();
 
     Set<Long> availableAgent = new TreeSet<>();
-    Set<Long> waitingRes = new TreeSet<>();
 
     @Override
     public void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time) {
@@ -46,7 +45,7 @@ public class RandomDestinationFleetManager extends FleetManager {
                 availableAgent.remove(assignedAgent);
                 action = AgentAction.assignTo(assignedAgent, resource.id);
             } else {
-                waitingRes.add(resource.id);
+                waitingResources.add(resource);
             }
         } else if (state == ResourceState.DROPPED_OFF) {
             Resource bestResource =  null;
@@ -66,8 +65,8 @@ public class RandomDestinationFleetManager extends FleetManager {
             }
 
             if (bestResource != null) {
+                waitingResources.remove(bestResource);
                 action = AgentAction.assignTo(resource.assignedAgentId, bestResource.id);
-
             } else {
                 availableAgent.add(resource.assignedAgentId);
                 action = AgentAction.doNothing();
@@ -76,7 +75,7 @@ public class RandomDestinationFleetManager extends FleetManager {
             agentLastLocation.put(resource.assignedAgentId, currentLoc);
             agentLastAppearTime.put(resource.assignedAgentId, time);
         } else if (state == ResourceState.EXPIRED) {
-            waitingRes.remove(resource.id);
+            waitingResources.remove(resource);
         } else if (state == ResourceState.PICKED_UP) {
             agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
         }

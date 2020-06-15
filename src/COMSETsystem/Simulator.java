@@ -124,6 +124,10 @@ public class Simulator {
 		events.remove(e);
 	}
 
+	public void addEvent(Event e) {
+		events.remove(e);
+	}
+
 	/**
 	 * Configure the simulation system including:
 	 * 
