@@ -45,25 +45,31 @@ public class AgentEventTest {
      */
     @Test
     public void testTrigger_cruising() throws Exception {
+        long initTimeFromStartIntersection = testMap.roadFrom1to2.travelTime / 2;
         // Construction agent reaching intersection2
-        LocationOnRoad locAtReachedIntersection = new LocationOnRoad(testMap.roadFrom1to2,
-                testMap.roadFrom1to2.travelTime);
+        LocationOnRoad locAtMiddleOfRoad = new LocationOnRoad(testMap.roadFrom1to2, initTimeFromStartIntersection);
 
-        AgentEvent agentEvent = new AgentEvent(locAtReachedIntersection,
-                TRIGGER_TIME, mockSimulator, mockFleetManager);
-        // return intersection3 as next intersection
-        when(mockFleetManager.onReachIntersection(eq(agentEvent.id), anyLong(), anyObject()))
-                .thenReturn(testMap.intersection3);
+        AgentEvent agentEvent = new AgentEvent(locAtMiddleOfRoad, TRIGGER_TIME, mockSimulator, mockFleetManager);
 
         // Verify initial state
-        assertEquals(AgentEvent.State.INTERSECTION_REACHED, agentEvent.state);
-
+        assertEquals(AgentEvent.State.INITIAL, agentEvent.state);
+        
         AgentEvent nextEvent = (AgentEvent) agentEvent.trigger();
+        // return intersection3 as next intersection
+        when(mockFleetManager.onReachIntersection(eq(nextEvent.id), anyLong(), anyObject()))
+                .thenReturn(testMap.intersection3);
+
+        // Verify that next AgentEvent will trigger when reaching the end of road1
+        assertEquals(AgentEvent.State.INTERSECTION_REACHED, nextEvent.state);
+        assertEquals(testMap.roadFrom1to2, nextEvent.loc.road);
+        assertEquals(TRIGGER_TIME + initTimeFromStartIntersection, nextEvent.time);
+
+        nextEvent = (AgentEvent) agentEvent.trigger();
 
         // Verify that next AgentEvent will trigger when reaching the end of road2
         assertEquals(AgentEvent.State.INTERSECTION_REACHED, nextEvent.state);
         assertEquals(testMap.roadFrom2to3, nextEvent.loc.road);
-        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime, nextEvent.time);
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + initTimeFromStartIntersection, nextEvent.time);
     }
 
     /**
@@ -90,7 +96,7 @@ public class AgentEventTest {
                 testMap.roadFrom1to2.travelTime);
         AgentEvent agentEvent = new AgentEvent(locAtReachedIntersection, TRIGGER_TIME,
                 mockSimulator, mockFleetManager);
-        agentEvent.assignTo(customer);
+        agentEvent.assignTo(customer, 1);
 
         // Trigger the event
         AgentEvent pickUpEvent = (AgentEvent) agentEvent.trigger();
@@ -186,7 +192,7 @@ public class AgentEventTest {
         );
 
         AgentEvent spyEvent = spy(new AgentEvent(locationOnRoad, 100, mockSimulator, mockFleetManager));
-        spyEvent.assignTo(resource);
+        spyEvent.assignTo(resource, 1);
         AgentEvent newEvent = (AgentEvent) spyEvent.trigger();
 
         assertEquals(AgentEvent.State.PICKING_UP, newEvent.state);

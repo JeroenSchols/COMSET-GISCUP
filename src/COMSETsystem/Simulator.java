@@ -216,6 +216,16 @@ public class Simulator {
 					events.add(e);
 				}
 			}
+
+			while (!events.isEmpty()) {
+				Event toTrigger = events.poll();
+				if (toTrigger instanceof AgentEvent && ((AgentEvent) toTrigger).isPickup) {
+					Event e = toTrigger.trigger();
+					if (e != null) {
+						events.add(e);
+					}
+				}
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

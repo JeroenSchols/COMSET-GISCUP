@@ -166,7 +166,6 @@ public class MapWithData {
 		long deployTime = earliestResourceTime - 1;
 
 		Random generator = new Random(agentPlacementRandomSeed);
-		Set<Long> initAgents = new HashSet<>();
 		for (int i = 0; i < simulator.totalAgents(); i++) {
 			Road road = map.roads().get(generator.nextInt(map.roads().size()));
 			long travelTimeFromStartIntersection;
@@ -178,11 +177,9 @@ public class MapWithData {
 			LocationOnRoad locationOnRoad = new LocationOnRoad(road, travelTimeFromStartIntersection);
 			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator, fleetManager);
 			assignmentManager.addNewEvent(ev);
-			initAgents.add(ev.getId());
 			simulator.addEmptyAgent(ev);
 			events.add(ev);
 		}
-		fleetManager.agentsCreated(initAgents);
 	}
 
 //	/**
