@@ -15,42 +15,14 @@ public class RandomDestinationFleetManager extends FleetManager {
 
     Map<Long, LinkedList<Intersection>> agentRoutes = new HashMap<>();
 
-    Map<Long, LocationOnRoad> resourceLocation = new HashMap<>();
-    Map<Long, Long> agentAssignment = new HashMap<>();
     Set<Long> availableAgent = new TreeSet<>();
     Set<Long> waitingRes = new TreeSet<>();
-    Set<Long> pickedUpRes = new TreeSet<>();
-    Set<Long> expiredRes = new TreeSet<>();
-
 
     @Override
-    public void agentsCreated(Set<Long> agentIds) {
-//        availableAgent = agentIds;
-    }
-
-    @Override
-    public AgentAction onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time) {
+    public void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time) {
         agentLastAppearTime.put(agentId, time);
         agentLastLocation.put(agentId, currentLoc);
-
-        long bestTravelTime = Long.MAX_VALUE;
-        Resource bestRes = null;
-        for (Resource res : waitingResources) {
-            long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc);
-
-            if (travelTime < bestTravelTime) {
-                bestTravelTime = travelTime;
-                bestRes = res;
-            }
-        }
-
-        if (bestRes != null && isReachableBeforeExpiration(bestRes, bestTravelTime + time)) {
-            resourceAssignment.put(agentId, bestRes);
-            return AgentAction.assignTo(agentId, bestRes.id);
-        } else {
-            availableAgent.add(agentId);
-            return AgentAction.doNothing();
-        }
+        availableAgent.add(agentId);
     }
 
     @Override
@@ -61,16 +33,13 @@ public class RandomDestinationFleetManager extends FleetManager {
     @Override
     public AgentAction onResourceAvailabilityChange(Resource resource, ResourceState state, LocationOnRoad currentLoc,
                                                     long time) {
-        resourceLocation.put(resource.id, currentLoc);
 
         AgentAction action = AgentAction.doNothing();
 
         if (state == ResourceState.AVAILABLE) {
-//            Long assignedAgent = getNearestAvailableAgent(currentLoc, time);
             Long assignedAgent = getNearestAvailableAgent(resource, time);
             if (assignedAgent != null) {
                 resourceAssignment.put(assignedAgent, resource);
-//                agentAssignment.put(assignedAgent, resource.id);
                 agentRoutes.put(assignedAgent, new LinkedList<>());
                 availableAgent.remove(assignedAgent);
                 action = AgentAction.assignTo(assignedAgent, resource.id);
@@ -104,36 +73,10 @@ public class RandomDestinationFleetManager extends FleetManager {
             resourceAssignment.put(resource.assignedAgentId, bestResource);
             agentLastLocation.put(resource.assignedAgentId, currentLoc);
             agentLastAppearTime.put(resource.assignedAgentId, time);
-
-//            if (waitingRes.isEmpty()) {
-//                availableAgent.add(resource.assignedAgentId);
-//            } else {
-//                Long assignedRes = null;
-//                for (Long resId : waitingRes) {
-//                    assignedRes = resId;
-//
-//                    break;
-//                }
-//
-//                if (assignedRes != null) {
-//                    waitingRes.remove(assignedRes);
-//                    agentAssignment.put(resource.assignedAgentId, assignedRes);
-//                    agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
-//                    action = AgentAction.assignTo(resource.assignedAgentId, assignedRes);
-//                }
-//            }
         } else if (state == ResourceState.EXPIRED) {
-            if (resource.assignedAgentId != -1) {
-                agentAssignment.remove(resource.assignedAgentId);
-                availableAgent.add(resource.assignedAgentId);
-                agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
-            } else {
-                waitingRes.remove(resource.id);
-            }
-            expiredRes.add(resource.id);
+            waitingRes.remove(resource.id);
         } else if (state == ResourceState.PICKED_UP) {
             agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
-            pickedUpRes.add(resource.id);
         }
 
         return action;
@@ -201,23 +144,6 @@ public class RandomDestinationFleetManager extends FleetManager {
         } else {
             return null;
         }
-    }
-
-    Long getNearestAvailableAgent(LocationOnRoad resourceLocation, long time) {
-        long earliest = Long.MAX_VALUE;
-        Long bestAgent = null;
-        for (Long id : availableAgent) {
-            if (!agentLastLocation.containsKey(id)) continue;
-
-            long elapseTime = time - agentLastAppearTime.get(id);
-            long travelTime = map.travelTimeBetween(agentLastLocation.get(id), resourceLocation) - elapseTime;
-            long arriveTime = travelTime + time;
-            if (arriveTime < earliest) {
-                bestAgent = id;
-                earliest = arriveTime;
-            }
-        }
-        return bestAgent;
     }
 
     LinkedList<Intersection> planRoute(long agentId, LocationOnRoad currentLocation) {

@@ -17,9 +17,7 @@ public abstract class FleetManager {
         EXPIRED
     }
 
-    public abstract void agentsCreated(Set<Long> agentIds);
-
-    public abstract AgentAction onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time);
+    public abstract void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time);
 
     public abstract void onMapStateChanged(Road road, MapState state);
 
