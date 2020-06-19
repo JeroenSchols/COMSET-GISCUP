@@ -9,13 +9,13 @@ public class RandomDestinationFleetManager extends FleetManager {
     Map<Long, Long> agentLastAppearTime = new HashMap<>();
     Map<Long, LocationOnRoad> agentLastLocation = new HashMap<>();
     Map<Long, Resource> resourceAssignment = new HashMap<>();
-    Set<Resource> waitingResources = new HashSet<>();
+    TreeSet<Resource> waitingResources = new TreeSet<>(Comparator.comparingLong((Resource r) -> r.id));
     Map<Long, Random> agentRnd = new HashMap<>();
 
 
     Map<Long, LinkedList<Intersection>> agentRoutes = new HashMap<>();
 
-    Set<Long> availableAgent = new TreeSet<>();
+    Set<Long> availableAgent = new TreeSet<>(Comparator.comparingLong((Long id) -> id));
 
     @Override
     public void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time) {

@@ -93,6 +93,11 @@ public class AgentEvent extends Event {
 
 		if (loc.road.equals(assignedResource.pickupLoc.road)) {
 
+			if (this.time == time) {
+				update(time, assignedResource.pickupLoc, State.PICKING_UP);
+				return;
+			}
+
 			long currentLocTravelFromStart = loc.road.travelTime - (this.time - time);
 			if (currentLocTravelFromStart <= assignedResource.pickupLoc.travelTimeFromStartIntersection) {
 
@@ -191,7 +196,7 @@ public class AgentEvent extends Event {
 
 		assignedResource.pickup(this, time);
 
-		if (assignedResource.dropoffLoc.road.equals(loc.road)) {
+		if (assignedResource.dropoffLoc.road.equals(loc.road) && loc.travelTimeFromStartIntersection <= assignedResource.dropoffLoc.travelTimeFromStartIntersection) {
 			long nextEventTime = time + (assignedResource.dropoffLoc.travelTimeFromStartIntersection - loc.travelTimeFromStartIntersection);
 			update(nextEventTime, assignedResource.dropoffLoc, State.DROPPING_OFF);
 		} else {
