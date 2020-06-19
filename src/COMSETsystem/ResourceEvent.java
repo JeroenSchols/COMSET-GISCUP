@@ -131,10 +131,8 @@ public class ResourceEvent extends Event {
 	}
 
 	void dropOff(long dropOffTime) {
-		long waitTime = pickupTime - availableTime;
 		long tripTime = dropOffTime - pickupTime;
 
-		simulator.totalResourceWaitTime += waitTime;
 		simulator.totalResourceTripTime += tripTime;
 		simulator.totalAssignments++;
 
