@@ -38,8 +38,6 @@ public class Simulator {
 	// The event queue.
 	private PriorityQueue<Event> events = new PriorityQueue<>();
 
-	protected AssignmentManager assignmentManager = new AssignmentManager();
-
 	// The set of empty agents.
 	protected TreeSet<AgentEvent> emptyAgents = new TreeSet<>(new AgentEventComparator());
 
@@ -107,6 +105,9 @@ public class Simulator {
 	protected final Class<? extends FleetManager> agentClass;
 
 	protected FleetManager fleetManager;
+
+	public Map<Long, AgentEvent> agentMap = new HashMap<>();
+	public Map<Long, ResourceEvent> resMap = new HashMap<>();
 
 	/**
 	 * Constructor of the class Main. This is made such that the type of
@@ -183,14 +184,16 @@ public class Simulator {
 
 		// The simulation end time is the expiration time of the last resource.
 		// which is return by createMapWithData
-		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager, assignmentManager);
+		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager);
 
 		// Deploy agents at random locations of the map.
 		System.out.println("Randomly placing " + this.totalAgents + " agents on the map...");
-		mapWD.placeAgentsRandomly(this, fleetManager, assignmentManager);
+		mapWD.placeAgentsRandomly(this, fleetManager);
 
 		// Initialize the event queue.
 		events = mapWD.getEvents();
+
+		mappingEventId();
 	}
 
 	/**
@@ -550,5 +553,13 @@ public class Simulator {
 //		return null;
 //	}
 
-
+	private void mappingEventId() {
+		for (Event event : events) {
+			if (event instanceof AgentEvent) {
+				agentMap.put(event.id, (AgentEvent) event);
+			} else if (event instanceof ResourceEvent) {
+				resMap.put(event.id, (ResourceEvent) event);
+			}
+		}
+	}
 }

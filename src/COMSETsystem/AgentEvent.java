@@ -1,6 +1,5 @@
 package COMSETsystem;
 
-import javax.management.StandardEmitterMBean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,8 +83,8 @@ public class AgentEvent extends Event {
 		return this;
 	}
 
-	boolean hasPickupRes() {
-		return isPickup;
+	boolean hasResPickup() {
+		return !isPickup;
 	}
 
 	void assignTo(ResourceEvent resourceEvent, long time) {
@@ -196,7 +195,15 @@ public class AgentEvent extends Event {
 
 		assignedResource.pickup(this, time);
 
-		if (assignedResource.dropoffLoc.road.equals(loc.road) && loc.travelTimeFromStartIntersection <= assignedResource.dropoffLoc.travelTimeFromStartIntersection) {
+		AgentAction action = fleetManager.onResourceAvailabilityChange(assignedResource.copyResource(), FleetManager.ResourceState.PICKED_UP, simulator.agentCopy(loc), time);
+
+		if (isValidAction(action)) {
+			ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
+			AgentEvent agentEvent = simulator.agentMap.get(action.agentId);
+			agentEvent.assignTo(resourceEvent, time);
+		}
+
+		if (isOnSameRoad(assignedResource.dropoffLoc, loc) && loc.travelTimeFromStartIntersection <= assignedResource.dropoffLoc.travelTimeFromStartIntersection) {
 			long nextEventTime = time + (assignedResource.dropoffLoc.travelTimeFromStartIntersection - loc.travelTimeFromStartIntersection);
 			update(nextEventTime, assignedResource.dropoffLoc, State.DROPPING_OFF);
 		} else {
@@ -215,28 +222,66 @@ public class AgentEvent extends Event {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
 
 		isPickup = false;
-		ResourceEvent dropOffRes = assignedResource;
-		dropOffRes.dropOff(time);
+		assignedResource.dropOff(time);
 
-		// Check if this agent has been assign a new resource
-		if (dropOffRes == assignedResource) {
+		AgentAction action = fleetManager.onResourceAvailabilityChange(assignedResource.copyResource(), FleetManager.ResourceState.DROPPED_OFF, simulator.agentCopy(loc), time);
+
+		if (!isValidAction(action)) {
 			assignedResource = null;
-		}
 
-		if (state != State.DROPPING_OFF) {
-			// This agent is assigned a new resource right after dropoff.
+			// move to the end intersection of the current road
+			long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
+			LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
+			update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
 			return;
 		}
 
-		// move to the end intersection of the current road
-		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
-		LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
-		update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+
+		ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
+		if (action.agentId == id) {
+			assignedResource = resourceEvent;
+
+			if (isOnSameRoad(loc, assignedResource.pickupLoc) && loc.travelTimeFromStartIntersection <= assignedResource.pickupLoc.travelTimeFromStartIntersection) {
+				long nextEventTime = assignedResource.pickupLoc.travelTimeFromStartIntersection - loc.travelTimeFromStartIntersection + time;
+				update(nextEventTime, assignedResource.pickupLoc, State.PICKING_UP);
+			} else {
+				// move to the end intersection of the current road
+				long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
+				LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
+				update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+			}
+		} else {
+			AgentEvent agentEvent = simulator.agentMap.get(action.agentId);
+			agentEvent.assignTo(resourceEvent, time);
+
+			assignedResource = null;
+
+			// move to the end intersection of the current road
+			long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
+			LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
+			update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+		}
 	}
 
 	private void update(long time, LocationOnRoad loc, State state) {
 		this.time = time;
 		this.loc = loc;
 		this.state = state;
+	}
+
+	private boolean isValidAction(AgentAction agentAction) {
+		if (agentAction == null) return false;
+
+        long agentId = agentAction.agentId;
+        long resId = agentAction.resId;
+
+        AgentEvent agentEvent = simulator.agentMap.get(agentId);
+		ResourceEvent resEvent = simulator.resMap.get(resId);
+
+		return agentEvent != null && resEvent != null && agentEvent.hasResPickup();
+	}
+
+	private boolean isOnSameRoad(LocationOnRoad loc1, LocationOnRoad loc2) {
+		return loc1.road.equals(loc2.road);
 	}
 }

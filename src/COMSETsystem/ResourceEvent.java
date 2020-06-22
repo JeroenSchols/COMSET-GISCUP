@@ -37,8 +37,6 @@ public class ResourceEvent extends Event {
 
 	AgentEvent agentEvent = null;
 
-	AssignmentManager assignmentManager;
-
 	State state;
 
 	// The shortest travel time from pickupLoc to dropoffLoc
@@ -52,7 +50,7 @@ public class ResourceEvent extends Event {
 	 * @param dropoffLoc this resource's destination location.
 	 * @param simulator the simulator object.
 	 */
-	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long tripTime, Simulator simulator, FleetManager fleetManager, AssignmentManager assignmentManager) {
+	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long tripTime, Simulator simulator, FleetManager fleetManager) {
 		super(availableTime, simulator, fleetManager);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
@@ -60,7 +58,6 @@ public class ResourceEvent extends Event {
 		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
 		this.tripTime = tripTime;
 		this.state = State.AVAILABLE;
-		this.assignmentManager = assignmentManager;
 	}
 
 	/**
@@ -126,18 +123,12 @@ public class ResourceEvent extends Event {
 		this.pickupTime = pickupTime;
 		this.agentEvent = agentEvent;
 		simulator.removeEvent(this);
-		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.PICKED_UP, simulator.agentCopy(pickupLoc), pickupTime);
-		assignmentManager.processAgentAction(action, pickupTime);
 	}
 
 	void dropOff(long dropOffTime) {
 		long tripTime = dropOffTime - pickupTime;
-
 		simulator.totalResourceTripTime += tripTime;
 		simulator.totalAssignments++;
-
-		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.DROPPED_OFF, simulator.agentCopy(dropoffLoc), dropOffTime);
-		assignmentManager.processAgentAction(action, dropOffTime);
 	}
 
 	private void available() {
@@ -145,22 +136,35 @@ public class ResourceEvent extends Event {
 
 		simulator.waitingResources.add(this);
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), time);
-		assignmentManager.processAgentAction(action, time);
+		processAgentAction(action);
 		time = expirationTime;
 		state = State.EXPIRED;
 	}
 
 	private void expire() {
-		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Resource " + id + " expired");
 		simulator.expiredResources++;
 		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
 		simulator.waitingResources.remove(this);
 
-		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED, simulator.agentCopy(pickupLoc), time);
-		assignmentManager.processAgentAction(action, time);
+		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
+				simulator.agentCopy(pickupLoc), time);
+		processAgentAction(action);
 		if (agentEvent != null) {
 			agentEvent.abortResource();
 		}
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
+	}
+
+	private void processAgentAction(AgentAction agentAction) {
+		if (agentAction == null) {
+			return;
+		}
+
+		AgentEvent agentEvent = simulator.agentMap.get(agentAction.agentId);
+		ResourceEvent resourceEvent = simulator.resMap.get(agentAction.resId);
+
+		if (agentEvent != null && resourceEvent != null && agentEvent.hasResPickup()) {
+			agentEvent.assignTo(resourceEvent, time);
+		}
 	}
 }

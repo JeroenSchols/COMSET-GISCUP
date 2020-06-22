@@ -30,8 +30,7 @@ public class AgentEventTest {
     Simulator.PickUp mockNoPickUp;
     @Mock
     FleetManager mockFleetManager;
-    @Mock
-    AssignmentManager mockAssignmentManager;
+
     private SimpleMap testMap = new SimpleMap();
 
     @Before
@@ -174,7 +173,7 @@ public class AgentEventTest {
     private ResourceEvent makeCustomer(LocationOnRoad pickupLocation,
                                        LocationOnRoad dropoffLocation) {
         return new ResourceEvent(pickupLocation, dropoffLocation,
-                AVAILABLE_TIME, 0, mockSimulator, mockFleetManager, mockAssignmentManager);
+                AVAILABLE_TIME, 0, mockSimulator, mockFleetManager);
     }
 
     @Test
@@ -188,8 +187,7 @@ public class AgentEventTest {
                 100L,
                 1000L,
                 mockSimulator,
-                mockFleetManager,
-                mockAssignmentManager
+                mockFleetManager
         );
 
         AgentEvent spyEvent = spy(new AgentEvent(locationOnRoad, 100, mockSimulator, mockFleetManager));

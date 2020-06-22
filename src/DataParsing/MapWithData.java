@@ -60,7 +60,7 @@ public class MapWithData {
 	 * be created.
 	 * @return long the latest resource time
 	 */
-	public long createMapWithData(Simulator simulator, FleetManager fleetManager, AssignmentManager assignmentManager) {
+	public long createMapWithData(Simulator simulator, FleetManager fleetManager) {
  
 		CSVNewYorkParser parser = new CSVNewYorkParser(resourceFile, zoneId);
 		ArrayList<Resource> resourcesParsed = parser.parse();
@@ -71,8 +71,7 @@ public class MapWithData {
 				LocationOnRoad dropoffMatch = mapMatch(resource.getDropoffLon(), resource.getDropoffLat());
 				long tripTime = simulator.getMap().travelTimeBetween(pickupMatch, dropoffMatch);
 
-				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), tripTime, simulator, fleetManager, assignmentManager);
-				assignmentManager.addNewEvent(ev);
+				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), tripTime, simulator, fleetManager);
 				events.add(ev);
 
 				//  track earliestResourceTime and latestResourceTime
@@ -162,7 +161,7 @@ public class MapWithData {
 	 *
 	 * @param simulator a reference to the simulator object
 	 */
-	public void placeAgentsRandomly(Simulator simulator, FleetManager fleetManager, AssignmentManager assignmentManager) {
+	public void placeAgentsRandomly(Simulator simulator, FleetManager fleetManager) {
 		long deployTime = earliestResourceTime - 1;
 
 		Random generator = new Random(agentPlacementRandomSeed);
@@ -176,7 +175,6 @@ public class MapWithData {
 			}
 			LocationOnRoad locationOnRoad = new LocationOnRoad(road, travelTimeFromStartIntersection);
 			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator, fleetManager);
-			assignmentManager.addNewEvent(ev);
 			simulator.addEmptyAgent(ev);
 			events.add(ev);
 		}
