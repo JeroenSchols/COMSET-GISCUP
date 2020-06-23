@@ -84,7 +84,7 @@ public class AgentEvent extends Event {
 	}
 
 	boolean hasResPickup() {
-		return !isPickup;
+		return isPickup;
 	}
 
 	void assignTo(ResourceEvent resourceEvent, long time) {
@@ -109,7 +109,7 @@ public class AgentEvent extends Event {
 	void abortResource() {
 		assignedResource = null;
 		isPickup = false;
-		state = State.INTERSECTION_REACHED;
+		moveToEndIntersection();
 	}
 
 	void navigate() throws Exception {
@@ -263,7 +263,7 @@ public class AgentEvent extends Event {
         AgentEvent agentEvent = simulator.agentMap.get(agentId);
 		ResourceEvent resEvent = simulator.resMap.get(resId);
 
-		return agentEvent != null && resEvent != null && agentEvent.hasResPickup() && agentAction.getType() == AgentAction.Type.ASSIGN;
+		return agentEvent != null && resEvent != null && !agentEvent.hasResPickup() && agentAction.getType() == AgentAction.Type.ASSIGN;
 	}
 
 	private boolean isOnSameRoad(LocationOnRoad loc1, LocationOnRoad loc2) {

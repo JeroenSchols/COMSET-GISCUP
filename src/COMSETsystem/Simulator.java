@@ -212,21 +212,20 @@ public class Simulator {
 		try (ProgressBar pb = new ProgressBar("Progress:", 100, ProgressBarStyle.ASCII)) {
 			assert events.peek() != null;
 			simulationStartTime = simulationTime = events.peek().time;
-			while (simulationTime <= simulationEndTime) {
-				assert events.peek() != null;
-				simulationTime = events.peek().time;
-				Event toTrigger = events.poll();
-				pb.stepTo((long)(((float)(toTrigger.time - simulationStartTime))
-						/ (simulationEndTime - simulationStartTime) * 100.0));
-				Event e = toTrigger.trigger();
-				if (e != null) { 
-					events.add(e);
-				}
-			}
+			long totalSimulationTime = simulationEndTime - simulationStartTime;
 
 			while (!events.isEmpty()) {
+				assert events.peek() != null;
+				simulationTime = events.peek().time;
+
+				// Extend total simulation time for agent which is still delivering resource
+				totalSimulationTime = Math.max(totalSimulationTime, simulationTime - simulationStartTime);
+
 				Event toTrigger = events.poll();
-				if (toTrigger instanceof AgentEvent && ((AgentEvent) toTrigger).isPickup) {
+				pb.stepTo((long)(((float)(toTrigger.time - simulationStartTime))
+						/ totalSimulationTime * 100.0));
+
+				if (simulationTime <= simulationEndTime || (toTrigger instanceof AgentEvent && ((AgentEvent) toTrigger).hasResPickup())) {
 					Event e = toTrigger.trigger();
 					if (e != null) {
 						events.add(e);

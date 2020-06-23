@@ -163,7 +163,7 @@ public class ResourceEvent extends Event {
 		AgentEvent agentEvent = simulator.agentMap.get(agentAction.agentId);
 		ResourceEvent resourceEvent = simulator.resMap.get(agentAction.resId);
 
-		if (agentEvent != null && resourceEvent != null && agentEvent.hasResPickup()) {
+		if (agentEvent != null && resourceEvent != null && !agentEvent.hasResPickup()) {
 			agentEvent.assignTo(resourceEvent, time);
 		}
 	}
