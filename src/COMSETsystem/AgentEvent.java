@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 public class AgentEvent extends Event {
 
 	enum State {
+		INITIAL,
 		INTERSECTION_REACHED,
 		PICKING_UP,
 		DROPPING_OFF
@@ -41,7 +42,7 @@ public class AgentEvent extends Event {
 
 	boolean isPickup = false;
 
-	State state = State.INTERSECTION_REACHED;
+	State state = State.INITIAL;
 
 	/*
 	 * The time at which the agent started to search for a resource. This is also the
@@ -55,7 +56,7 @@ public class AgentEvent extends Event {
 	 * @param loc this agent's location when it becomes empty.
 	 */
 	public AgentEvent(LocationOnRoad loc, long startedSearch, Simulator simulator, FleetManager fleetManager) {
-		super(startedSearch + loc.road.travelTime - loc.travelTimeFromStartIntersection, simulator, fleetManager);
+		super(startedSearch, simulator, fleetManager);
 		this.loc = loc;
 		this.startSearchTime = startedSearch;
 	}
@@ -66,6 +67,9 @@ public class AgentEvent extends Event {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + loc, this);
 
 		switch (state) {
+			case INITIAL:
+				navigateToNearestIntersection();
+				break;
 			case INTERSECTION_REACHED:
 				navigate();
 				break;
@@ -79,18 +83,33 @@ public class AgentEvent extends Event {
 		return this;
 	}
 
-	boolean hasPickupRes() {
+	boolean hasResPickup() {
 		return isPickup;
 	}
 
-	void assignTo(ResourceEvent resourceEvent) {
+	void assignTo(ResourceEvent resourceEvent, long time) {
 		this.assignedResource = resourceEvent;
+
+		if (isOnSameRoad(loc, assignedResource.pickupLoc)) {
+
+			long currentLocTravelFromStart = loc.road.travelTime - (this.time - time);
+			if (currentLocTravelFromStart <= assignedResource.pickupLoc.travelTimeFromStartIntersection) {
+
+				long nextEventTime =
+						assignedResource.pickupLoc.travelTimeFromStartIntersection - currentLocTravelFromStart + time;
+				update(nextEventTime, assignedResource.pickupLoc, State.PICKING_UP);
+
+				if (simulator.getEvents().remove(this)) {
+					simulator.getEvents().add(this);
+				}
+			}
+		}
 	}
 
 	void abortResource() {
 		assignedResource = null;
 		isPickup = false;
-		state = State.INTERSECTION_REACHED;
+		moveToEndIntersection();
 	}
 
 	void navigate() throws Exception {
@@ -111,13 +130,14 @@ public class AgentEvent extends Event {
 
 		Intersection nextIntersection;
 		if (isPickup && assignedResource != null) {
-			nextIntersection = fleetManager.onReachIntersectionWithResource(id, time, simulator.agentCopy(loc), assignedResource.copyResource());
+			nextIntersection = fleetManager.onReachIntersectionWithResource(id, time, simulator.agentCopy(loc),
+					assignedResource.copyResource());
 		} else {
 			nextIntersection = fleetManager.onReachIntersection(id, time, simulator.agentCopy(loc));
 		}
 
 		if (nextIntersection == null) {
-			throw new Exception("agent.move() did not return a next location");
+			throw new Exception("FleetManager did not return a next location");
 		}
 
 		if (!loc.road.to.isAdjacent(nextIntersection)) {
@@ -131,6 +151,14 @@ public class AgentEvent extends Event {
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Move to " + nextRoad.to, this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Next trigger time = " + time, this);
+	}
+
+	private void navigateToNearestIntersection() {
+		startSearchTime = time;
+
+		fleetManager.onAgentIntroduced(id, simulator.agentCopy(loc), time);
+
+		moveToEndIntersection();
 	}
 
 	private boolean isArrivingPickupLoc() {
@@ -150,19 +178,29 @@ public class AgentEvent extends Event {
 		isPickup = true;
 		long searchTime = time - startSearchTime;
 
-		// TODO I believe this should be the time between when it become available and when it's picked-up.
-		//    This is not what is being computed here.
-		long waitTime = assignedResource.time - assignedResource.availableTime;
+		// Resource had been wiating from introductionTime (i.e. when it was available) to now (time that this
+		// pickup event triggered).
+		long waitTime = time - assignedResource.availableTime;
 
 		simulator.totalAgentSearchTime += searchTime;
 		simulator.totalResourceWaitTime += waitTime;
 
 		assignedResource.pickup(this, time);
 
-		// move to the end intersection of the current road
-		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
-		LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
-		update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
+		AgentAction action = fleetManager.onResourceAvailabilityChange(assignedResource.copyResource(), FleetManager.ResourceState.PICKED_UP, simulator.agentCopy(loc), time);
+
+		if (isValidAssignmentAction(action)) {
+			ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
+			AgentEvent agentEvent = simulator.agentMap.get(action.agentId);
+			agentEvent.assignTo(resourceEvent, time);
+		}
+
+		if (isOnSameRoad(assignedResource.dropoffLoc, loc) && loc.travelTimeFromStartIntersection <= assignedResource.dropoffLoc.travelTimeFromStartIntersection) {
+			long nextEventTime = time + (assignedResource.dropoffLoc.travelTimeFromStartIntersection - loc.travelTimeFromStartIntersection);
+			update(nextEventTime, assignedResource.dropoffLoc, State.DROPPING_OFF);
+		} else {
+			moveToEndIntersection();
+		}
 	}
 
 	/*
@@ -174,9 +212,37 @@ public class AgentEvent extends Event {
 
 		isPickup = false;
 		assignedResource.dropOff(time);
-		assignedResource = null;
 
-		// move to the end intersection of the current road
+		AgentAction action = fleetManager.onResourceAvailabilityChange(assignedResource.copyResource(), FleetManager.ResourceState.DROPPED_OFF, simulator.agentCopy(loc), time);
+
+		if (!isValidAssignmentAction(action)) {
+			assignedResource = null;
+			moveToEndIntersection();
+			return;
+		}
+
+
+		ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
+		if (action.agentId == id) {
+			assignedResource = resourceEvent;
+
+			if (isOnSameRoad(loc, assignedResource.pickupLoc) && loc.travelTimeFromStartIntersection <= assignedResource.pickupLoc.travelTimeFromStartIntersection) {
+				// Reach resource pickup location before reach the end intersection
+				long nextEventTime = assignedResource.pickupLoc.travelTimeFromStartIntersection - loc.travelTimeFromStartIntersection + time;
+				update(nextEventTime, assignedResource.pickupLoc, State.PICKING_UP);
+			} else {
+				moveToEndIntersection();
+			}
+		} else {
+			AgentEvent agentEvent = simulator.agentMap.get(action.agentId);
+			agentEvent.assignTo(resourceEvent, time);
+
+			assignedResource = null;
+			moveToEndIntersection();
+		}
+	}
+
+	private void moveToEndIntersection() {
 		long nextEventTime = time + loc.road.travelTime - loc.travelTimeFromStartIntersection;
 		LocationOnRoad nextLoc = new LocationOnRoad(loc.road, loc.road.travelTime);
 		update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
@@ -186,5 +252,21 @@ public class AgentEvent extends Event {
 		this.time = time;
 		this.loc = loc;
 		this.state = state;
+	}
+
+	private boolean isValidAssignmentAction(AgentAction agentAction) {
+		if (agentAction == null) return false;
+
+        long agentId = agentAction.agentId;
+        long resId = agentAction.resId;
+
+        AgentEvent agentEvent = simulator.agentMap.get(agentId);
+		ResourceEvent resEvent = simulator.resMap.get(resId);
+
+		return agentEvent != null && resEvent != null && !agentEvent.hasResPickup() && agentAction.getType() == AgentAction.Type.ASSIGN;
+	}
+
+	private boolean isOnSameRoad(LocationOnRoad loc1, LocationOnRoad loc2) {
+		return loc1.road.equals(loc2.road);
 	}
 }

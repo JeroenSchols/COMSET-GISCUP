@@ -36,9 +36,7 @@ public class Simulator {
 	protected CityMap mapForAgents;
 
 	// The event queue.
-	protected PriorityQueue<Event> events = new PriorityQueue<>();
-
-	protected AssignmentManager assignmentManager = new AssignmentManager();
+	private PriorityQueue<Event> events = new PriorityQueue<>();
 
 	// The set of empty agents.
 	protected TreeSet<AgentEvent> emptyAgents = new TreeSet<>(new AgentEventComparator());
@@ -108,6 +106,9 @@ public class Simulator {
 
 	protected FleetManager fleetManager;
 
+	public Map<Long, AgentEvent> agentMap = new HashMap<>();
+	public Map<Long, ResourceEvent> resMap = new HashMap<>();
+
 	/**
 	 * Constructor of the class Main. This is made such that the type of
 	 * agent/resourceAnalyzer used is not hardcoded and the users can choose
@@ -118,6 +119,14 @@ public class Simulator {
 	 */
 	public Simulator(Class<? extends FleetManager> agentClass) {
 		this.agentClass = agentClass;
+	}
+
+	public void removeEvent(Event e) {
+		events.remove(e);
+	}
+
+	public void addEvent(Event e) {
+		events.remove(e);
 	}
 
 	/**
@@ -175,14 +184,16 @@ public class Simulator {
 
 		// The simulation end time is the expiration time of the last resource.
 		// which is return by createMapWithData
-		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager, assignmentManager);
+		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager);
 
 		// Deploy agents at random locations of the map.
 		System.out.println("Randomly placing " + this.totalAgents + " agents on the map...");
-		mapWD.placeAgentsRandomly(this, fleetManager, assignmentManager);
+		mapWD.placeAgentsRandomly(this, fleetManager);
 
 		// Initialize the event queue.
 		events = mapWD.getEvents();
+
+		mappingEventId();
 	}
 
 	/**
@@ -201,15 +212,24 @@ public class Simulator {
 		try (ProgressBar pb = new ProgressBar("Progress:", 100, ProgressBarStyle.ASCII)) {
 			assert events.peek() != null;
 			simulationStartTime = simulationTime = events.peek().time;
-			while (simulationTime <= simulationEndTime) {
+			long totalSimulationTime = simulationEndTime - simulationStartTime;
+
+			while (!events.isEmpty()) {
 				assert events.peek() != null;
 				simulationTime = events.peek().time;
+
+				// Extend total simulation time for agent which is still delivering resource
+				totalSimulationTime = Math.max(totalSimulationTime, simulationTime - simulationStartTime);
+
 				Event toTrigger = events.poll();
 				pb.stepTo((long)(((float)(toTrigger.time - simulationStartTime))
-						/ (simulationEndTime - simulationStartTime) * 100.0));
-				Event e = toTrigger.trigger();
-				if (e != null) { 
-					events.add(e);
+						/ totalSimulationTime * 100.0));
+
+				if (simulationTime <= simulationEndTime || (toTrigger instanceof AgentEvent && ((AgentEvent) toTrigger).hasResPickup())) {
+					Event e = toTrigger.trigger();
+					if (e != null) {
+						events.add(e);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -532,5 +552,13 @@ public class Simulator {
 //		return null;
 //	}
 
-
+	private void mappingEventId() {
+		for (Event event : events) {
+			if (event instanceof AgentEvent) {
+				agentMap.put(event.id, (AgentEvent) event);
+			} else if (event instanceof ResourceEvent) {
+				resMap.put(event.id, (ResourceEvent) event);
+			}
+		}
+	}
 }
