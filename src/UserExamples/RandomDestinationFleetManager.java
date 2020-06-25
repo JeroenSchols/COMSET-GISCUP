@@ -53,6 +53,10 @@ public class RandomDestinationFleetManager extends FleetManager {
             for (Resource res : waitingResources) {
                 // If res is in waitingResources, then it must have not expired yet
                 // testing null pointer exception
+
+                //long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc);
+                // multiple by 4 so we get similar travel time as last year's version. for test only.
+                // TODO: remove this statement and uncomment the above
                 long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc)*4;
 
                 // if the resource is reachable before expiration
@@ -130,6 +134,9 @@ public class RandomDestinationFleetManager extends FleetManager {
             DistanceLocationOnLink locationOnRoad = agentLastLocation.get(id);
             DistanceLocationOnLink curLoc = trafficPattern.travelRoadForTime(agentLastAppearTime.get(id), locationOnRoad, elapseTime);
 
+            //long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc);
+            // multiple by 4 so we get similar travel time as last year's version. for test only.
+            // TODO: remove this statement and uncomment the above
             long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc)*4;
             long arriveTime = travelTime + time;
             if (arriveTime < earliest) {
