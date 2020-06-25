@@ -98,7 +98,7 @@ public class CityMap {
 	 * @param destination The location to arrive at
 	 * @return the time in seconds it takes to go from source to destination
 	 */
-	public long travelTimeBetween (LocationOnRoad source, LocationOnRoad destination) {
+	public long travelTimeBetween (StaticTravelTimeLocationOnRoad source, StaticTravelTimeLocationOnRoad destination) {
 		long travelTime = -1;
 		if (source.road == destination.road && source.travelTimeFromStartIntersection <= destination.travelTimeFromStartIntersection) { 
 			// If the two locations are on the same road and source is closer to the start intersection than destination, 
@@ -111,7 +111,13 @@ public class CityMap {
 			travelTime = travelTimeToEndIntersectionOfSource + travelTimeFromEndIntersectionOfSourceToStartIntersectionOfDestination + travelTimeFromStartIntersectionOfDestination;
 		}
 		return travelTime;
-	}        
+	}
+
+	public long travelTimeBetween(DistanceLocationOnLink source, DistanceLocationOnLink destination) {
+		StaticTravelTimeLocationOnRoad sourceTravelTimeLocation = new StaticTravelTimeLocationOnRoad(source);
+		StaticTravelTimeLocationOnRoad destinationTravelTimeLocation = new StaticTravelTimeLocationOnRoad(destination);
+		return travelTimeBetween(sourceTravelTimeLocation, destinationTravelTimeLocation);
+	}
 
 	/**
 	 * @return { @code projector }

@@ -97,7 +97,7 @@ public class MapCreator {
 	 * modifies {@code vertices }
 	 *
 	 */
-	public MapCreator(String mapFile, String boundingPolygonKMLFile, double speedReduction) {
+	public MapCreator(String mapFile, String boundingPolygonKMLFile) {
 
 		boundingPolygon = getPolygonFromKML(boundingPolygonKMLFile);
 
@@ -216,9 +216,9 @@ public class MapCreator {
 						double distance = vertices.get(id1).xy.distance(vertices.get(id2).xy);
 
 						// Convert km/h to meters per second; apply speed reduction
-						vertices.get(id1).addEdge(vertices.get(id2), distance, maxSpeed * 1000 / 3600 / speedReduction);
+						vertices.get(id1).addEdge(vertices.get(id2), distance, maxSpeed * 1000 / 3600);
 						if (!oneway) {
-							vertices.get(id2).addEdge(vertices.get(id1), distance, maxSpeed * 1000 / 3600 / speedReduction);
+							vertices.get(id2).addEdge(vertices.get(id1), distance, maxSpeed * 1000 / 3600);
 						}
 					}
 				}
@@ -454,6 +454,8 @@ public class MapCreator {
 	 * Create roads to connect intersections
 	 */
 	public void createRoads() {
+		int duplicates = 0;
+		ArrayList<Road> roadsToRemove = new ArrayList<Road>();
 		for (Intersection intersection : intersections.values()) {
 			Vertex vertex = intersection.vertex;
 			for (Link link : vertex.linksMapFrom.values()) {
@@ -473,15 +475,51 @@ public class MapCreator {
 						}
 					}
 				}
-				// add the link that connects to the end intersection
+
 				road.addLink(currentLink);
 				road.to = currentLink.to.intersection;
-				intersection.roadsMapFrom.put(road.to, road);
-				road.to.roadsMapTo.put(intersection,  road);
+
+				// check if there is duplicate from-to pair
+				// in the case of duplicate, keep the shorter road
+				Road toAbandon = null;
+				for (Road aRoad : intersection.roadsMapFrom.values()) {
+					if (aRoad.to.id == road.to.id) {
+						if (road.travelTime >= aRoad.travelTime) {
+							// abandon new road
+							toAbandon = road;
+						} else {
+							// abandon old road
+							toAbandon = aRoad;
+						}
+						break;
+					}
+				}
+				if (toAbandon != null) {
+					roadsToRemove.add(toAbandon);
+				}
+				if (toAbandon == null || toAbandon.id != road.id) {
+					// add new road
+					intersection.roadsMapFrom.put(road.to, road);
+					road.to.roadsMapTo.put(intersection, road);
+				}
 			}
+		}
+		for (Road road : roadsToRemove) {
+			removeRoad(road);
 		}
 	}
 
+	public void removeRoad(Road road) {
+		// remove intermediate vertices
+		for (int link_order = 0; link_order < road.links.size() - 1; link_order++) {
+			vertices.remove(road.links.get(link_order).to.id);
+		}
+		// remove the from-links of the start vertex
+		Link firstLink = road.links.get(0);
+		firstLink.from.linksMapFrom.remove(firstLink.to);
+		Link lastLink = road.links.get(road.links.size() - 1);
+		lastLink.to.linksMapTo.remove(lastLink.from);
+	}
 	/**
 	 * Removes all dead end vertices, i.e. the vertices that do not have 
 	 * incoming links or outgoing links.

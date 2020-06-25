@@ -65,12 +65,21 @@ public class Main {
                 System.exit(1);
             }
 
-            double speedReduction = 1.0;
-            String speedReductionArg = prop.getProperty("comset.speed_reduction").trim();
-            if (speedReductionArg != null) {
-                speedReduction = Double.parseDouble(speedReductionArg);
+            long trafficPatternEpoch = 900; // in seconds
+            String trafficPatternEpochArg = prop.getProperty("comset.traffic_pattern_epoch").trim();
+            if (trafficPatternEpochArg != null) {
+                trafficPatternEpoch = Long.parseLong(trafficPatternEpochArg);
             } else {
-                System.out.println("The speed reduction must be specified the configuration file.");
+                System.out.println("The traffic pattern epoch must be specified the configuration file.");
+                System.exit(1);
+            }
+
+            long trafficPatternStep = 60; // in seconds
+            String trafficPatternStepArg = prop.getProperty("comset.traffic_pattern_step").trim();
+            if (trafficPatternStepArg != null) {
+                trafficPatternStep = Long.parseLong(trafficPatternStepArg);
+            } else {
+                System.out.println("The traffic pattern step must be specified the configuration file.");
                 System.exit(1);
             }
 
@@ -98,7 +107,7 @@ public class Main {
             }
 
             simulator.configure(mapJSONFile, datasetFile, numberOfAgents, boundingPolygonKMLFile,
-                    resourceMaximumLifeTime, agentPlacementSeed, speedReduction);
+                    resourceMaximumLifeTime, agentPlacementSeed, trafficPatternEpoch, trafficPatternStep);
 
             simulator.run();
 

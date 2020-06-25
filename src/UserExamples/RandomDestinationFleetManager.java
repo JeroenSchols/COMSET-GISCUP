@@ -6,7 +6,7 @@ import java.util.*;
 
 public class RandomDestinationFleetManager extends FleetManager {
     private Map<Long, Long> agentLastAppearTime = new HashMap<>();
-    private Map<Long, LocationOnRoad> agentLastLocation = new HashMap<>();
+    private Map<Long, DistanceLocationOnLink> agentLastLocation = new HashMap<>();
     private Map<Long, Resource> resourceAssignment = new HashMap<>();
     private Set<Resource> waitingResources = new TreeSet<>(Comparator.comparingLong((Resource r) -> r.id));
     private Set<Long> availableAgent = new TreeSet<>(Comparator.comparingLong((Long id) -> id));
@@ -18,7 +18,7 @@ public class RandomDestinationFleetManager extends FleetManager {
 
 
     @Override
-    public void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time) {
+    public void onAgentIntroduced(long agentId, DistanceLocationOnLink currentLoc, long time) {
         agentLastAppearTime.put(agentId, time);
         agentLastLocation.put(agentId, currentLoc);
         availableAgent.add(agentId);
@@ -32,7 +32,7 @@ public class RandomDestinationFleetManager extends FleetManager {
     @Override
     public AgentAction onResourceAvailabilityChange(Resource resource,
                                                     ResourceState state,
-                                                    LocationOnRoad currentLoc,
+                                                    DistanceLocationOnLink currentLoc,
                                                     long time) {
 
         AgentAction action = AgentAction.doNothing();
@@ -53,7 +53,7 @@ public class RandomDestinationFleetManager extends FleetManager {
             for (Resource res : waitingResources) {
                 // If res is in waitingResources, then it must have not expired yet
                 // testing null pointer exception
-                long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc);
+                long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc)*4;
 
                 // if the resource is reachable before expiration
                 long arriveTime = time + travelTime;
@@ -84,7 +84,7 @@ public class RandomDestinationFleetManager extends FleetManager {
     }
 
     @Override
-    public Intersection onReachIntersection(long agentId, long time, LocationOnRoad currentLoc) {
+    public Intersection onReachIntersection(long agentId, long time, DistanceLocationOnLink currentLoc) {
         agentLastAppearTime.put(agentId, time);
 
         LinkedList<Intersection> route = agentRoutes.getOrDefault(agentId, new LinkedList<>());
@@ -95,14 +95,14 @@ public class RandomDestinationFleetManager extends FleetManager {
         }
 
         Intersection nextLocation = route.poll();
-        Road nextRoad = currentLoc.road.to.roadTo(nextLocation);
-        LocationOnRoad locationOnRoad = new LocationOnRoad(nextRoad, 0);
+        Road nextRoad = currentLoc.link.road.to.roadTo(nextLocation);
+        DistanceLocationOnLink locationOnRoad = new DistanceLocationOnLink(nextRoad.links.get(0), 0);
         agentLastLocation.put(agentId, locationOnRoad);
         return nextLocation;
     }
 
     @Override
-    public Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc,
+    public Intersection onReachIntersectionWithResource(long agentId, long time, DistanceLocationOnLink currentLoc,
                                                         Resource resource) {
         agentLastAppearTime.put(agentId, time);
 
@@ -114,8 +114,8 @@ public class RandomDestinationFleetManager extends FleetManager {
         }
 
         Intersection nextLocation = route.poll();
-        Road nextRoad = currentLoc.road.to.roadTo(nextLocation);
-        LocationOnRoad locationOnRoad = new LocationOnRoad(nextRoad, 0);
+        Road nextRoad = currentLoc.link.road.to.roadTo(nextLocation);
+        DistanceLocationOnLink locationOnRoad = new DistanceLocationOnLink(nextRoad.links.get(0), 0);
         agentLastLocation.put(agentId, locationOnRoad);
         return nextLocation;
     }
@@ -127,10 +127,10 @@ public class RandomDestinationFleetManager extends FleetManager {
             if (!agentLastLocation.containsKey(id)) continue;
 
             long elapseTime = time - agentLastAppearTime.get(id);
-            LocationOnRoad locationOnRoad = agentLastLocation.get(id);
-            LocationOnRoad curLoc = new LocationOnRoad(locationOnRoad.road, locationOnRoad.travelTimeFromStartIntersection + elapseTime);
+            DistanceLocationOnLink locationOnRoad = agentLastLocation.get(id);
+            DistanceLocationOnLink curLoc = trafficPattern.travelRoadForTime(agentLastAppearTime.get(id), locationOnRoad, elapseTime);
 
-            long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc);
+            long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc)*4;
             long arriveTime = travelTime + time;
             if (arriveTime < earliest) {
                 bestAgent = id;
@@ -145,12 +145,12 @@ public class RandomDestinationFleetManager extends FleetManager {
         }
     }
 
-    LinkedList<Intersection> planRoute(long agentId, LocationOnRoad currentLocation) {
+    LinkedList<Intersection> planRoute(long agentId, DistanceLocationOnLink currentLocation) {
         Resource assignedRes = resourceAssignment.get(agentId);
 
         if (assignedRes != null) {
-            Intersection sourceIntersection = currentLocation.road.to;
-            Intersection destinationIntersection = assignedRes.pickupLoc.road.from;
+            Intersection sourceIntersection = currentLocation.link.road.to;
+            Intersection destinationIntersection = assignedRes.pickupLoc.link.road.from;
             LinkedList<Intersection> shortestTravelTimePath = map.shortestTravelTimePath(sourceIntersection,
                     destinationIntersection);
             shortestTravelTimePath.poll(); // Ensure that route.get(0) != currentLocation.road.to.
@@ -160,20 +160,20 @@ public class RandomDestinationFleetManager extends FleetManager {
         }
     }
 
-    LinkedList<Intersection> planRouteToTarget(LocationOnRoad source, LocationOnRoad destination) {
-        Intersection sourceIntersection = source.road.to;
-        Intersection destinationIntersection = destination.road.from;
+    LinkedList<Intersection> planRouteToTarget(DistanceLocationOnLink source, DistanceLocationOnLink destination) {
+        Intersection sourceIntersection = source.link.road.to;
+        Intersection destinationIntersection = destination.link.road.from;
         LinkedList<Intersection> shortestTravelTimePath = map.shortestTravelTimePath(sourceIntersection,
                 destinationIntersection);
         shortestTravelTimePath.poll(); // Ensure that route.get(0) != currentLocation.road.to.
         return shortestTravelTimePath;
     }
 
-    LinkedList<Intersection> getRandomRoute(long agentId, LocationOnRoad currentLocation) {
+    LinkedList<Intersection> getRandomRoute(long agentId, DistanceLocationOnLink currentLocation) {
         Random random = agentRnd.getOrDefault(agentId, new Random(agentId));
         agentRnd.put(agentId, random);
 
-        Intersection sourceIntersection = currentLocation.road.to;
+        Intersection sourceIntersection = currentLocation.link.road.to;
         int destinationIndex = random.nextInt(map.intersections().size());
         Intersection[] intersectionArray =
                 map.intersections().values().toArray(new Intersection[0]);

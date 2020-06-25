@@ -67,9 +67,13 @@ public class MapWithData {
 		try {
             for (Resource resource : resourcesParsed) {
 				// map matching
-				LocationOnRoad pickupMatch = mapMatch(resource.getPickupLon(), resource.getPickupLat());
-				LocationOnRoad dropoffMatch = mapMatch(resource.getDropoffLon(), resource.getDropoffLat());
+				DistanceLocationOnLink pickupMatch = mapMatch(resource.getPickupLon(), resource.getPickupLat());
+				DistanceLocationOnLink dropoffMatch = mapMatch(resource.getDropoffLon(), resource.getDropoffLat());
+				// TODO: won't need trip time
 				long tripTime = simulator.getMap().travelTimeBetween(pickupMatch, dropoffMatch);
+
+				resource.setPickupLocation(pickupMatch);
+				resource.setDropoffLocation(dropoffMatch);
 
 				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), tripTime, simulator, fleetManager);
 				events.add(ev);
@@ -78,28 +82,31 @@ public class MapWithData {
 				if (resource.getTime() < earliestResourceTime) {
 					earliestResourceTime = resource.getTime();
 				}
-				if (resource.getTime() + simulator.ResourceMaximumLifeTime + ev.tripTime > latestResourceTime) {
-					latestResourceTime = resource.getTime() + simulator.ResourceMaximumLifeTime + ev.tripTime;
+				//TODO: consider alo ev.triptime
+				if (resource.getTime() + simulator.ResourceMaximumLifeTime > latestResourceTime) {
+					latestResourceTime = resource.getTime() + simulator.ResourceMaximumLifeTime;
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	
+
+		TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed, simulator.trafficPatternEpoch, simulator.trafficPatternStep);
+		simulator.trafficPattern = trafficPattern;
+
+		fleetManager.setTrafficPattern(trafficPattern);
 		return latestResourceTime;
 	}
 
 	/**
 	 * Match a point to the closest location on the map
 	 */
-	public LocationOnRoad mapMatch(double longitude, double latitude) {
+	public DistanceLocationOnLink mapMatch(double longitude, double latitude) {
 		Link link = map.getNearestLink(longitude, latitude);
 		double [] xy = map.projector().fromLatLon(latitude, longitude);
 		double [] snapResult = snap(link.from.getX(), link.from.getY(), link.to.getX(), link.to.getY(), xy[0], xy[1]);
 		double distanceFromStartVertex = this.distance(snapResult[0], snapResult[1], link.from.getX(), link.from.getY());
-		long travelTimeFromStartVertex = Math.round(distanceFromStartVertex / link.length * link.travelTime);
-		long travelTimeFromStartIntersection = link.beginTime + travelTimeFromStartVertex;
-		return new LocationOnRoad(link.road, travelTimeFromStartIntersection);		
+		return new DistanceLocationOnLink(link, distanceFromStartVertex);
 	}
 
 	/**
@@ -167,13 +174,9 @@ public class MapWithData {
 		Random generator = new Random(agentPlacementRandomSeed);
 		for (int i = 0; i < simulator.totalAgents(); i++) {
 			Road road = map.roads().get(generator.nextInt(map.roads().size()));
-			long travelTimeFromStartIntersection;
-			if (road.travelTime != 0L) {
-				travelTimeFromStartIntersection = generator.nextInt((int) road.travelTime);
-			} else {
-				travelTimeFromStartIntersection = 0L;
-			}
-			LocationOnRoad locationOnRoad = new LocationOnRoad(road, travelTimeFromStartIntersection);
+			Link link = road.links.get(generator.nextInt(road.links.size()));
+			double distanceFromStartVertex = generator.nextDouble() * link.length;
+			DistanceLocationOnLink locationOnRoad = new DistanceLocationOnLink(link, distanceFromStartVertex);
 			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator, fleetManager);
 			simulator.addEmptyAgent(ev);
 			events.add(ev);
@@ -215,4 +218,65 @@ public class MapWithData {
 		return events;
 	}
 
+	private static Comparator<Resource> resourceComparator = new Comparator<Resource>() {
+		public int compare(Resource r1, Resource r2) {
+			if (r1.getTime() < r2.getTime()) {
+				return -1;
+			} else if (r1.getTime() > r2.getTime()) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+	};
+
+	public TrafficPattern buildSlidingTrafficPattern(ArrayList<Resource> resources, long epoch, long step) {
+		// sort resources by pickup
+
+		Collections.sort(resources, resourceComparator);
+		TrafficPattern trafficPattern = new TrafficPattern(epoch, step);
+		long epochBeginTime = resources.get(0).getPickupTime();
+		int beginResourceIndex = 0;
+		while (true) {
+			ArrayList<Resource> epochResources = new ArrayList<Resource>();
+			long epochEndTime = epochBeginTime + epoch;
+			int resourceIndex = beginResourceIndex;
+			while (resourceIndex < resources.size() && resources.get(resourceIndex).getPickupTime() < epochEndTime) {
+				if (resources.get(resourceIndex).getDropoffTime() < epochEndTime) {
+					epochResources.add(resources.get(resourceIndex));
+				}
+				resourceIndex += 1;
+			}
+			if (resourceIndex == resources.size()) {
+				break;
+			} else {
+				double speedFactor = getSpeedFactor(epochResources);
+				trafficPattern.addTrafficPatternItem(epochBeginTime, speedFactor);
+				//System.out.println(epochResources.size()+","+speedFactor);
+				epochBeginTime += step;
+				while (beginResourceIndex < resources.size() && resources.get(beginResourceIndex).getPickupTime() < epochBeginTime) {
+					beginResourceIndex += 1;
+				}
+			}
+		}
+		//trafficPattern.printOut();
+		return trafficPattern;
+	}
+
+	public double getSpeedFactor(ArrayList<Resource> resources) {
+		long totalActualTravelTime = 0;
+		long totalSimulatedTravelTime = 0;
+		for (Resource r : resources) {
+			long pickupTime = r.getPickupTime();
+			long dropoffTime = r.getDropoffTime();
+			long actualTravelTime = dropoffTime - pickupTime;
+
+			long simulatedTravelTime = map.travelTimeBetween(r.getPickupLocation(), r.getDropoffLocation());
+
+			totalActualTravelTime += actualTravelTime;
+			totalSimulatedTravelTime += simulatedTravelTime;
+		}
+		double speedFactor = ((double)totalSimulatedTravelTime) / totalActualTravelTime;
+		return speedFactor;
+	}
 }

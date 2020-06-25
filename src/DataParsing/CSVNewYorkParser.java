@@ -79,8 +79,8 @@ public class CSVNewYorkParser {
 			while (sc.hasNext()) {
 				sc.next();// skip first VendorID
 				long time = dateConversion(sc.next());
+				long dropoffTime = dateConversion(sc.next());
 				sc.next();// skip these fields
-				sc.next();
 				sc.next();
 				double pickupLon = Double.parseDouble(sc.next());
 				double pickupLat = Double.parseDouble(sc.next());
@@ -93,7 +93,7 @@ public class CSVNewYorkParser {
 				if (!(MapCreator.insidePolygon(pickupLon, pickupLat) && MapCreator.insidePolygon(dropoffLon, dropoffLat))) {
 					continue;
 				}
-				resources.add(new Resource(pickupLat, pickupLon, dropoffLat, dropoffLon, time)); //create new resource with the above fields
+				resources.add(new Resource(pickupLat, pickupLon, dropoffLat, dropoffLon, time, dropoffTime)); //create new resource with the above fields
 			}
 			sc.close();
 		} catch (Exception e) {
