@@ -97,7 +97,7 @@ public class MapCreator {
 	 * modifies {@code vertices }
 	 *
 	 */
-	public MapCreator(String mapFile, String boundingPolygonKMLFile) {
+	public MapCreator(String mapFile, String boundingPolygonKMLFile, long timeResolution) {
 
 		boundingPolygon = getPolygonFromKML(boundingPolygonKMLFile);
 
@@ -214,11 +214,12 @@ public class MapCreator {
 						long id2 = (long)jsonvertices.get(i+1);
 
 						double distance = vertices.get(id1).xy.distance(vertices.get(id2).xy);
-
 						// Convert km/h to meters per second; apply speed reduction
-						vertices.get(id1).addEdge(vertices.get(id2), distance, maxSpeed * 1000 / 3600);
+						vertices.get(id1).addEdge(vertices.get(id2), distance, maxSpeed * 1000 / 3600 / timeResolution / 4.0);
+						//vertices.get(id1).addEdge(vertices.get(id2), 5, 1.0/timeResolution);
 						if (!oneway) {
-							vertices.get(id2).addEdge(vertices.get(id1), distance, maxSpeed * 1000 / 3600);
+							vertices.get(id2).addEdge(vertices.get(id1), distance, maxSpeed * 1000 / 3600 / timeResolution / 4.0);
+							//vertices.get(id2).addEdge(vertices.get(id1), 5, 1.0/timeResolution);
 						}
 					}
 				}

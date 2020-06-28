@@ -54,10 +54,10 @@ public class RandomDestinationFleetManager extends FleetManager {
                 // If res is in waitingResources, then it must have not expired yet
                 // testing null pointer exception
 
-                //long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc);
+                long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc);
                 // multiple by 4 so we get similar travel time as last year's version. for test only.
                 // TODO: remove this statement and uncomment the above
-                long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc)*4;
+                //long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc)*4;
 
                 // if the resource is reachable before expiration
                 long arriveTime = time + travelTime;
@@ -89,6 +89,9 @@ public class RandomDestinationFleetManager extends FleetManager {
 
     @Override
     public Intersection onReachIntersection(long agentId, long time, DistanceLocationOnLink currentLoc) {
+        if (agentId == 240902L && time == 1464800008L) {
+            System.out.println("here");
+        }
         agentLastAppearTime.put(agentId, time);
 
         LinkedList<Intersection> route = agentRoutes.getOrDefault(agentId, new LinkedList<>());
@@ -134,10 +137,10 @@ public class RandomDestinationFleetManager extends FleetManager {
             DistanceLocationOnLink locationOnRoad = agentLastLocation.get(id);
             DistanceLocationOnLink curLoc = trafficPattern.travelRoadForTime(agentLastAppearTime.get(id), locationOnRoad, elapseTime);
 
-            //long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc);
+            long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc);
             // multiple by 4 so we get similar travel time as last year's version. for test only.
             // TODO: remove this statement and uncomment the above
-            long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc)*4;
+            //long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc)*4;
             long arriveTime = travelTime + time;
             if (arriveTime < earliest) {
                 bestAgent = id;
@@ -184,6 +187,12 @@ public class RandomDestinationFleetManager extends FleetManager {
         int destinationIndex = random.nextInt(map.intersections().size());
         Intersection[] intersectionArray =
                 map.intersections().values().toArray(new Intersection[0]);
+        for (int i = 0; i < intersectionArray.length; i++)
+            for (int j = i + 1; j < intersectionArray.length; j++) {
+                if (intersectionArray[i].id == intersectionArray[j].id) {
+                    System.out.println("something is wrong");
+                }
+            }
         Intersection destinationIntersection = intersectionArray[destinationIndex];
         if (destinationIntersection == sourceIntersection) {
             // destination cannot be the source

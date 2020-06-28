@@ -50,6 +50,7 @@ public class Simulator {
 	// Full path to an OSM JSON map file
 	protected String mapJSONFile;
 
+	public long timeResolution = 1;
 
 	// Full path to a TLC New York Yellow trip record file
 	protected String resourceFile = null;
@@ -157,7 +158,7 @@ public class Simulator {
 	 * @param trafficPatternStep The epoch step in seconds of traffic pattern
 	 */
 	public void configure(String mapJSONFile, String resourceFile, Long totalAgents, String boundingPolygonKMLFile,
-						  Long maximumLifeTime, long agentPlacementRandomSeed, long trafficPatternEpoch, long trafficPatternStep) {
+						  long timeResolution, long maximumLifeTime, long agentPlacementRandomSeed, long trafficPatternEpoch, long trafficPatternStep) {
 
 		this.mapJSONFile = mapJSONFile;
 
@@ -165,15 +166,17 @@ public class Simulator {
 
 		this.boundingPolygonKMLFile = boundingPolygonKMLFile;
 
-		this.ResourceMaximumLifeTime = maximumLifeTime;
+		this.timeResolution = timeResolution;
+
+		this.ResourceMaximumLifeTime = maximumLifeTime * timeResolution;
 
 		this.resourceFile = resourceFile;
 
-		this.trafficPatternEpoch = trafficPatternEpoch;
+		this.trafficPatternEpoch = trafficPatternEpoch * timeResolution;
 
-		this.trafficPatternStep = trafficPatternStep;
+		this.trafficPatternStep = trafficPatternStep * timeResolution;
 
-		MapCreator creator = new MapCreator(this.mapJSONFile, this.boundingPolygonKMLFile);
+		MapCreator creator = new MapCreator(this.mapJSONFile, this.boundingPolygonKMLFile, this.timeResolution);
 		System.out.println("Creating the map...");
 
 		creator.createMap();
@@ -392,8 +395,9 @@ public class Simulator {
 			System.out.println("Bounding polygon KML file: " + boundingPolygonKMLFile);
 			System.out.println("Number of agents: " + totalAgents);
 			System.out.println("Number of resources: " + totalResources);
-			System.out.println("Resource Maximum Life Time: " + ResourceMaximumLifeTime + " seconds");
+			System.out.println("Resource Maximum Life Time: " + ResourceMaximumLifeTime / timeResolution + " seconds");
 			System.out.println("Agent class: " + agentClass.getName());
+			System.out.println("Time resolution: " + timeResolution);
 
 			System.out.println("\n***Statistics***");
 		
@@ -407,22 +411,22 @@ public class Simulator {
 				}
 
 				sb.append("average agent search time: ")
-						.append(Math.floorDiv(totalAgentSearchTime + totalRemainTime,
+						.append(Math.floorDiv((totalAgentSearchTime + totalRemainTime) / timeResolution,
 								(totalAssignments + emptyAgents.size())))
 						.append(" seconds \n");
 				sb.append("average resource wait time: ")
-						.append(Math.floorDiv(totalResourceWaitTime, totalResources))
+						.append(Math.floorDiv(totalResourceWaitTime / timeResolution, totalResources))
 						.append(" seconds \n");
 				sb.append("resource expiration percentage: ")
 						.append(Math.floorDiv(expiredResources * 100, totalResources))
 						.append("%\n");
 				sb.append("\n");
 				sb.append("average agent cruise time: ")
-						.append(Math.floorDiv(totalAgentCruiseTime, totalAssignments)).append(" seconds \n");
+						.append(Math.floorDiv(totalAgentCruiseTime / timeResolution, totalAssignments)).append(" seconds \n");
 				sb.append("average agent approach time: ")
-						.append(Math.floorDiv(totalAgentApproachTime, totalAssignments)).append(" seconds \n");
+						.append(Math.floorDiv(totalAgentApproachTime / timeResolution, totalAssignments)).append(" seconds \n");
 				sb.append("average resource trip time: ")
-						.append(Math.floorDiv(totalResourceTripTime, totalAssignments))
+						.append(Math.floorDiv(totalResourceTripTime / timeResolution, totalAssignments))
 						.append(" seconds \n");
 				sb.append("total number of assignments: ")
 						.append(totalAssignments)
@@ -539,16 +543,13 @@ public class Simulator {
 	 * @param locationOnRoad the location to make a copy for
 	 * @return an agent copy of the location 
 	 */
-	public DistanceLocationOnLink agentCopy(DistanceLocationOnLink locationOnRoad) {
-		// TODO: make a real copy. For now just use the original copy
-		return locationOnRoad;
-		/*
-		Intersection from = mapForAgents.intersections().get(locationOnRoad.road.from.id);
-		Intersection to = mapForAgents.intersections().get(locationOnRoad.road.to.id);
+	public DistanceLocationOnLink agentCopy(DistanceLocationOnLink distancelocationOnLink) {
+		Intersection from = mapForAgents.intersections().get(distancelocationOnLink.link.road.from.id);
+		Intersection to = mapForAgents.intersections().get(distancelocationOnLink.link.road.to.id);
 		Road roadAgentCopy = from.roadsMapFrom.get(to);
-		return new LocationOnRoad(roadAgentCopy, locationOnRoad.travelTimeFromStartIntersection);
-
-		 */
+		int linkOrder = distancelocationOnLink.link.road.links.indexOf(distancelocationOnLink.link);
+		Link linkAgentCopy = roadAgentCopy.links.get(linkOrder);
+		return new DistanceLocationOnLink(linkAgentCopy, distancelocationOnLink.distanceFromStartVertex);
 	}
 
 	public FleetManager createFleetManager() {

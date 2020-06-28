@@ -77,6 +77,9 @@ public class Intersection implements Comparable<Intersection> {
 	 *          the other
 	 */
 	public Road roadTo (Intersection i) throws IllegalArgumentException {
+		if (roadsMapFrom == null || i == null) {
+			System.out.println("here");
+		}
 		if (roadsMapFrom.keySet().contains(i)) {
 			return roadsMapFrom.get(i);
 		}

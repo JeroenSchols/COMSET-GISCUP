@@ -337,6 +337,9 @@ public class CityMap {
 				Intersection intersectionFrom = intersectionsCopy.get(road.from.id);
 				Intersection intersectionTo = intersectionsCopy.get(road.to.id);
 				Road roadCopy = new Road(road, intersectionFrom, intersectionTo, linksCopy);
+				for (Link linkCopy : linksCopy) {
+					linkCopy.road = roadCopy;
+				}
 				intersectionFrom.roadsMapFrom.put(intersectionTo,  roadCopy);
 				intersectionTo.roadsMapTo.put(intersectionFrom, roadCopy);
 			}

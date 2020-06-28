@@ -44,6 +44,15 @@ public class Main {
                 System.exit(1);
             }
 
+            String timeResolutionArg = prop.getProperty("comset.time_resolution").trim();
+            long timeResolution = -1;
+            if (timeResolutionArg != null) {
+                timeResolution = Long.parseLong(timeResolutionArg);
+            } else {
+                System.out.println("The time resolution must be specified in the configuration file.");
+                System.exit(1);
+            }
+
             String boundingPolygonKMLFile = prop.getProperty("comset.bounding_polygon_KML_file").trim();
             if (boundingPolygonKMLFile == null) {
                 System.out.println("The bounding polygon KML file must be specified in the configuration file.");
@@ -107,7 +116,7 @@ public class Main {
             }
 
             simulator.configure(mapJSONFile, datasetFile, numberOfAgents, boundingPolygonKMLFile,
-                    resourceMaximumLifeTime, agentPlacementSeed, trafficPatternEpoch, trafficPatternStep);
+                    timeResolution, resourceMaximumLifeTime, agentPlacementSeed, trafficPatternEpoch, trafficPatternStep);
 
             simulator.run();
 

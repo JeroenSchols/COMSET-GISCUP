@@ -63,12 +63,13 @@ public class MapWithData {
 	public long createMapWithData(Simulator simulator, FleetManager fleetManager) {
  
 		CSVNewYorkParser parser = new CSVNewYorkParser(resourceFile, zoneId);
-		ArrayList<Resource> resourcesParsed = parser.parse();
+		ArrayList<Resource> resourcesParsed = parser.parse(simulator.timeResolution);
 		try {
             for (Resource resource : resourcesParsed) {
 				// map matching
 				DistanceLocationOnLink pickupMatch = mapMatch(resource.getPickupLon(), resource.getPickupLat());
 				DistanceLocationOnLink dropoffMatch = mapMatch(resource.getDropoffLon(), resource.getDropoffLat());
+
 				// TODO: won't need trip time
 				long tripTime = simulator.getMap().travelTimeBetween(pickupMatch, dropoffMatch);
 
@@ -83,15 +84,17 @@ public class MapWithData {
 					earliestResourceTime = resource.getTime();
 				}
 				//TODO: consider alo ev.triptime
-				if (resource.getTime() + simulator.ResourceMaximumLifeTime > latestResourceTime) {
-					latestResourceTime = resource.getTime() + simulator.ResourceMaximumLifeTime;
+				if (resource.getTime() + simulator.ResourceMaximumLifeTime +1000*simulator.timeResolution > latestResourceTime) {
+					latestResourceTime = resource.getTime() + simulator.ResourceMaximumLifeTime + 1000*simulator.timeResolution;
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed, simulator.trafficPatternEpoch, simulator.trafficPatternStep);
+		//TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed, simulator.trafficPatternEpoch, simulator.trafficPatternStep);
+		TrafficPattern trafficPattern = new TrafficPattern(900, 60);
+		trafficPattern.addTrafficPatternItem(0, 1.0);
 		simulator.trafficPattern = trafficPattern;
 
 		fleetManager.setTrafficPattern(trafficPattern);
@@ -106,7 +109,9 @@ public class MapWithData {
 		double [] xy = map.projector().fromLatLon(latitude, longitude);
 		double [] snapResult = snap(link.from.getX(), link.from.getY(), link.to.getX(), link.to.getY(), xy[0], xy[1]);
 		double distanceFromStartVertex = this.distance(snapResult[0], snapResult[1], link.from.getX(), link.from.getY());
-		return new DistanceLocationOnLink(link, distanceFromStartVertex);
+		Link firstLink = link.road.links.get(0);
+		return new DistanceLocationOnLink(firstLink, 0.0);
+		//return new DistanceLocationOnLink(link, distanceFromStartVertex);
 	}
 
 	/**
@@ -173,10 +178,20 @@ public class MapWithData {
 
 		Random generator = new Random(agentPlacementRandomSeed);
 		for (int i = 0; i < simulator.totalAgents(); i++) {
-			Road road = map.roads().get(generator.nextInt(map.roads().size()));
-			Link link = road.links.get(generator.nextInt(road.links.size()));
-			double distanceFromStartVertex = generator.nextDouble() * link.length;
-			DistanceLocationOnLink locationOnRoad = new DistanceLocationOnLink(link, distanceFromStartVertex);
+			int road_id = generator.nextInt(map.roads().size());
+			Road road = map.roads().get(road_id);
+			long travelTimeFromStartIntersection;
+			if (road.travelTime != 0L) {
+				travelTimeFromStartIntersection = generator.nextInt((int) road.travelTime);
+			} else {
+				travelTimeFromStartIntersection = 0L;
+			}
+			//Link link = road.links.get(generator.nextInt(road.links.size()));
+			//double distanceFromStartVertex = generator.nextDouble() * link.length;
+			Link firstLink = road.links.get(0);
+			DistanceLocationOnLink locationOnRoad = new DistanceLocationOnLink(firstLink, 0);
+			//DistanceLocationOnLink locationOnRoad = new DistanceLocationOnLink(link, distanceFromStartVertex);
+
 			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator, fleetManager);
 			simulator.addEmptyAgent(ev);
 			events.add(ev);

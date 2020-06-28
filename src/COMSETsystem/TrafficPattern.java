@@ -21,7 +21,7 @@ public class TrafficPattern {
 
     public void addTrafficPatternItem(long epochBeginTime, double speedFactor) {
         //TrafficPatternItem trafficPatternItem = new TrafficPatternItem(epochBeginTime, speedFactor);
-        TrafficPatternItem trafficPatternItem = new TrafficPatternItem(epochBeginTime, 0.25);
+        TrafficPatternItem trafficPatternItem = new TrafficPatternItem(epochBeginTime, 1.0);
         trafficPattern.add(trafficPatternItem);
     }
 
@@ -112,7 +112,7 @@ public class TrafficPattern {
 
     // dynamic travel time from a location on a road to the end of the road
     public long roadTravelTimeToEndIntersection(long time, DistanceLocationOnLink loc) {
-        return (long)roadTravelTimeToEndIntersection((double)time, loc);
+        return (long)Math.round(roadTravelTimeToEndIntersection((double)time, loc));
     }
 
     // dynamic travel time from a location on a road to the end of the road
@@ -123,7 +123,7 @@ public class TrafficPattern {
     }
 
     public long roadTravelTimeFromStartIntersection(long time, DistanceLocationOnLink loc) {
-        return (long)roadTravelTimeFromStartIntersection((double)time, loc);
+        return (long)Math.round(roadTravelTimeFromStartIntersection((double)time, loc));
     }
 
     public double roadTravelTimeFromStartIntersection(double time, DistanceLocationOnLink loc) {
@@ -133,12 +133,16 @@ public class TrafficPattern {
     }
 
     public long roadForwardTravelTime(long time, DistanceLocationOnLink loc1, DistanceLocationOnLink loc2) {
-        return (long)roadForwardTravelTime((double)time, loc1, loc2);
+        return (long)Math.round(roadForwardTravelTime((double)time, loc1, loc2));
     }
 
-    // TODO: to be tested
     public double roadForwardTravelTime(double time, DistanceLocationOnLink loc1, DistanceLocationOnLink loc2) {
         assert loc1.upstreamTo(loc2) : "loc1 must be upstream to loc2";
+
+        if (loc1.link.id == loc2.link.id) {
+            // loc1 and loc2 are on the same link
+            return linkForwardTravelTime(time, loc1.link, loc2.distanceFromStartVertex - loc1.distanceFromStartVertex);
+        }
 
         Road road = loc1.link.road;
         Link link1 = loc1.link;

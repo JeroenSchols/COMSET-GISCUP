@@ -65,7 +65,7 @@ public class CSVNewYorkParser {
 	 * 
 	 * @return ArrayList<Resource>
 	 */
-	public ArrayList<Resource> parse() {
+	public ArrayList<Resource> parse(long timeResolution) {
 
 		try {
 			Scanner sc = new Scanner(new File(path));   //scanner will scan the file specified by path
@@ -76,10 +76,11 @@ public class CSVNewYorkParser {
 			//each line in input file will contain 4 tokens for the scanner and will be in the format : latitude longitude time type
 			//per line of input file we will create a new TimestampAgRe object
 			// and save the 4 tokens of each line in the corresponding field of the TimestampAgRe object
+			int resource_count = 0;
 			while (sc.hasNext()) {
 				sc.next();// skip first VendorID
-				long time = dateConversion(sc.next());
-				long dropoffTime = dateConversion(sc.next());
+				long time = dateConversion(sc.next()) * timeResolution;
+				long dropoffTime = dateConversion(sc.next()) * timeResolution;
 				sc.next();// skip these fields
 				sc.next();
 				double pickupLon = Double.parseDouble(sc.next());
@@ -94,6 +95,9 @@ public class CSVNewYorkParser {
 					continue;
 				}
 				resources.add(new Resource(pickupLat, pickupLon, dropoffLat, dropoffLon, time, dropoffTime)); //create new resource with the above fields
+				resource_count += 1;
+				//if (resource_count == 100)
+				//	break;
 			}
 			sc.close();
 		} catch (Exception e) {
