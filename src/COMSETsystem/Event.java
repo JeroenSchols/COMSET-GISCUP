@@ -73,14 +73,22 @@ public abstract class Event implements Comparable<Event> {
 			return -1;
 		else if (this.time > o.time)
 			return 1;
-		else if (this.id < o.id) // tie on time; compare id
-			return -1;
-		else if (this.id > o.id)
-			return 1;
-		else {
-			System.out.println("Duplicate event exception");
-			System.exit(1);
-			return 0;
+		else if (this.getClass().equals(o.getClass())) { // tie on time; if two events are the same type compare id
+			if (this.id < o.id)
+				return -1;
+			else if (this.id > o.id)
+				return 1;
+			else {
+				System.out.println("Duplicate event exception");
+				System.exit(1);
+				return 0;
+			}
+		} else {
+			if (this instanceof AgentEvent) { // if not, agent should be processed first
+				return -1;
+			} else {
+				return 1;
+			}
 		}
 	}
 }
