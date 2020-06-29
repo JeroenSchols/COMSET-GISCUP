@@ -50,6 +50,8 @@ public class AgentEvent extends Event {
 	 */
 	long startSearchTime;
 
+	long assignTime;
+
 	/**
 	 * Constructor for class AgentEvent.
 	 *
@@ -93,6 +95,7 @@ public class AgentEvent extends Event {
 
 	void assignTo(ResourceEvent resourceEvent, long time) {
 		this.assignedResource = resourceEvent;
+		this.assignTime = time;
 
 		if (isOnSameRoad(loc, assignedResource.pickupLoc)) {
 
@@ -189,6 +192,8 @@ public class AgentEvent extends Event {
 
 		simulator.totalAgentSearchTime += searchTime;
 		simulator.totalResourceWaitTime += waitTime;
+		simulator.totalAgentCruiseTime += assignTime - startSearchTime;
+		simulator.totalAgentApproachTime += time - assignTime;
 
 		assignedResource.pickup(this, time);
 
@@ -232,6 +237,7 @@ public class AgentEvent extends Event {
 		if (action.agentId == id) {
 			assignedResource = resourceEvent;
 			assignedResource.assignTo(this);
+			assignTime = time;
 
 			if (isOnSameRoad(loc, assignedResource.pickupLoc) && loc.travelTimeFromStartIntersection <= assignedResource.pickupLoc.travelTimeFromStartIntersection) {
 				// Reach resource pickup location before reach the end intersection
