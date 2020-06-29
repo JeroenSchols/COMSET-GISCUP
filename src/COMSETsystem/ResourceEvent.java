@@ -101,18 +101,20 @@ public class ResourceEvent extends Event {
 			System.out.println("intersection is null");
 		}
 
-		Event e = null;
+
 		switch (state) {
 			case AVAILABLE:
 				available();
-				e = this;
-				break;
+				return this;
 			case EXPIRED:
+			default:
 				expire();
-				break;
+				return null;
 		}
+	}
 
-		return e;
+	void assignTo(AgentEvent event) {
+		this.agentEvent = event;
 	}
 
 	Resource copyResource() {
@@ -121,7 +123,6 @@ public class ResourceEvent extends Event {
 
 	void pickup(AgentEvent agentEvent, long pickupTime) {
 		this.pickupTime = pickupTime;
-		this.agentEvent = agentEvent;
 		simulator.removeEvent(this);
 	}
 
@@ -165,6 +166,7 @@ public class ResourceEvent extends Event {
 
 		if (agentEvent != null && resourceEvent != null && !agentEvent.hasResPickup()) {
 			agentEvent.assignTo(resourceEvent, time);
+			resourceEvent.assignTo(agentEvent);
 		}
 	}
 }

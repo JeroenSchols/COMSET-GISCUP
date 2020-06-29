@@ -76,6 +76,11 @@ public class RandomDestinationFleetManager extends FleetManager {
             agentLastAppearTime.put(resource.assignedAgentId, time);
         } else if (state == ResourceState.EXPIRED) {
             waitingResources.remove(resource);
+            if (resource.assignedAgentId != -1) {
+                agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
+                availableAgent.add(resource.assignedAgentId);
+                resourceAssignment.remove(resource.assignedAgentId);
+            }
         } else if (state == ResourceState.PICKED_UP) {
             agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
         }

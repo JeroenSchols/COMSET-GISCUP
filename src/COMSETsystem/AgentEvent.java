@@ -74,7 +74,11 @@ public class AgentEvent extends Event {
 				navigate();
 				break;
 			case PICKING_UP:
-				pickup();
+				if (assignedResource == null) {
+					moveToEndIntersection();
+				} else {
+					pickup();
+				}
 				break;
 			case DROPPING_OFF:
 				dropOff();
@@ -99,9 +103,8 @@ public class AgentEvent extends Event {
 						assignedResource.pickupLoc.travelTimeFromStartIntersection - currentLocTravelFromStart + time;
 				update(nextEventTime, assignedResource.pickupLoc, State.PICKING_UP);
 
-				if (simulator.getEvents().remove(this)) {
-					simulator.getEvents().add(this);
-				}
+				simulator.removeEvent(this);
+				simulator.getEvents().add(this);
 			}
 		}
 	}
@@ -109,7 +112,9 @@ public class AgentEvent extends Event {
 	void abortResource() {
 		assignedResource = null;
 		isPickup = false;
-		moveToEndIntersection();
+		if (state == State.PICKING_UP) {
+			moveToEndIntersection();
+		}
 	}
 
 	void navigate() throws Exception {
@@ -193,6 +198,7 @@ public class AgentEvent extends Event {
 			ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
 			AgentEvent agentEvent = simulator.agentMap.get(action.agentId);
 			agentEvent.assignTo(resourceEvent, time);
+			resourceEvent.assignTo(agentEvent);
 		}
 
 		if (isOnSameRoad(assignedResource.dropoffLoc, loc) && loc.travelTimeFromStartIntersection <= assignedResource.dropoffLoc.travelTimeFromStartIntersection) {
@@ -225,6 +231,7 @@ public class AgentEvent extends Event {
 		ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
 		if (action.agentId == id) {
 			assignedResource = resourceEvent;
+			assignedResource.assignTo(this);
 
 			if (isOnSameRoad(loc, assignedResource.pickupLoc) && loc.travelTimeFromStartIntersection <= assignedResource.pickupLoc.travelTimeFromStartIntersection) {
 				// Reach resource pickup location before reach the end intersection
@@ -236,6 +243,7 @@ public class AgentEvent extends Event {
 		} else {
 			AgentEvent agentEvent = simulator.agentMap.get(action.agentId);
 			agentEvent.assignTo(resourceEvent, time);
+			resourceEvent.assignTo(agentEvent);
 
 			assignedResource = null;
 			moveToEndIntersection();
