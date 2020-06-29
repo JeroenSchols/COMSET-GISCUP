@@ -6,6 +6,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.TreeSet;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -198,6 +200,38 @@ public class AgentEventTest {
 
         assertEquals(AgentEvent.State.PICKING_UP, newEvent.state);
 
+    }
+
+    @Test
+    public void testExpiration_withAssignedAgent() throws Exception {
+        LocationOnRoad locationOnRoad = spy(new LocationOnRoad(testMap.roadFrom1to2, testMap.roadFrom1to2.travelTime));
+        when(locationOnRoad.toString()).thenReturn("123,45t");
+
+        mockSimulator.waitingResources = new TreeSet<>();
+
+        ResourceEvent resource = new ResourceEvent(
+                new LocationOnRoad(testMap.roadFrom2to3, 20L),
+                new LocationOnRoad(testMap.roadFrom2to3, 10L),
+                100L,
+                1000L,
+                mockSimulator,
+                mockFleetManager
+        );
+        resource.state = ResourceEvent.State.EXPIRED;
+
+        AgentEvent spyEvent = spy(new AgentEvent(locationOnRoad, 101L, mockSimulator, mockFleetManager));
+        spyEvent.state = AgentEvent.State.INTERSECTION_REACHED;
+
+        spyEvent.assignTo(resource, 101L);
+        resource.assignTo(spyEvent);
+
+        spyEvent = (AgentEvent) spyEvent.trigger();
+
+        assertEquals(AgentEvent.State.PICKING_UP, spyEvent.state);
+
+        resource.trigger();
+
+        assertEquals(AgentEvent.State.INTERSECTION_REACHED, spyEvent.state);
     }
 
     @Test
