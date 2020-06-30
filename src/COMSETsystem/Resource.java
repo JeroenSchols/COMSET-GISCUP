@@ -4,11 +4,11 @@ public class Resource {
     public long id;
     public long expirationTime;
     public long assignedAgentId;
-    public DistanceLocationOnLink pickupLoc;
-    public DistanceLocationOnLink dropOffLoc;
+    public LocationOnRoad pickupLoc;
+    public LocationOnRoad dropOffLoc;
 
-    public Resource(long id, long expirationTime, long assignedAgentId, DistanceLocationOnLink pickupLoc,
-                    DistanceLocationOnLink dropOffLoc) {
+    public Resource(long id, long expirationTime, long assignedAgentId, LocationOnRoad pickupLoc,
+                    LocationOnRoad dropOffLoc) {
         this.id = id;
         this.expirationTime = expirationTime;
         this.assignedAgentId = assignedAgentId;

@@ -13,11 +13,9 @@ public class StaticTravelTimeLocationOnRoad {
         this.travelTimeFromStartIntersection = travelTimeFromStartIntersection;
     }
 
-    public StaticTravelTimeLocationOnRoad(DistanceLocationOnLink distanceLocationOnLink) {
-        this.road = distanceLocationOnLink.link.road;
-        Link link = distanceLocationOnLink.link;
-        long travelTimeFromStartVertex = Math.round(distanceLocationOnLink.distanceFromStartVertex / link.length * link.travelTime);
-        this.travelTimeFromStartIntersection = link.beginTime + travelTimeFromStartVertex;
+    public StaticTravelTimeLocationOnRoad(LocationOnRoad locationOnRoad) {
+        this.road = locationOnRoad.road;
+        this.travelTimeFromStartIntersection = Math.round(locationOnRoad.distanceFromStartIntersection / road.speed);
     }
 
     /**

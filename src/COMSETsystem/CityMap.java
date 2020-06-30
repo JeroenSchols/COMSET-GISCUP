@@ -113,7 +113,7 @@ public class CityMap {
 		return travelTime;
 	}
 
-	public long travelTimeBetween(DistanceLocationOnLink source, DistanceLocationOnLink destination) {
+	public long travelTimeBetween(LocationOnRoad source, LocationOnRoad destination) {
 		StaticTravelTimeLocationOnRoad sourceTravelTimeLocation = new StaticTravelTimeLocationOnRoad(source);
 		StaticTravelTimeLocationOnRoad destinationTravelTimeLocation = new StaticTravelTimeLocationOnRoad(destination);
 		return travelTimeBetween(sourceTravelTimeLocation, destinationTravelTimeLocation);

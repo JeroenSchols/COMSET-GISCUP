@@ -33,7 +33,7 @@ public abstract class BaseAgent {
 	 * 
 	 * This method must be overridden in every Agent implementation.
 	 */
-	public abstract void planSearchRoute(DistanceLocationOnLink currentLocation, long currentTime);
+	public abstract void planSearchRoute(LocationOnRoad currentLocation, long currentTime);
 
 	/**
 	 * This method must be overridden in every Agent implementation in order to return an Intersection that the
@@ -47,7 +47,7 @@ public abstract class BaseAgent {
 	 * @param currentTime The time at which the method is invoked
 	 * @return Intersection that the Agent is going to move to
 	 */
-	public abstract Intersection nextIntersection(DistanceLocationOnLink currentLocation, long currentTime);
+	public abstract Intersection nextIntersection(LocationOnRoad currentLocation, long currentTime);
 
 	/**
 	 * This method is to inform the agent that it is assigned to a resource. No action is necessary from the agent. The agent
@@ -62,5 +62,5 @@ public abstract class BaseAgent {
 	 * @param resourcePickupLocation The pickup location of the resource to which the agent is assigned
 	 * @param resourceDropoffLocation The dropoff location of the resource to which the agent is assigned
 	 */
-	public abstract void assignedTo(DistanceLocationOnLink currentLocation, long currentTime, long resourceId, DistanceLocationOnLink resourcePickupLocation, DistanceLocationOnLink resourceDropoffLocation);
+	public abstract void assignedTo(LocationOnRoad currentLocation, long currentTime, long resourceId, LocationOnRoad resourcePickupLocation, LocationOnRoad resourceDropoffLocation);
 }

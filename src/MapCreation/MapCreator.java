@@ -215,11 +215,9 @@ public class MapCreator {
 
 						double distance = vertices.get(id1).xy.distance(vertices.get(id2).xy);
 						// Convert km/h to meters per second; apply speed reduction
-						vertices.get(id1).addEdge(vertices.get(id2), distance, maxSpeed * 1000 / 3600 / timeResolution / 4.0);
-						//vertices.get(id1).addEdge(vertices.get(id2), 5, 1.0/timeResolution);
+						vertices.get(id1).addEdge(vertices.get(id2), distance, maxSpeed * 1000 / 3600 / timeResolution);
 						if (!oneway) {
-							vertices.get(id2).addEdge(vertices.get(id1), distance, maxSpeed * 1000 / 3600 / timeResolution / 4.0);
-							//vertices.get(id2).addEdge(vertices.get(id1), 5, 1.0/timeResolution);
+							vertices.get(id2).addEdge(vertices.get(id1), distance, maxSpeed * 1000 / 3600 / timeResolution);
 						}
 					}
 				}
@@ -695,6 +693,10 @@ public class MapCreator {
 			for (Road road : inter.getRoadsFrom()) {
 				roads.add(road);
 			}
+		}
+		// set road speed
+		for (Road road : roads) {
+			road.setSpeed();
 		}
 		return new CityMap(intersections, roads, projector, kdTree);
 	}

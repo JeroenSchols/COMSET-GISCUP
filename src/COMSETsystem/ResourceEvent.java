@@ -23,9 +23,9 @@ public class ResourceEvent extends Event {
 	}
 
 	// The location at which the resource is introduced.
-	public final DistanceLocationOnLink pickupLoc;
+	public final LocationOnRoad pickupLoc;
 	// The destination of the resource.
-	public final DistanceLocationOnLink dropoffLoc;
+	public final LocationOnRoad dropoffLoc;
 
 	// The time at which the resource is introduced
 	final long availableTime;
@@ -40,7 +40,7 @@ public class ResourceEvent extends Event {
 	State state;
 
 	// The shortest travel time from pickupLoc to dropoffLoc
-	public long tripTime;
+	public long staticTripTime;
 
 	/**
 	 * Constructor for class ResourceEvent.
@@ -50,13 +50,13 @@ public class ResourceEvent extends Event {
 	 * @param dropoffLoc this resource's destination location.
 	 * @param simulator the simulator object.
 	 */
-	public ResourceEvent(DistanceLocationOnLink pickupLoc, DistanceLocationOnLink dropoffLoc, long availableTime, long tripTime, Simulator simulator, FleetManager fleetManager) {
+	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long staticTripTime, Simulator simulator, FleetManager fleetManager) {
 		super(availableTime, simulator, fleetManager);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
 		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
-		this.tripTime = tripTime;
+		this.staticTripTime = staticTripTime;
 		this.state = State.AVAILABLE;
 	}
 
@@ -66,16 +66,16 @@ public class ResourceEvent extends Event {
 	 * @param availableTime time when this agent is introduced to the system.
 	 * @param pickupLoc this resource's location when it becomes available.
 	 * @param dropoffLoc this resource's destination location.
-	 * @param tripTime the time it takes to go from pickUpLoc and dropoffLoc
+	 * @param staticTripTime the time it takes to go from pickUpLoc and dropoffLoc under static traffic condition
 	 * @param simulator the simulator object.
 	 */
-	protected ResourceEvent(DistanceLocationOnLink pickupLoc, DistanceLocationOnLink dropoffLoc, long availableTime, long tripTime, Simulator simulator) {
+	protected ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long staticTripTime, Simulator simulator) {
 		super(availableTime);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
 		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
-		this.tripTime = tripTime;
+		this.staticTripTime = staticTripTime;
 	}
 
 	/**
@@ -128,6 +128,9 @@ public class ResourceEvent extends Event {
 	void dropOff(long dropOffTime) {
 		long tripTime = dropOffTime - pickupTime;
 		simulator.totalResourceTripTime += tripTime;
+		simulator.resourcePickupTimes.add(pickupTime);
+		long staticTripTime = simulator.map.travelTimeBetween(pickupLoc, dropoffLoc);
+		simulator.resourceSpeedRatios.add(staticTripTime / (double)tripTime);
 		simulator.totalAssignments++;
 	}
 
@@ -151,6 +154,7 @@ public class ResourceEvent extends Event {
 		processAgentAction(action);
 		if (agentEvent != null) {
 			agentEvent.abortResource();
+			simulator.totalAbortions++;
 		}
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 	}

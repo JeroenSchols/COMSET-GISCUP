@@ -50,7 +50,9 @@ public class Simulator {
 	// Full path to an OSM JSON map file
 	protected String mapJSONFile;
 
-	public long timeResolution = 1;
+	public long timeResolution = 1000000;
+
+	public boolean dynamicTraffic;
 
 	// Full path to a TLC New York Yellow trip record file
 	protected String resourceFile = null;
@@ -97,6 +99,15 @@ public class Simulator {
 
 	// The number of assignments that have been made.
 	protected long totalAssignments = 0;
+
+	// The number of times an agent fails to reach an assigned resource before the resource expires
+	protected long totalAbortions = 0;
+
+	// TODO: the following lines are for debug and need to be removed
+	protected ArrayList<Long> resourcePickupTimes = new ArrayList<Long>();
+	protected ArrayList<Double> resourceSpeedRatios = new ArrayList<Double>();
+	protected ArrayList<Long> agentStartApproachTimes = new ArrayList<Long>();
+	protected ArrayList<Double> agentApproachSpeedRatios = new ArrayList<Double>();
 
 	// A list of all the agents in the system. Not really used in COMSET, but maintained for
 	// a user's debugging purposes.
@@ -158,7 +169,7 @@ public class Simulator {
 	 * @param trafficPatternStep The epoch step in seconds of traffic pattern
 	 */
 	public void configure(String mapJSONFile, String resourceFile, Long totalAgents, String boundingPolygonKMLFile,
-						  long timeResolution, long maximumLifeTime, long agentPlacementRandomSeed, long trafficPatternEpoch, long trafficPatternStep) {
+						  long maximumLifeTime, long agentPlacementRandomSeed, boolean dynamicTraffic, long trafficPatternEpoch, long trafficPatternStep) {
 
 		this.mapJSONFile = mapJSONFile;
 
@@ -166,11 +177,11 @@ public class Simulator {
 
 		this.boundingPolygonKMLFile = boundingPolygonKMLFile;
 
-		this.timeResolution = timeResolution;
-
 		this.ResourceMaximumLifeTime = maximumLifeTime * timeResolution;
 
 		this.resourceFile = resourceFile;
+
+		this.dynamicTraffic = dynamicTraffic;
 
 		this.trafficPatternEpoch = trafficPatternEpoch * timeResolution;
 
@@ -431,11 +442,23 @@ public class Simulator {
 				sb.append("total number of assignments: ")
 						.append(totalAssignments)
 						.append("\n");
+				sb.append("total number of abortions: ")
+						.append(totalAbortions)
+						.append("\n");
 			} else {
 				sb.append("No resources.\n");
 			}
 
 			System.out.print(sb.toString());
+
+			// TODO: for debug, to be deleted
+			for (int i = 0; i < resourcePickupTimes.size(); i++) {
+				System.out.println(resourcePickupTimes.get(i)+","+resourceSpeedRatios.get(i));
+			}
+			System.out.println("**********");
+			for (int i = 0; i < agentStartApproachTimes.size(); i++) {
+				System.out.println(agentStartApproachTimes.get(i)+","+agentApproachSpeedRatios.get(i));
+			}
 		}
 	}
 
@@ -543,13 +566,11 @@ public class Simulator {
 	 * @param locationOnRoad the location to make a copy for
 	 * @return an agent copy of the location 
 	 */
-	public DistanceLocationOnLink agentCopy(DistanceLocationOnLink distancelocationOnLink) {
-		Intersection from = mapForAgents.intersections().get(distancelocationOnLink.link.road.from.id);
-		Intersection to = mapForAgents.intersections().get(distancelocationOnLink.link.road.to.id);
+	public LocationOnRoad agentCopy(LocationOnRoad locationOnRoad) {
+		Intersection from = mapForAgents.intersections().get(locationOnRoad.road.from.id);
+		Intersection to = mapForAgents.intersections().get(locationOnRoad.road.to.id);
 		Road roadAgentCopy = from.roadsMapFrom.get(to);
-		int linkOrder = distancelocationOnLink.link.road.links.indexOf(distancelocationOnLink.link);
-		Link linkAgentCopy = roadAgentCopy.links.get(linkOrder);
-		return new DistanceLocationOnLink(linkAgentCopy, distancelocationOnLink.distanceFromStartVertex);
+		return new LocationOnRoad(roadAgentCopy, locationOnRoad.distanceFromStartIntersection);
 	}
 
 	public FleetManager createFleetManager() {

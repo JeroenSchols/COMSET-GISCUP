@@ -17,6 +17,8 @@ public class Road implements Comparable<Road> {
 	public double length;
 	// travel time of the road segment in seconds
 	public long travelTime;
+	// average speed in m/s
+	public double speed;
 	// a unique id
 	public long id;
 
@@ -66,6 +68,11 @@ public class Road implements Comparable<Road> {
 		this.travelTime += link.travelTime;
 	}
 
+	public void setSpeed() {
+		// compute the average speed
+		this.speed = this.length / this.travelTime;
+	}
+
 	/**
 	 * checks whether this is the same road as some specified road
 	 * 
@@ -92,6 +99,6 @@ public class Road implements Comparable<Road> {
 	 * @return string of information
 	 */
 	public String toString() {
-		return from + "," + to + "," + length + "," + travelTime;
+		return from + "," + to + "," + length + "," + travelTime + "," + speed;
 	}
 }

@@ -36,7 +36,7 @@ public class AgentEvent extends Event {
 	}
 
 	// The location at which the event is triggered.
-	DistanceLocationOnLink loc;
+	LocationOnRoad loc;
 
 	ResourceEvent assignedResource;
 
@@ -50,12 +50,16 @@ public class AgentEvent extends Event {
 	 */
 	long startSearchTime;
 
+	// TODO: for test, to remove
+	long startApproachTime;
+	LocationOnRoad startApproachLocation;
+
 	/**
 	 * Constructor for class AgentEvent.
 	 *
 	 * @param loc this agent's location when it becomes empty.
 	 */
-	public AgentEvent(DistanceLocationOnLink loc, long startedSearch, Simulator simulator, FleetManager fleetManager) {
+	public AgentEvent(LocationOnRoad loc, long startedSearch, Simulator simulator, FleetManager fleetManager) {
 		super(startedSearch, simulator, fleetManager);
 		this.loc = loc;
 		this.startSearchTime = startedSearch;
@@ -88,7 +92,11 @@ public class AgentEvent extends Event {
 	}
 
 	void assignTo(ResourceEvent resourceEvent, long time) {
+
 		this.assignedResource = resourceEvent;
+
+		startApproachTime = time;
+		startApproachLocation = loc;
 
 		if (isOnSameRoad(loc, assignedResource.pickupLoc)) {
 			// check if loc is closer to the start of the road than pickupLoc
@@ -139,13 +147,13 @@ public class AgentEvent extends Event {
 			throw new Exception("FleetManager did not return a next location");
 		}
 
-		if (!loc.link.road.to.isAdjacent(nextIntersection)) {
+		if (!loc.road.to.isAdjacent(nextIntersection)) {
 			throw new Exception("move not made to an adjacent location");
 		}
 
 		// set location and time of the next trigger
-		Road nextRoad = loc.link.road.to.roadTo(nextIntersection);
-		DistanceLocationOnLink nextLocation = DistanceLocationOnLink.createFromRoadEnd(nextRoad);
+		Road nextRoad = loc.road.to.roadTo(nextIntersection);
+		LocationOnRoad nextLocation = LocationOnRoad.createFromRoadEnd(nextRoad);
 		long travelTime = fleetManager.trafficPattern.roadTravelTimeFromStartIntersection(time, nextLocation);
 		update(time + travelTime, nextLocation, State.INTERSECTION_REACHED);
 
@@ -162,11 +170,11 @@ public class AgentEvent extends Event {
 	}
 
 	private boolean isArrivingPickupLoc() {
-		return !isPickup && assignedResource != null && assignedResource.pickupLoc.link.road.from.equals(loc.link.road.to);
+		return !isPickup && assignedResource != null && assignedResource.pickupLoc.road.from.equals(loc.road.to);
 	}
 
 	private boolean isArrivingDropOffLoc() {
-		return isPickup && assignedResource != null && assignedResource.dropoffLoc.link.road.from.equals(loc.link.road.to);
+		return isPickup && assignedResource != null && assignedResource.dropoffLoc.road.from.equals(loc.road.to);
 	}
 
 	/*
@@ -177,6 +185,11 @@ public class AgentEvent extends Event {
 
 		isPickup = true;
 		long searchTime = time - startSearchTime;
+
+		long approachTime = time - startApproachTime;
+		simulator.agentStartApproachTimes.add(startApproachTime);
+		long staticApproachTime = simulator.map.travelTimeBetween(startApproachLocation, loc);
+		simulator.agentApproachSpeedRatios.add(staticApproachTime / (double)approachTime);
 
 		// Resource had been wiating from introductionTime (i.e. when it was available) to now (time that this
 		// pickup event triggered).
@@ -209,6 +222,7 @@ public class AgentEvent extends Event {
 	 */
 	private void dropOff() {
 		startSearchTime = time;
+
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
 
 		isPickup = false;
@@ -225,6 +239,9 @@ public class AgentEvent extends Event {
 
 		ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
 		if (action.agentId == id) {
+			startApproachTime = time;
+			startApproachLocation = loc;
+
 			assignedResource = resourceEvent;
 
 			if (isOnSameRoad(loc, assignedResource.pickupLoc) && loc.upstreamTo(assignedResource.pickupLoc)) {
@@ -247,11 +264,11 @@ public class AgentEvent extends Event {
 	private void moveToEndIntersection() {
 		long travelTime = fleetManager.trafficPattern.roadTravelTimeToEndIntersection(time, loc);
 		long nextEventTime = time + travelTime;
-		DistanceLocationOnLink nextLoc = DistanceLocationOnLink.createFromRoadEnd(loc.link.road);
+		LocationOnRoad nextLoc = LocationOnRoad.createFromRoadEnd(loc.road);
 		update(nextEventTime, nextLoc, State.INTERSECTION_REACHED);
 	}
 
-	private void update(long time, DistanceLocationOnLink loc, State state) {
+	private void update(long time, LocationOnRoad loc, State state) {
 		this.time = time;
 		this.loc = loc;
 		this.state = state;
@@ -269,7 +286,7 @@ public class AgentEvent extends Event {
 		return agentEvent != null && resEvent != null && !agentEvent.hasResPickup() && agentAction.getType() == AgentAction.Type.ASSIGN;
 	}
 
-	private boolean isOnSameRoad(DistanceLocationOnLink loc1, DistanceLocationOnLink loc2) {
-		return loc1.link.road.equals(loc2.link.road);
+	private boolean isOnSameRoad(LocationOnRoad loc1, LocationOnRoad loc2) {
+		return loc1.road.equals(loc2.road);
 	}
 }

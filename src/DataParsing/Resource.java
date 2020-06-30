@@ -1,6 +1,6 @@
 package DataParsing;
 
-import COMSETsystem.DistanceLocationOnLink;
+import COMSETsystem.LocationOnRoad;
 
 /**
  *
@@ -11,8 +11,8 @@ public class Resource extends TimestampAbstract {
 	private double dropffLat; // drop-off latitude of resource
 	private double dropffLon; // drop-off longitude of resource
 
-	private DistanceLocationOnLink pickupLocation; // pickup location on road
-	private DistanceLocationOnLink dropffLocation; // dropff location on road
+	private LocationOnRoad pickupLocation; // pickup location on road
+	private LocationOnRoad dropffLocation; // dropff location on road
 	private long dropffTime; // drop-off time of resource from raw data
 
 	//constructor initiating each field of the Resource record type
@@ -42,13 +42,13 @@ public class Resource extends TimestampAbstract {
 		return dropffLon;
 	}
 
-	public void setPickupLocation(DistanceLocationOnLink pickupLocation) { this.pickupLocation = pickupLocation; }
+	public void setPickupLocation(LocationOnRoad pickupLocation) { this.pickupLocation = pickupLocation; }
 
-	public void setDropoffLocation(DistanceLocationOnLink dropffLocation) { this.dropffLocation = dropffLocation; }
+	public void setDropoffLocation(LocationOnRoad dropffLocation) { this.dropffLocation = dropffLocation; }
 
-	public DistanceLocationOnLink getPickupLocation() { return pickupLocation; }
+	public LocationOnRoad getPickupLocation() { return pickupLocation; }
 
-	public DistanceLocationOnLink getDropoffLocation() { return dropffLocation; }
+	public LocationOnRoad getDropoffLocation() { return dropffLocation; }
 
 	public long getPickupTime() { return this.getTime(); }
 
