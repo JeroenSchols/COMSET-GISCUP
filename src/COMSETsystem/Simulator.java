@@ -452,13 +452,13 @@ public class Simulator {
 			System.out.print(sb.toString());
 
 			// TODO: for debug, to be deleted
-			for (int i = 0; i < resourcePickupTimes.size(); i++) {
-				System.out.println(resourcePickupTimes.get(i)+","+resourceSpeedRatios.get(i));
-			}
-			System.out.println("**********");
-			for (int i = 0; i < agentStartApproachTimes.size(); i++) {
-				System.out.println(agentStartApproachTimes.get(i)+","+agentApproachSpeedRatios.get(i));
-			}
+//			for (int i = 0; i < resourcePickupTimes.size(); i++) {
+//				System.out.println(resourcePickupTimes.get(i)+","+resourceSpeedRatios.get(i));
+//			}
+//			System.out.println("**********");
+//			for (int i = 0; i < agentStartApproachTimes.size(); i++) {
+//				System.out.println(agentStartApproachTimes.get(i)+","+agentApproachSpeedRatios.get(i));
+//			}
 		}
 	}
 
