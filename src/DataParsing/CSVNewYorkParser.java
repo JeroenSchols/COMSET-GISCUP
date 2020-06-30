@@ -65,7 +65,7 @@ public class CSVNewYorkParser {
 	 * 
 	 * @return ArrayList<Resource>
 	 */
-	public ArrayList<Resource> parse() {
+	public ArrayList<Resource> parse(long timeResolution) {
 
 		try {
 			Scanner sc = new Scanner(new File(path));   //scanner will scan the file specified by path
@@ -78,7 +78,7 @@ public class CSVNewYorkParser {
 			// and save the 4 tokens of each line in the corresponding field of the TimestampAgRe object
 			while (sc.hasNext()) {
 				sc.next();// skip first VendorID
-				long time = dateConversion(sc.next());
+				long time = dateConversion(sc.next()) * timeResolution;
 				sc.next();// skip these fields
 				sc.next();
 				sc.next();

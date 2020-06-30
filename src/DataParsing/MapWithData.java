@@ -63,7 +63,7 @@ public class MapWithData {
 	public long createMapWithData(Simulator simulator, FleetManager fleetManager) {
  
 		CSVNewYorkParser parser = new CSVNewYorkParser(resourceFile, zoneId);
-		ArrayList<Resource> resourcesParsed = parser.parse();
+		ArrayList<Resource> resourcesParsed = parser.parse(simulator.timeResolution);
 		try {
             for (Resource resource : resourcesParsed) {
 				// map matching

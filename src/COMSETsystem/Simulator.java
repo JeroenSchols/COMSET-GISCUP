@@ -97,6 +97,8 @@ public class Simulator {
 	// The number of assignments that have been made.
 	protected long totalAssignments = 0;
 
+	public long timeResolution = 1;
+
 	// A list of all the agents in the system. Not really used in COMSET, but maintained for
 	// a user's debugging purposes.
 	ArrayList<BaseAgent> agents;
@@ -108,6 +110,11 @@ public class Simulator {
 
 	public Map<Long, AgentEvent> agentMap = new HashMap<>();
 	public Map<Long, ResourceEvent> resMap = new HashMap<>();
+
+	protected ArrayList<Long> resourcePickupTimes = new ArrayList<Long>();
+	protected ArrayList<Double> resourceSpeedRatios = new ArrayList<Double>();
+	protected ArrayList<Long> agentStartApproachTimes = new ArrayList<Long>();
+	protected ArrayList<Double> agentApproachSpeedRatios = new ArrayList<Double>();
 
 	/**
 	 * Constructor of the class Main. This is made such that the type of
@@ -155,11 +162,11 @@ public class Simulator {
 
 		this.boundingPolygonKMLFile = boundingPolygonKMLFile;
 
-		this.ResourceMaximumLifeTime = maximumLifeTime;
+		this.ResourceMaximumLifeTime = maximumLifeTime * timeResolution;
 
 		this.resourceFile = resourceFile;
 
-		MapCreator creator = new MapCreator(this.mapJSONFile, this.boundingPolygonKMLFile, speedReduction);
+		MapCreator creator = new MapCreator(this.mapJSONFile, this.boundingPolygonKMLFile, speedReduction, this.timeResolution);
 		System.out.println("Creating the map...");
 
 		creator.createMap();
@@ -376,8 +383,9 @@ public class Simulator {
 			System.out.println("Bounding polygon KML file: " + boundingPolygonKMLFile);
 			System.out.println("Number of agents: " + totalAgents);
 			System.out.println("Number of resources: " + totalResources);
-			System.out.println("Resource Maximum Life Time: " + ResourceMaximumLifeTime + " seconds");
+			System.out.println("Resource Maximum Life Time: " + ResourceMaximumLifeTime / timeResolution + " seconds");
 			System.out.println("Agent class: " + agentClass.getName());
+			System.out.println("Time resolution: " + timeResolution);
 
 			System.out.println("\n***Statistics***");
 		
@@ -391,22 +399,22 @@ public class Simulator {
 				}
 
 				sb.append("average agent search time: ")
-						.append(Math.floorDiv(totalAgentSearchTime + totalRemainTime,
+						.append(Math.floorDiv((totalAgentSearchTime + totalRemainTime) / timeResolution,
 								(totalAssignments + emptyAgents.size())))
 						.append(" seconds \n");
 				sb.append("average resource wait time: ")
-						.append(Math.floorDiv(totalResourceWaitTime, totalResources))
+						.append(Math.floorDiv(totalResourceWaitTime / timeResolution, totalResources))
 						.append(" seconds \n");
 				sb.append("resource expiration percentage: ")
 						.append(Math.floorDiv(expiredResources * 100, totalResources))
 						.append("%\n");
 				sb.append("\n");
 				sb.append("average agent cruise time: ")
-						.append(Math.floorDiv(totalAgentCruiseTime, totalAssignments)).append(" seconds \n");
+						.append(Math.floorDiv(totalAgentCruiseTime / timeResolution, totalAssignments)).append(" seconds \n");
 				sb.append("average agent approach time: ")
-						.append(Math.floorDiv(totalAgentApproachTime, totalAssignments)).append(" seconds \n");
+						.append(Math.floorDiv(totalAgentApproachTime / timeResolution, totalAssignments)).append(" seconds \n");
 				sb.append("average resource trip time: ")
-						.append(Math.floorDiv(totalResourceTripTime, totalAssignments))
+						.append(Math.floorDiv(totalResourceTripTime / timeResolution, totalAssignments))
 						.append(" seconds \n");
 				sb.append("total number of assignments: ")
 						.append(totalAssignments)
@@ -416,6 +424,14 @@ public class Simulator {
 			}
 
 			System.out.print(sb.toString());
+
+			for (int i = 0; i < resourcePickupTimes.size(); i++) {
+				System.out.println(resourcePickupTimes.get(i)+","+resourceSpeedRatios.get(i));
+			}
+			System.out.println("**********");
+			for (int i = 0; i < agentStartApproachTimes.size(); i++) {
+				System.out.println(agentStartApproachTimes.get(i)+","+agentApproachSpeedRatios.get(i));
+			}
 		}
 	}
 

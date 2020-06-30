@@ -130,6 +130,10 @@ public class ResourceEvent extends Event {
 		long tripTime = dropOffTime - pickupTime;
 		simulator.totalResourceTripTime += tripTime;
 		simulator.totalAssignments++;
+
+		simulator.resourcePickupTimes.add(pickupTime);
+		long staticTripTime = simulator.map.travelTimeBetween(pickupLoc, dropoffLoc);
+		simulator.resourceSpeedRatios.add(staticTripTime / (double)tripTime);
 	}
 
 	private void available() {
