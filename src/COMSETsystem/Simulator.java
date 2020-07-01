@@ -6,6 +6,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.logging.Logger;
+
 import me.tongfei.progressbar.*;
 
 
@@ -111,10 +113,11 @@ public class Simulator {
 	public Map<Long, AgentEvent> agentMap = new HashMap<>();
 	public Map<Long, ResourceEvent> resMap = new HashMap<>();
 
-	protected ArrayList<Long> resourcePickupTimes = new ArrayList<Long>();
-	protected ArrayList<Double> resourceSpeedRatios = new ArrayList<Double>();
-	protected ArrayList<Long> agentStartApproachTimes = new ArrayList<Long>();
-	protected ArrayList<Double> agentApproachSpeedRatios = new ArrayList<Double>();
+	protected ArrayList<Long> resourcePickupTimes = new ArrayList<>();
+	protected ArrayList<Double> resourceSpeedRatios = new ArrayList<>();
+	protected ArrayList<Long> agentStartApproachTimes = new ArrayList<>();
+	protected ArrayList<Long> staticApproachTime = new ArrayList<>();
+	protected ArrayList<Double> agentApproachSpeedRatios = new ArrayList<>();
 
 	/**
 	 * Constructor of the class Main. This is made such that the type of
@@ -425,13 +428,39 @@ public class Simulator {
 
 			System.out.print(sb.toString());
 
+			// TODO: Remove debugging code below when done.
+			double l2 = 0.0;
+			int count = 0;
 			for (int i = 0; i < resourcePickupTimes.size(); i++) {
-				System.out.println(resourcePickupTimes.get(i)+","+resourceSpeedRatios.get(i));
+//				System.out.println(resourcePickupTimes.get(i)+","+resourceSpeedRatios.get(i));
+				double x = resourceSpeedRatios.get(i);
+				if (Double.isFinite(x)) {
+					l2 += x * x;
+					count++;
+				}
 			}
+			System.out.println("Rescoure Speed Ratios RMS =" + Math.sqrt(l2) / count
+					+ "; Count =" + count);
 			System.out.println("**********");
+			l2 = 0.0;
+			count = 0;
+			int below_threshold_count = 0;
+			double threshold = 0.02;
 			for (int i = 0; i < agentStartApproachTimes.size(); i++) {
-				System.out.println(agentStartApproachTimes.get(i)+","+agentApproachSpeedRatios.get(i));
+				double x = agentApproachSpeedRatios.get(i);
+				if (Double.isFinite(x) && x < threshold) {
+					System.out.println(agentStartApproachTimes.get(i) + "," +
+							staticApproachTime.get(i) + "," + x);
+					below_threshold_count++;
+				}
+				if (Double.isFinite(x)) {
+					l2 += x * x;
+					count++;
+				}
 			}
+			System.out.println("THreshold ="+threshold+"; Count ="+below_threshold_count);
+			System.out.println("Agent Approach Speed Ratios RMS =" + Math.sqrt(l2) / count
+					+ "; Count =" + count);
 		}
 	}
 

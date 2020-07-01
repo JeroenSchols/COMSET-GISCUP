@@ -90,7 +90,7 @@ public class ResourceEvent extends Event {
 	 * agent from the PriorityQueue and from activeAgents.
 	 */
 	@Override
-	Event trigger() {
+	Event trigger() throws Exception {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id + " triggered at time " + time, this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + this.pickupLoc + "," + this.dropoffLoc, this);
 
@@ -136,7 +136,7 @@ public class ResourceEvent extends Event {
 		simulator.resourceSpeedRatios.add(staticTripTime / (double)tripTime);
 	}
 
-	private void available() {
+	private void available() throws Exception {
 		++simulator.totalResources;
 
 		simulator.waitingResources.add(this);
@@ -146,7 +146,7 @@ public class ResourceEvent extends Event {
 		state = State.EXPIRED;
 	}
 
-	private void expire() {
+	private void expire() throws Exception {
 		simulator.expiredResources++;
 		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
 		simulator.waitingResources.remove(this);
@@ -160,7 +160,7 @@ public class ResourceEvent extends Event {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 	}
 
-	private void processAgentAction(AgentAction agentAction) {
+	private void processAgentAction(AgentAction agentAction) throws Exception {
 		if (agentAction == null) {
 			return;
 		}

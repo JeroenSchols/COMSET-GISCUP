@@ -32,7 +32,7 @@ public class AgentEvent extends Event {
 		INITIAL,
 		INTERSECTION_REACHED,
 		PICKING_UP,
-		DROPPING_OFF
+		DROPPING_OFF,
 	}
 
 	// The location at which the event is triggered.
@@ -95,10 +95,10 @@ public class AgentEvent extends Event {
 		return isPickup;
 	}
 
-	void assignTo(ResourceEvent resourceEvent, long time) {
+	void assignTo(ResourceEvent resourceEvent, long time) throws Exception {
 		this.assignedResource = resourceEvent;
 		this.assignTime = time;
-		this.assignLocation = loc;
+		this.assignLocation = getCurrentLocation(time);
 
 		if (isOnSameRoad(loc, assignedResource.pickupLoc)) {
 
@@ -113,6 +113,26 @@ public class AgentEvent extends Event {
 				simulator.getEvents().add(this);
 			}
 		}
+	}
+
+	/**
+	 * Compute this agent's current location based on the current time. This should work for agent's
+	 * in all states.
+	 * @param time This should be the current simulation time.
+	 * @return the current location
+	 */
+	private LocationOnRoad getCurrentLocation(long time) throws UnsupportedOperationException {
+
+		switch(state) {
+			case INTERSECTION_REACHED:
+			case PICKING_UP:
+			case DROPPING_OFF:
+				break;
+			default:
+				throw new UnsupportedOperationException("getCurrentLocation called on unsupported state");
+		}
+		return new LocationOnRoad(loc.road,
+				loc.travelTimeFromStartIntersection - (this.time - time));
 	}
 
 	void abortResource() {
@@ -183,7 +203,7 @@ public class AgentEvent extends Event {
 	/*
 	 * The handler of a pick up event.
 	 */
-	private void pickup() {
+	private void pickup() throws Exception {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Pickup at " + loc, this);
 
 		isPickup = true;
@@ -192,6 +212,7 @@ public class AgentEvent extends Event {
 		long approachTime = time - assignTime;
 		simulator.agentStartApproachTimes.add(assignTime);
 		long staticApproachTime = simulator.map.travelTimeBetween(assignLocation, loc);
+		simulator.staticApproachTime.add(staticApproachTime);
 		simulator.agentApproachSpeedRatios.add(staticApproachTime / (double)approachTime);
 
 		// Resource had been wiating from introductionTime (i.e. when it was available) to now (time that this
@@ -225,7 +246,7 @@ public class AgentEvent extends Event {
 	/*
 	 * The handler of a drop off event.
 	 */
-	private void dropOff() {
+	private void dropOff() throws Exception {
 		startSearchTime = time;
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
 
