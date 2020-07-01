@@ -32,7 +32,7 @@ public class AgentEvent extends Event {
 		INITIAL,
 		INTERSECTION_REACHED,
 		PICKING_UP,
-		DROPPING_OFF
+		DROPPING_OFF,
 	}
 
 	// The location at which the event is triggered.
@@ -84,7 +84,11 @@ public class AgentEvent extends Event {
 				navigate();
 				break;
 			case PICKING_UP:
-				pickup();
+				if (assignedResource == null) {
+					moveToEndIntersection();
+				} else {
+					pickup();
+				}
 				break;
 			case DROPPING_OFF:
 				dropOff();
@@ -97,9 +101,10 @@ public class AgentEvent extends Event {
 		return isPickup;
 	}
 
-	void assignTo(ResourceEvent resourceEvent, long assignTime) {
+	void assignTo(ResourceEvent resourceEvent, long assignTime) throws UnsupportedOperationException {
 
 		this.assignedResource = resourceEvent;
+
 
 		this.assignTime = assignTime;
 		long elapseTime = assignTime - lastAppearTime;
@@ -110,23 +115,49 @@ public class AgentEvent extends Event {
 		LocationOnRoad currentLocation = simulator.trafficPattern.travelRoadForTime(lastAppearTime, lastAppearLocation, elapseTime);
 		this.assignLocation = currentLocation;
 
+		// FIXME: This needs to be reconciled above by moving the call to travelRoadForTime
+		//   in getCurrentLocation
+		// this.assignLocation = getCurrentLocation(time);
+
 		if (isOnSameRoad(loc, assignedResource.pickupLoc)) {
 			// check if loc is closer to the start of the road than pickupLoc
 			if (currentLocation.upstreamTo(assignedResource.pickupLoc)) {
 				long nextEventTime = assignTime + simulator.trafficPattern.roadForwardTravelTime(assignTime, currentLocation, assignedResource.pickupLoc);
 				update(nextEventTime, assignedResource.pickupLoc, State.PICKING_UP, assignTime, currentLocation);
 
-				if (simulator.getEvents().remove(this)) {
-					simulator.getEvents().add(this);
-				}
+				simulator.removeEvent(this);
+				simulator.getEvents().add(this);
 			}
 		}
+	}
+
+	// FIXME: This should call the code marked in the above FIXME
+	/**
+	 * Compute this agent's current location based on the current time. This should work for agent's
+	 * in all states.
+	 * @param time This should be the current simulation time.
+	 * @return the current location
+	 */
+	private LocationOnRoad getCurrentLocation(long time) throws UnsupportedOperationException {
+
+		switch(state) {
+			case INTERSECTION_REACHED:
+			case PICKING_UP:
+			case DROPPING_OFF:
+				break;
+			default:
+				throw new UnsupportedOperationException("getCurrentLocation called on unsupported state");
+		}
+		return new LocationOnRoad(loc.road,
+				loc.travelTimeFromStartIntersection - (this.time - time));
 	}
 
 	void abortResource() {
 		assignedResource = null;
 		isPickup = false;
-		moveToEndIntersection();
+		if (state == State.PICKING_UP) {
+			moveToEndIntersection();
+		}
 	}
 
 	void navigate() throws Exception {
@@ -192,16 +223,16 @@ public class AgentEvent extends Event {
 	/*
 	 * The handler of a pick up event.
 	 */
-	private void pickup() {
+	private void pickup() throws UnsupportedOperationException {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Pickup at " + loc, this);
 
 		isPickup = true;
 		long searchTime = time - startSearchTime;
-
 		long approachTime = time - assignTime;
-		simulator.agentStartApproachTimes.add(assignTime);
 		long staticApproachTime = simulator.map.travelTimeBetween(assignLocation, loc);
-		simulator.agentApproachSpeedRatios.add(staticApproachTime / (double)approachTime);
+
+		simulator.approachTimeCheckRecords.add(new Simulator.IntervalCheckRecord(
+				assignTime, approachTime, staticApproachTime));
 
 		// Resource had been wiating from introductionTime (i.e. when it was available) to now (time that this
 		// pickup event triggered).
@@ -209,6 +240,8 @@ public class AgentEvent extends Event {
 
 		simulator.totalAgentSearchTime += searchTime;
 		simulator.totalResourceWaitTime += waitTime;
+		simulator.totalAgentCruiseTime += assignTime - startSearchTime;
+		simulator.totalAgentApproachTime += time - assignTime;
 
 		assignedResource.pickup(this, time);
 
@@ -218,6 +251,7 @@ public class AgentEvent extends Event {
 			ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
 			AgentEvent agentEvent = simulator.agentMap.get(action.agentId);
 			agentEvent.assignTo(resourceEvent, time);
+			resourceEvent.assignTo(agentEvent);
 		}
 
 		if (isOnSameRoad(assignedResource.dropoffLoc, loc) && loc.upstreamTo(assignedResource.dropoffLoc)) {
@@ -232,7 +266,7 @@ public class AgentEvent extends Event {
 	/*
 	 * The handler of a drop off event.
 	 */
-	private void dropOff() {
+	private void dropOff() throws UnsupportedOperationException {
 		startSearchTime = time;
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
@@ -251,10 +285,10 @@ public class AgentEvent extends Event {
 
 		ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
 		if (action.agentId == id) {
+			assignedResource = resourceEvent;
+			assignedResource.assignTo(this);
 			assignTime = time;
 			assignLocation = loc;
-
-			assignedResource = resourceEvent;
 
 			if (isOnSameRoad(loc, assignedResource.pickupLoc) && loc.upstreamTo(assignedResource.pickupLoc)) {
 				// Reach resource pickup location before reach the end intersection
@@ -267,6 +301,7 @@ public class AgentEvent extends Event {
 		} else {
 			AgentEvent agentEvent = simulator.agentMap.get(action.agentId);
 			agentEvent.assignTo(resourceEvent, time);
+			resourceEvent.assignTo(agentEvent);
 
 			assignedResource = null;
 			moveToEndIntersection();

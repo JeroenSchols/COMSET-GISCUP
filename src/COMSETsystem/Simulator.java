@@ -6,6 +6,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.logging.Logger;
+
 import me.tongfei.progressbar.*;
 
 
@@ -129,6 +131,25 @@ public class Simulator {
 
 	public Map<Long, AgentEvent> agentMap = new HashMap<>();
 	public Map<Long, ResourceEvent> resMap = new HashMap<>();
+
+	protected static class IntervalCheckRecord {
+		public final long time;
+		public final long interval;
+		public final long expected_interval;
+
+		IntervalCheckRecord(long time, long interval, long expected_interval) {
+			this.time = time;
+			this.interval = interval;
+			this.expected_interval = expected_interval;
+		}
+
+		double ratio() {
+			return (interval == 0 && expected_interval == 0) ? 1.0 : expected_interval/(double)interval;
+		}
+	}
+
+	protected ArrayList<IntervalCheckRecord> approachTimeCheckRecords = new ArrayList<>();
+	protected ArrayList<IntervalCheckRecord> resourcePickupTimeCheckRecords = new ArrayList<>();
 
 	/**
 	 * Constructor of the class Main. This is made such that the type of
@@ -451,15 +472,48 @@ public class Simulator {
 
 			System.out.print(sb.toString());
 
-			// TODO: for debug, to be deleted
-			for (int i = 0; i < resourcePickupTimes.size(); i++) {
-				System.out.println(resourcePickupTimes.get(i)+","+resourceSpeedRatios.get(i));
+			// TODO: Remove debugging code below when done.
+
+			System.out.println("********** pickup time checks");
+			double l2 = 0.0;
+			int below_threshold_count = 0;
+			int print_limit = 10;
+			double threshold = 2.0;
+			for(IntervalCheckRecord checkRecord: resourcePickupTimeCheckRecords) {
+				double ratio = checkRecord.ratio();
+				if (ratio < threshold) {
+					if (print_limit > 0) {
+						System.out.println(checkRecord.time + "," + ratio);
+					}
+					print_limit--;
+					below_threshold_count++;
+				}
+				l2 += ratio * ratio;
 			}
-			System.out.println("**********");
-			for (int i = 0; i < agentStartApproachTimes.size(); i++) {
-				System.out.println(agentStartApproachTimes.get(i)+","+agentApproachSpeedRatios.get(i));
+			System.out.println("Threshold ="+threshold+"; Count ="+below_threshold_count);
+			System.out.println("Resource Pickup Ratios RMS =" + Math.sqrt(l2 / resourcePickupTimeCheckRecords.size())
+					+ "; Count =" + resourcePickupTimeCheckRecords.size());
+
+
+			System.out.println("********** Approach time checks");
+			l2 = 0.0;
+			below_threshold_count = 0;
+			print_limit = 10;
+			threshold = 2.0;
+			for(IntervalCheckRecord checkRecord: approachTimeCheckRecords) {
+				double ratio = checkRecord.ratio();
+				if (ratio < threshold) {
+					if (print_limit > 0) {
+						System.out.println(checkRecord.time + "," + ratio);
+					}
+					print_limit--;
+					below_threshold_count++;
+				}
+				l2 += ratio * ratio;
 			}
-		}
+			System.out.println("Threshold ="+threshold+"; Count ="+below_threshold_count);
+			System.out.println("Agent Approach Ratios RMS =" + Math.sqrt(l2 / approachTimeCheckRecords.size())
+					+ "; Count =" + approachTimeCheckRecords.size());
 	}
 
 	/**
@@ -583,17 +637,6 @@ public class Simulator {
 		}
 		return null;
 	}
-
-//	public BaseAgent MakeAgent(long id) {
-//		try {
-//			Constructor<? extends BaseAgent> cons = this.agentClass.getConstructor( CityMap.class);
-//			return cons.newInstance(id, this.mapForAgents);
-//		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
-//				InvocationTargetException e) {
-//			e.printStackTrace();
-//		}
-//		return null;
-//	}
 
 	private void mappingEventId() {
 		for (Event event : events) {

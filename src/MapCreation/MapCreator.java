@@ -92,7 +92,7 @@ public class MapCreator {
 	 * converts it into a map represented by { @code vertices ).
 	 * Uses Json.simple package
 	 *
-	 * @param fileName the JSON file that will be read
+	 * @param mapFile the JSON file that will be read
 	 * @param boundingPolygonKMLFile a KML file defining a bounding polygon of the simulated area
 	 * modifies {@code vertices }
 	 *
@@ -474,7 +474,7 @@ public class MapCreator {
 						}
 					}
 				}
-
+				// add the link that connects to the end intersection
 				road.addLink(currentLink);
 				road.to = currentLink.to.intersection;
 
