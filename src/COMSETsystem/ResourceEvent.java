@@ -90,7 +90,7 @@ public class ResourceEvent extends Event {
 	 * agent from the PriorityQueue and from activeAgents.
 	 */
 	@Override
-	Event trigger() throws Exception {
+	Event trigger() throws UnsupportedOperationException {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id + " triggered at time " + time, this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + this.pickupLoc + "," + this.dropoffLoc, this);
 
@@ -131,12 +131,12 @@ public class ResourceEvent extends Event {
 		simulator.totalResourceTripTime += tripTime;
 		simulator.totalAssignments++;
 
-		simulator.resourcePickupTimes.add(pickupTime);
 		long staticTripTime = simulator.map.travelTimeBetween(pickupLoc, dropoffLoc);
-		simulator.resourceSpeedRatios.add(staticTripTime / (double)tripTime);
+		simulator.resourcePickupTimeCheckRecords.add(new Simulator.IntervalCheckRecord(
+				pickupTime, tripTime, staticTripTime));
 	}
 
-	private void available() throws Exception {
+	private void available() throws UnsupportedOperationException {
 		++simulator.totalResources;
 
 		simulator.waitingResources.add(this);
@@ -146,7 +146,7 @@ public class ResourceEvent extends Event {
 		state = State.EXPIRED;
 	}
 
-	private void expire() throws Exception {
+	private void expire() throws UnsupportedOperationException {
 		simulator.expiredResources++;
 		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
 		simulator.waitingResources.remove(this);
@@ -160,7 +160,7 @@ public class ResourceEvent extends Event {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 	}
 
-	private void processAgentAction(AgentAction agentAction) throws Exception {
+	private void processAgentAction(AgentAction agentAction) throws UnsupportedOperationException {
 		if (agentAction == null) {
 			return;
 		}

@@ -95,7 +95,7 @@ public class AgentEvent extends Event {
 		return isPickup;
 	}
 
-	void assignTo(ResourceEvent resourceEvent, long time) throws Exception {
+	void assignTo(ResourceEvent resourceEvent, long time) throws UnsupportedOperationException {
 		this.assignedResource = resourceEvent;
 		this.assignTime = time;
 		this.assignLocation = getCurrentLocation(time);
@@ -203,17 +203,16 @@ public class AgentEvent extends Event {
 	/*
 	 * The handler of a pick up event.
 	 */
-	private void pickup() throws Exception {
+	private void pickup() throws UnsupportedOperationException {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Pickup at " + loc, this);
 
 		isPickup = true;
 		long searchTime = time - startSearchTime;
-
 		long approachTime = time - assignTime;
-		simulator.agentStartApproachTimes.add(assignTime);
 		long staticApproachTime = simulator.map.travelTimeBetween(assignLocation, loc);
-		simulator.staticApproachTime.add(staticApproachTime);
-		simulator.agentApproachSpeedRatios.add(staticApproachTime / (double)approachTime);
+
+		simulator.approachTimeCheckRecords.add(new Simulator.IntervalCheckRecord(
+				assignTime, approachTime, staticApproachTime));
 
 		// Resource had been wiating from introductionTime (i.e. when it was available) to now (time that this
 		// pickup event triggered).
@@ -246,7 +245,7 @@ public class AgentEvent extends Event {
 	/*
 	 * The handler of a drop off event.
 	 */
-	private void dropOff() throws Exception {
+	private void dropOff() throws UnsupportedOperationException {
 		startSearchTime = time;
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
 
