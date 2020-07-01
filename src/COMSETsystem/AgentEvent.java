@@ -54,6 +54,9 @@ public class AgentEvent extends Event {
 	long startApproachTime;
 	LocationOnRoad startApproachLocation;
 
+	long lastAppearTime;
+	LocationOnRoad lastAppearLocation;
+
 	/**
 	 * Constructor for class AgentEvent.
 	 *
@@ -63,6 +66,8 @@ public class AgentEvent extends Event {
 		super(startedSearch, simulator, fleetManager);
 		this.loc = loc;
 		this.startSearchTime = startedSearch;
+		this.lastAppearTime = startedSearch;
+		this.lastAppearLocation = loc;
 	}
 
 	@Override
@@ -96,7 +101,12 @@ public class AgentEvent extends Event {
 		this.assignedResource = resourceEvent;
 
 		startApproachTime = time;
-		startApproachLocation = loc;
+		long elapseTime = time - lastAppearTime;
+		// TODO: to delete this sanity check
+		if (lastAppearLocation.road.id != loc.road.id || lastAppearLocation.distanceFromStartIntersection > loc.distanceFromStartIntersection) {
+			System.out.println("last appear location has to be on the same road as loc and upstream to it.");
+		}
+		startApproachLocation = simulator.trafficPattern.travelRoadForTime(lastAppearTime, lastAppearLocation, elapseTime);
 
 		if (isOnSameRoad(loc, assignedResource.pickupLoc)) {
 			// check if loc is closer to the start of the road than pickupLoc
@@ -156,6 +166,9 @@ public class AgentEvent extends Event {
 		LocationOnRoad nextLocation = LocationOnRoad.createFromRoadEnd(nextRoad);
 		long travelTime = fleetManager.trafficPattern.roadTravelTimeFromStartIntersection(time, nextLocation);
 		update(time + travelTime, nextLocation, State.INTERSECTION_REACHED);
+
+		lastAppearTime = time;
+		lastAppearLocation = LocationOnRoad.createFromRoadStart(nextRoad);
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Move to " + nextRoad.to, this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Next trigger time = " + time, this);
@@ -222,6 +235,10 @@ public class AgentEvent extends Event {
 	 */
 	private void dropOff() {
 		startSearchTime = time;
+
+		//TODO: for debug, to remove
+		lastAppearTime = time;
+		lastAppearLocation = loc;
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Dropoff at " + loc, this);
 

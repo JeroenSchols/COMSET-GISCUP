@@ -181,12 +181,12 @@ public class RandomDestinationFleetManager extends FleetManager {
         int destinationIndex = random.nextInt(map.intersections().size());
         Intersection[] intersectionArray =
                 map.intersections().values().toArray(new Intersection[0]);
-        for (int i = 0; i < intersectionArray.length; i++)
-            for (int j = i + 1; j < intersectionArray.length; j++) {
-                if (intersectionArray[i].id == intersectionArray[j].id) {
-                    System.out.println("something is wrong");
-                }
-            }
+//        for (int i = 0; i < intersectionArray.length; i++)
+//            for (int j = i + 1; j < intersectionArray.length; j++) {
+//                if (intersectionArray[i].id == intersectionArray[j].id) {
+//                    System.out.println("something is wrong");
+//                }
+//            }
         Intersection destinationIntersection = intersectionArray[destinationIndex];
         if (destinationIntersection == sourceIntersection) {
             // destination cannot be the source
