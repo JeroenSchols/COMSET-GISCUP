@@ -31,6 +31,8 @@ public abstract class FleetManager {
     public abstract Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc,
                                                                  Resource resource);
 
+    public abstract boolean isResourceWaitingPickup(Resource resource);
+
     public FleetManager(CityMap map) {
         this.map = map;
     }

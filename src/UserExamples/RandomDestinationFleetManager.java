@@ -90,6 +90,11 @@ public class RandomDestinationFleetManager extends FleetManager {
     }
 
     @Override
+    public boolean isResourceWaitingPickup(Resource resource) {
+        return waitingResources.contains(resource);
+    }
+
+    @Override
     public Intersection onReachIntersection(long agentId, long time, LocationOnRoad currentLoc) {
         if (agentId == 240902L && time == 1464800008L) {
             System.out.println("here");

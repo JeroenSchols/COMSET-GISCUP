@@ -129,12 +129,9 @@ public class ResourceEvent extends Event {
 	void dropOff(long dropOffTime) {
 		long tripTime = dropOffTime - pickupTime;
 		simulator.totalResourceTripTime += tripTime;
-		simulator.resourcePickupTimes.add(pickupTime);
 		long staticTripTime = simulator.map.travelTimeBetween(pickupLoc, dropoffLoc);
-		simulator.resourceSpeedRatios.add(staticTripTime / (double)tripTime);
 		simulator.totalAssignments++;
 
-		long staticTripTime = simulator.map.travelTimeBetween(pickupLoc, dropoffLoc);
 		simulator.resourcePickupTimeCheckRecords.add(new Simulator.IntervalCheckRecord(
 				pickupTime, tripTime, staticTripTime));
 	}
@@ -150,17 +147,27 @@ public class ResourceEvent extends Event {
 	}
 
 	private void expire() throws UnsupportedOperationException {
+//		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
+//				simulator.agentCopy(pickupLoc), time);
+//		processAgentAction(action);
+//		if (agentEvent != null) {
+//			agentEvent.abortResource();
+//			simulator.totalAbortions++;
+//		}
+
+		// FIXME This is a bit convoluted. Probably should be fixed in the Fleet Manager?
+		if (agentEvent == null) {
+			// If the agentEvent is set then we're on our way to the drop-off. Resource can't be expired.
+			// Otherwise tell the fleetManager it has expired.
+			AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
+					simulator.agentCopy(pickupLoc), time);
+			processAgentAction(action);
+		}
+
 		simulator.expiredResources++;
 		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
 		simulator.waitingResources.remove(this);
 
-		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
-				simulator.agentCopy(pickupLoc), time);
-		processAgentAction(action);
-		if (agentEvent != null) {
-			agentEvent.abortResource();
-			simulator.totalAbortions++;
-		}
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 	}
 

@@ -132,25 +132,25 @@ public class AgentEvent extends Event {
 	}
 
 	// FIXME: This should call the code marked in the above FIXME
-	/**
-	 * Compute this agent's current location based on the current time. This should work for agent's
-	 * in all states.
-	 * @param time This should be the current simulation time.
-	 * @return the current location
-	 */
-	private LocationOnRoad getCurrentLocation(long time) throws UnsupportedOperationException {
-
-		switch(state) {
-			case INTERSECTION_REACHED:
-			case PICKING_UP:
-			case DROPPING_OFF:
-				break;
-			default:
-				throw new UnsupportedOperationException("getCurrentLocation called on unsupported state");
-		}
-		return new LocationOnRoad(loc.road,
-				loc.travelTimeFromStartIntersection - (this.time - time));
-	}
+//	/**
+//	 * Compute this agent's current location based on the current time. This should work for agent's
+//	 * in all states.
+//	 * @param time This should be the current simulation time.
+//	 * @return the current location
+//	 */
+//	private LocationOnRoad getCurrentLocation(long time) throws UnsupportedOperationException {
+//
+//		switch(state) {
+//			case INTERSECTION_REACHED:
+//			case PICKING_UP:
+//			case DROPPING_OFF:
+//				break;
+//			default:
+//				throw new UnsupportedOperationException("getCurrentLocation called on unsupported state");
+//		}
+//		return new LocationOnRoad(loc.road,
+//				loc.travelTimeFromStartIntersection - (this.time - time));
+//	}
 
 	void abortResource() {
 		assignedResource = null;

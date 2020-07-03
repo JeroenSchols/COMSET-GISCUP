@@ -105,12 +105,6 @@ public class Simulator {
 	// The number of times an agent fails to reach an assigned resource before the resource expires
 	protected long totalAbortions = 0;
 
-	// TODO: the following lines are for debug and need to be removed
-	protected ArrayList<Long> resourcePickupTimes = new ArrayList<Long>();
-	protected ArrayList<Double> resourceSpeedRatios = new ArrayList<Double>();
-	protected ArrayList<Long> agentStartApproachTimes = new ArrayList<Long>();
-	protected ArrayList<Double> agentApproachSpeedRatios = new ArrayList<Double>();
-
 	// A list of all the agents in the system. Not really used in COMSET, but maintained for
 	// a user's debugging purposes.
 	ArrayList<BaseAgent> agents;
@@ -290,46 +284,6 @@ public class Simulator {
 		score.end();
 	}
 
-	/**
-	 * Get the closest resource that will not expire before the agent reaches it
-	 *
-	 * @param agentLoc  Location of agent.
-	 * @return PickUp instance with ResourceAgent and time of pickup, or empty PickUp
-	 */
-	/* TODO: this is commented because it's never used.
-	public PickUp FindEarliestPickup(final LocationOnRoad agentLoc) {
-		// Check if there are resources waiting to be picked up by an agent.
-		if (waitingResources.size() > 0) {
-			ResourceEvent resource = null;
-			long earliest = Long.MAX_VALUE;
-			for (ResourceEvent res : waitingResources) {
-				// If res is in waitingResources, then it must have not expired yet
-				// testing null pointer exception
-				long travelTime = Long.MAX_VALUE;
-				if (agentLoc == null) {
-					System.out.println("loc is null");
-				} else if (res.pickupLoc == null) {
-					System.out.println("res.loc is null");
-				} else {
-					travelTime = map.travelTimeBetween(agentLoc, res.pickupLoc);
-				}
-
-				if (travelTime != Long.MAX_VALUE) {
-					// if the resource is reachable before expiration
-					long arriveTime = simulationTime + travelTime;
-					if (arriveTime <= res.expirationTime && arriveTime < earliest) {
-						earliest = arriveTime;
-						resource = res;
-					}
-				}
-			}
-			return new PickUp(resource, earliest);
-		} else {
-			return new PickUp(null, 0);
-		}
-	}
-	*/
-
 	protected static class PickUp {
 		private final ResourceEvent resource;
 		private final long time;
@@ -432,14 +386,14 @@ public class Simulator {
 			System.out.println("Time resolution: " + timeResolution);
 
 			System.out.println("\n***Statistics***");
-		
+
 			if (totalResources != 0) {
 				// Collect the "search" time for the agents that are empty at the end of the simulation.
 				// These agents are in search status and therefore the amount of time they spend on
 				// searching until the end of the simulation should be counted toward the total search time.
 				long totalRemainTime = 0;
-				for (AgentEvent ae: emptyAgents) {
-					totalRemainTime += (simulationEndTime - ae.startSearchTime); 
+				for (AgentEvent ae : emptyAgents) {
+					totalRemainTime += (simulationEndTime - ae.startSearchTime);
 				}
 
 				sb.append("average agent search time: ")
@@ -479,8 +433,8 @@ public class Simulator {
 			int below_threshold_count = 0;
 			int print_limit = 10;
 			double threshold = 2.0;
-			for(IntervalCheckRecord checkRecord: resourcePickupTimeCheckRecords) {
-				double ratio = checkRecord.ratio();
+			for (final IntervalCheckRecord checkRecord: resourcePickupTimeCheckRecords) {
+				final double ratio = checkRecord.ratio();
 				if (ratio < threshold) {
 					if (print_limit > 0) {
 						System.out.println(checkRecord.time + "," + ratio);
@@ -490,7 +444,7 @@ public class Simulator {
 				}
 				l2 += ratio * ratio;
 			}
-			System.out.println("Threshold ="+threshold+"; Count ="+below_threshold_count);
+			System.out.println("Threshold =" + threshold + "; Count =" + below_threshold_count);
 			System.out.println("Resource Pickup Ratios RMS =" + Math.sqrt(l2 / resourcePickupTimeCheckRecords.size())
 					+ "; Count =" + resourcePickupTimeCheckRecords.size());
 
@@ -500,8 +454,8 @@ public class Simulator {
 			below_threshold_count = 0;
 			print_limit = 10;
 			threshold = 2.0;
-			for(IntervalCheckRecord checkRecord: approachTimeCheckRecords) {
-				double ratio = checkRecord.ratio();
+			for (final IntervalCheckRecord checkRecord: approachTimeCheckRecords) {
+				final double ratio = checkRecord.ratio();
 				if (ratio < threshold) {
 					if (print_limit > 0) {
 						System.out.println(checkRecord.time + "," + ratio);
@@ -511,9 +465,10 @@ public class Simulator {
 				}
 				l2 += ratio * ratio;
 			}
-			System.out.println("Threshold ="+threshold+"; Count ="+below_threshold_count);
+			System.out.println("Threshold =" + threshold + "; Count =" + below_threshold_count);
 			System.out.println("Agent Approach Ratios RMS =" + Math.sqrt(l2 / approachTimeCheckRecords.size())
 					+ "; Count =" + approachTimeCheckRecords.size());
+		}
 	}
 
 	/**
