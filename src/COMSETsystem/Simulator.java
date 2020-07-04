@@ -99,7 +99,7 @@ public class Simulator {
 	// The number of agents that are deployed (at the beginning of the simulation). 
 	protected long totalAgents;
 
-	// The number of assignments that have been made.
+	// The number of assignments that have been made, and dropped off
 	protected long totalAssignments = 0;
 
 	// The number of times an agent fails to reach an assigned resource before the resource expires

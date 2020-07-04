@@ -308,7 +308,7 @@ public class AgentEvent extends Event {
 		}
 	}
 
-	private void moveToEndIntersection() {
+	protected void moveToEndIntersection() {
 		long travelTime = fleetManager.trafficPattern.roadTravelTimeToEndIntersection(time, loc);
 		long nextEventTime = time + travelTime;
 		LocationOnRoad nextLoc = LocationOnRoad.createFromRoadEnd(loc.road);

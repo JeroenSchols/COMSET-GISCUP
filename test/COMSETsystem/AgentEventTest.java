@@ -39,7 +39,7 @@ public class AgentEventTest {
     public void BeforeEachTest() {
     }
 
-    /**
+   /**
      * Tests cruising this path intersection 1 -> intersection 2 -> intersection 3.
      *
      * @throws Exception from spyEvent.Trigger if any

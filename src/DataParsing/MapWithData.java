@@ -93,7 +93,8 @@ public class MapWithData {
 		}
 
 		System.out.println("Building traffic patterns...");
-		TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed, simulator.trafficPatternEpoch, simulator.trafficPatternStep, simulator.dynamicTraffic);
+		TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed, simulator.trafficPatternEpoch,
+				simulator.trafficPatternStep, simulator.dynamicTraffic);
 		simulator.trafficPattern = trafficPattern;
 
 		fleetManager.setTrafficPattern(trafficPattern);
@@ -255,7 +256,8 @@ public class MapWithData {
 		}
 	};
 
-	public TrafficPattern buildSlidingTrafficPattern(ArrayList<Resource> resources, long epoch, long step, boolean dynamicTraffic) {
+	public TrafficPattern buildSlidingTrafficPattern(ArrayList<Resource> resources, long epoch, long step,
+													 boolean dynamicTraffic) {
 		// sort resources by pickup
 
 		Collections.sort(resources, resourceComparator);

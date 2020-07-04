@@ -57,6 +57,7 @@ public class ResourceEvent extends Event {
 		this.availableTime = availableTime;
 		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
 		this.staticTripTime = staticTripTime;
+		this.pickupTime = -1;
 		this.state = State.AVAILABLE;
 	}
 
@@ -76,6 +77,7 @@ public class ResourceEvent extends Event {
 		this.availableTime = availableTime;
 		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
 		this.staticTripTime = staticTripTime;
+		this.pickupTime = -1;
 	}
 
 	/**
@@ -126,6 +128,10 @@ public class ResourceEvent extends Event {
 		simulator.removeEvent(this);
 	}
 
+	boolean isPickedup() {
+		return pickupTime > 0;
+	}
+
 	void dropOff(long dropOffTime) {
 		long tripTime = dropOffTime - pickupTime;
 		simulator.totalResourceTripTime += tripTime;
@@ -147,21 +153,16 @@ public class ResourceEvent extends Event {
 	}
 
 	private void expire() throws UnsupportedOperationException {
-//		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
-//				simulator.agentCopy(pickupLoc), time);
-//		processAgentAction(action);
-//		if (agentEvent != null) {
-//			agentEvent.abortResource();
-//			simulator.totalAbortions++;
-//		}
+		// Expiration can only happen if the resource has not been picked up.
+		assert !isPickedup() : "Resource expiring after having been picked up";
 
-		// FIXME This is a bit convoluted. Probably should be fixed in the Fleet Manager?
-		if (agentEvent == null) {
-			// If the agentEvent is set then we're on our way to the drop-off. Resource can't be expired.
-			// Otherwise tell the fleetManager it has expired.
-			AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
-					simulator.agentCopy(pickupLoc), time);
-			processAgentAction(action);
+		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
+				simulator.agentCopy(pickupLoc), time);
+		processAgentAction(action);
+		if (agentEvent != null) {
+			// We're assigned but hasn't been picked up, so the trip is being aborted.
+			agentEvent.abortResource();
+			simulator.totalAbortions++;
 		}
 
 		simulator.expiredResources++;
