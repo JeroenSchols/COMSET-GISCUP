@@ -24,7 +24,7 @@ public abstract class Event implements Comparable<Event> {
 	/* An id that is unique among all events regardless of whether agent or resource.
 	 * To facilitate solving ties of trigger time.
 	 */
-	long id;  
+    final long id;
 
 	/**
 	 * Constructor for class Event

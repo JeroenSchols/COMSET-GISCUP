@@ -40,7 +40,7 @@ public class ResourceEvent extends Event {
 	State state;
 
 	// The shortest travel time from pickupLoc to dropoffLoc
-	public long staticTripTime;
+	public final long staticTripTime;
 
 	/**
 	 * Constructor for class ResourceEvent.

@@ -8,12 +8,12 @@ import COMSETsystem.LocationOnRoad;
  */
 public class Resource extends TimestampAbstract {
 
-	private double dropffLat; // drop-off latitude of resource
-	private double dropffLon; // drop-off longitude of resource
+	private final double dropffLat; // drop-off latitude of resource
+	private final double dropffLon; // drop-off longitude of resource
 
 	private LocationOnRoad pickupLocation; // pickup location on road
 	private LocationOnRoad dropffLocation; // dropff location on road
-	private long dropffTime; // drop-off time of resource from raw data
+	private final long dropffTime; // drop-off time of resource from raw data
 
 	//constructor initiating each field of the Resource record type
 	public Resource(double pickupLat, double pickupLon, double dropffLat, double dropffLon, long time, long dropffTime) {

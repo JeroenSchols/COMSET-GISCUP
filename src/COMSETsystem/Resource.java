@@ -1,9 +1,9 @@
 package COMSETsystem;
 
 public class Resource {
-    public long id;
-    public long expirationTime;
-    public long assignedAgentId;
+    public final long id;
+    public final long expirationTime;
+    public final long assignedAgentId;
     public LocationOnRoad pickupLoc;
     public LocationOnRoad dropOffLoc;
 

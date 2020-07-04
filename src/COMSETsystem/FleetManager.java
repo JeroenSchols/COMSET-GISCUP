@@ -4,7 +4,7 @@ import java.util.Set;
 
 public abstract class FleetManager {
 
-    protected CityMap map;
+    protected final CityMap map;
 
     protected TrafficPattern trafficPattern;
 

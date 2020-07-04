@@ -20,13 +20,13 @@ public class Road implements Comparable<Road> {
 	// average speed in m/s
 	public double speed;
 	// a unique id
-	public long id;
+	public final long id;
 
 	// an ID counter to get a unique id
 	private static long maxId = 0;
 	
 	// links that constitute the road
-	public ArrayList<Link> links;
+	public final ArrayList<Link> links;
 
     /**
      * Constructing an "empty" road object.

@@ -8,7 +8,7 @@ package COMSETsystem;
 public abstract class BaseAgent {
 
 	// Every agent gets a reference to the map
-	protected CityMap map;
+	protected final CityMap map;
 
 	// An id that is unique across all agents and resources 
 	protected final long id;

@@ -52,7 +52,7 @@ public class Simulator {
 	// Full path to an OSM JSON map file
 	protected String mapJSONFile;
 
-	public long timeResolution = 1000000;
+	public final long timeResolution = 1000000;
 
 	public boolean dynamicTraffic;
 
@@ -123,8 +123,8 @@ public class Simulator {
 	// Traffic pattern
 	public TrafficPattern trafficPattern;
 
-	public Map<Long, AgentEvent> agentMap = new HashMap<>();
-	public Map<Long, ResourceEvent> resMap = new HashMap<>();
+	public final Map<Long, AgentEvent> agentMap = new HashMap<>();
+	public final Map<Long, ResourceEvent> resMap = new HashMap<>();
 
 	protected static class IntervalCheckRecord {
 		public final long time;
@@ -142,8 +142,8 @@ public class Simulator {
 		}
 	}
 
-	protected ArrayList<IntervalCheckRecord> approachTimeCheckRecords = new ArrayList<>();
-	protected ArrayList<IntervalCheckRecord> resourcePickupTimeCheckRecords = new ArrayList<>();
+	protected final ArrayList<IntervalCheckRecord> approachTimeCheckRecords = new ArrayList<>();
+	protected final ArrayList<IntervalCheckRecord> resourcePickupTimeCheckRecords = new ArrayList<>();
 
 	/**
 	 * Constructor of the class Main. This is made such that the type of
@@ -311,11 +311,11 @@ public class Simulator {
 	 */
 	class ScoreInfo {
 
-		Runtime runtime = Runtime.getRuntime();
-		NumberFormat format = NumberFormat.getInstance();
-		StringBuilder sb = new StringBuilder();
+		final Runtime runtime = Runtime.getRuntime();
+		final NumberFormat format = NumberFormat.getInstance();
+		final StringBuilder sb = new StringBuilder();
 
-		long startTime;
+		final long startTime;
 		long allocatedMemory;
 
 		/**

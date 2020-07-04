@@ -4,7 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.TreeSet;
 
@@ -33,7 +33,7 @@ public class AgentEventTest {
     @Mock
     FleetManager mockFleetManager;
 
-    private SimpleMap testMap = new SimpleMap();
+    private final SimpleMap testMap = new SimpleMap();
 
     @Before
     public void BeforeEachTest() {
@@ -57,7 +57,7 @@ public class AgentEventTest {
         
         AgentEvent nextEvent = (AgentEvent) agentEvent.trigger();
         // return intersection3 as next intersection
-        when(mockFleetManager.onReachIntersection(eq(nextEvent.id), anyLong(), anyObject()))
+        when(mockFleetManager.onReachIntersection(eq(nextEvent.id), anyLong(), any(LocationOnRoad.class)))
                 .thenReturn(testMap.intersection3);
 
         // Verify that next AgentEvent will trigger when reaching the end of road1
@@ -130,7 +130,8 @@ public class AgentEventTest {
         // Setup expectations, we expect a call to FleetManager upon reaching end of road2to3 to
         // get next intersection which is intersection 4, i.e. the end of roadFrom3to4.
         when(mockFleetManager.onReachIntersectionWithResource(eq(travelToDropoffEvent.id),
-                eq(TRIGGER_TIME + testMap.roadFrom2to3.travelTime), anyObject(), anyObject()))
+                eq(TRIGGER_TIME + testMap.roadFrom2to3.travelTime), any(LocationOnRoad.class),
+                    any(Resource.class)))
                 .thenReturn(testMap.intersection4);
 
         // Trigger travel to DropOff's second segment
