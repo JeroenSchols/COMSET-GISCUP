@@ -55,12 +55,6 @@ public class Simulator {
 
 	public boolean dynamicTraffic;
 
-	// Full path to a TLC New York Yellow trip record file
-	protected String resourceFile = null;
-
-	// Full path to a KML defining the bounding polygon to crop the map
-	protected String boundingPolygonKMLFile;
-
 	// The beginning time of the simulation
 	protected long simulationStartTime;
 
@@ -96,7 +90,7 @@ public class Simulator {
 	protected long totalResources = 0;
 
 	// The number of agents that are deployed (at the beginning of the simulation). 
-	protected long totalAgents;
+	protected long numberOfAgents;
 
 	// The number of assignments that have been made, and dropped off
 	protected long totalAssignments = 0;
@@ -175,18 +169,15 @@ public class Simulator {
 	 *
 	 */
 	public void configure() {
-
 		configuration = Configuration.get();
-		this.resourceFile = configuration.datasetFile;
-		this.totalAgents = configuration.numberOfAgents;
-		this.boundingPolygonKMLFile = configuration.boundingPolygonKMLFile;
+		this.numberOfAgents = configuration.numberOfAgents;
 		this.resourceMaximumLifeTime = configuration.resourceMaximumLifetime * timeResolution;
 		this.dynamicTraffic = configuration.dynamicTraffic;
 		this.trafficPatternEpoch = configuration.trafficPatternEpoch * timeResolution;
 		this.trafficPatternStep = configuration.trafficPatternStep * timeResolution;
 
 		MapCreator creator = new MapCreator(configuration.mapJSONFile,
-											this.boundingPolygonKMLFile,
+											configuration.boundingPolygonKMLFile,
 											this.timeResolution);
 		System.out.println("Creating the map...");
 
@@ -203,7 +194,7 @@ public class Simulator {
 		// the simulator
 		mapForAgents = map.makeCopy();
 
-		MapWithData mapWD = new MapWithData(map, this.resourceFile, configuration.agentPlacementRandomSeed);
+		MapWithData mapWD = new MapWithData(map, configuration.resourceFile, configuration.agentPlacementRandomSeed);
 
 		// map match resources
 		System.out.println("Loading and map-matching resources...");
@@ -215,7 +206,7 @@ public class Simulator {
 		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager);
 
 		// Deploy agents at random locations of the map.
-		System.out.println("Randomly placing " + this.totalAgents + " agents on the map...");
+		System.out.println("Randomly placing " + this.numberOfAgents + " agents on the map...");
 		mapWD.placeAgentsRandomly(this, fleetManager);
 
 		// Initialize the event queue.
@@ -362,9 +353,9 @@ public class Simulator {
 
 			System.out.println("\n***Simulation environment***");
 			System.out.println("JSON map file: " + configuration.mapJSONFile);
-			System.out.println("Resource dataset file: " + resourceFile);
-			System.out.println("Bounding polygon KML file: " + boundingPolygonKMLFile);
-			System.out.println("Number of agents: " + totalAgents);
+			System.out.println("Resource dataset file: " + configuration.resourceFile);
+			System.out.println("Bounding polygon KML file: " + configuration.boundingPolygonKMLFile);
+			System.out.println("Number of agents: " + numberOfAgents);
 			System.out.println("Number of resources: " + totalResources);
 			System.out.println("Resource Maximum Life Time: " + resourceMaximumLifeTime / timeResolution + " seconds");
 			System.out.println("Fleet Manager class: " + fleetManagerClass.getName());
@@ -499,7 +490,7 @@ public class Simulator {
 	 * @return {@code totalAgents }
 	 */
 	public long totalAgents() {
-		return totalAgents;
+		return numberOfAgents;
 	}
 
 	/**

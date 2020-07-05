@@ -15,6 +15,8 @@ import java.io.FileInputStream;
 
 public class Main {
 
+    public static long timeResolution;
+
     public static void main(String[] args) {
 
         String configFile = "etc/config.properties";

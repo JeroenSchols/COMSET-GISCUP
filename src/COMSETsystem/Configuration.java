@@ -6,9 +6,15 @@ package COMSETsystem;
 public class Configuration {
     // Full path to an OSM JSON map file
     protected String mapJSONFile;
-    protected String datasetFile;
+
+    // Full path to a TLC New York Yellow trip record file
+    protected String resourceFile;
+
     protected long numberOfAgents;
+
+    // Full path to a KML defining the bounding polygon to crop the map
     protected String boundingPolygonKMLFile;
+
     protected long resourceMaximumLifetime;
     protected long agentPlacementRandomSeed;
     protected boolean dynamicTraffic;
@@ -20,7 +26,7 @@ public class Configuration {
     private Configuration() {}
 
     public static void make(String mapJSONFile,
-                            String datasetFile,
+                            String resourceFile,
                             long numberOfAgents,
                             String boundingPolygonKMLFile,
                             long resourceMaximumLifetime,
@@ -29,7 +35,7 @@ public class Configuration {
                             long trafficPatternEpoch,
                             long trafficPatternStep) {
         singletonConfiguration.mapJSONFile = mapJSONFile;
-        singletonConfiguration.datasetFile = datasetFile;
+        singletonConfiguration.resourceFile = resourceFile;
         singletonConfiguration.numberOfAgents = numberOfAgents;
         singletonConfiguration.boundingPolygonKMLFile = boundingPolygonKMLFile;
         singletonConfiguration.resourceMaximumLifetime = resourceMaximumLifetime;
