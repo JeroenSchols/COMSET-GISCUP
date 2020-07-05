@@ -2,8 +2,6 @@ package DataParsing;
 
 import COMSETsystem.*;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -84,8 +82,8 @@ public class MapWithData {
 					earliestResourceTime = resource.getTime();
 				}
 
-				if (resource.getTime() + simulator.ResourceMaximumLifeTime +ev.staticTripTime > latestResourceTime) {
-					latestResourceTime = resource.getTime() + simulator.ResourceMaximumLifeTime + ev.staticTripTime;
+				if (resource.getTime() + simulator.resourceMaximumLifeTime +ev.staticTripTime > latestResourceTime) {
+					latestResourceTime = resource.getTime() + simulator.resourceMaximumLifeTime + ev.staticTripTime;
 				}
 			}
 		} catch (Exception e) {
@@ -246,13 +244,7 @@ public class MapWithData {
 
 	private static Comparator<Resource> resourceComparator = new Comparator<Resource>() {
 		public int compare(Resource r1, Resource r2) {
-			if (r1.getTime() < r2.getTime()) {
-				return -1;
-			} else if (r1.getTime() > r2.getTime()) {
-				return 1;
-			} else {
-				return 0;
-			}
+			return Long.compare(r1.getTime(), r2.getTime());
 		}
 	};
 
@@ -265,7 +257,7 @@ public class MapWithData {
 		long epochBeginTime = resources.get(0).getPickupTime();
 		int beginResourceIndex = 0;
 		while (true) {
-			ArrayList<Resource> epochResources = new ArrayList<Resource>();
+			ArrayList<Resource> epochResources = new ArrayList<>();
 			long epochEndTime = epochBeginTime + epoch;
 			int resourceIndex = beginResourceIndex;
 			while (resourceIndex < resources.size() && resources.get(resourceIndex).getPickupTime() < epochEndTime) {
@@ -308,7 +300,6 @@ public class MapWithData {
 			totalActualTravelTime += actualTravelTime;
 			totalSimulatedTravelTime += simulatedTravelTime;
 		}
-		double speedFactor = ((double)totalSimulatedTravelTime) / totalActualTravelTime;
-		return speedFactor;
+		return ((double)totalSimulatedTravelTime) / totalActualTravelTime;
 	}
 }

@@ -55,7 +55,7 @@ public class ResourceEvent extends Event {
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
+		this.expirationTime = availableTime + simulator.resourceMaximumLifeTime;
 		this.staticTripTime = staticTripTime;
 		this.pickupTime = -1;
 		this.state = State.AVAILABLE;
@@ -75,7 +75,7 @@ public class ResourceEvent extends Event {
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
+		this.expirationTime = availableTime + simulator.resourceMaximumLifeTime;
 		this.staticTripTime = staticTripTime;
 		this.pickupTime = -1;
 	}
@@ -166,7 +166,7 @@ public class ResourceEvent extends Event {
 		}
 
 		simulator.expiredResources++;
-		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
+		simulator.totalResourceWaitTime += simulator.resourceMaximumLifeTime;
 		simulator.waitingResources.remove(this);
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);

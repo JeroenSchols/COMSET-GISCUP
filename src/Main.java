@@ -1,4 +1,5 @@
 import COMSETsystem.BaseAgent;
+import COMSETsystem.Configuration;
 import COMSETsystem.FleetManager;
 import COMSETsystem.Simulator;
 
@@ -117,8 +118,11 @@ public class Main {
                 LogManager.getLogManager().reset();
             }
 
-            simulator.configure(mapJSONFile, datasetFile, numberOfAgents, boundingPolygonKMLFile,
-                    resourceMaximumLifeTime, agentPlacementSeed, dynamicTraffic, trafficPatternEpoch, trafficPatternStep);
+            Configuration.make(mapJSONFile, datasetFile, numberOfAgents, boundingPolygonKMLFile,
+                    resourceMaximumLifeTime, agentPlacementSeed, dynamicTraffic, trafficPatternEpoch,
+                    trafficPatternStep);
+
+            simulator.configure();
 
             simulator.run();
 

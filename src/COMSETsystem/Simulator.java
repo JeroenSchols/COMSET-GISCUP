@@ -6,7 +6,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.util.*;
-import java.util.logging.Logger;
 
 import me.tongfei.progressbar.*;
 
@@ -47,10 +46,10 @@ public class Simulator {
 	protected TreeSet<ResourceEvent> waitingResources = new TreeSet<>(new ResourceEventComparator());
 
 	// The maximum life time of a resource in seconds. This is a parameter of the simulator. 
-	public long ResourceMaximumLifeTime; 
+	public long resourceMaximumLifeTime;
 
-	// Full path to an OSM JSON map file
-	protected String mapJSONFile;
+	// Configuration Properties for this simulation.
+	private Configuration configuration;
 
 	public final long timeResolution = 1000000;
 
@@ -110,7 +109,7 @@ public class Simulator {
 	ArrayList<BaseAgent> agents;
 
 	// A class that extends BaseAgent and implements a search routing strategy
-	protected final Class<? extends FleetManager> agentClass;
+	protected final Class<? extends FleetManager> fleetManagerClass;
 
 	protected FleetManager fleetManager;
 
@@ -150,11 +149,11 @@ public class Simulator {
 	 * agent/resourceAnalyzer used is not hardcoded and the users can choose
 	 * whichever they wants.
 	 *
-	 * @param agentClass the agent class that is going to be used in this
+	 * @param fleetManagerClass the agent class that is going to be used in this
 	 * simulation.
 	 */
-	public Simulator(Class<? extends FleetManager> agentClass) {
-		this.agentClass = agentClass;
+	public Simulator(Class<? extends FleetManager> fleetManagerClass) {
+		this.fleetManagerClass = fleetManagerClass;
 	}
 
 	public void removeEvent(Event e) {
@@ -172,37 +171,23 @@ public class Simulator {
 	 * 2. Load the resource data set and map match.
 	 * 3. Create the event queue. 
 	 *
-	 * See Main.java for detailed description of the parameters.
-	 * 
-	 * @param mapJSONFile The map file 
-	 * @param resourceFile The dataset file
-	 * @param totalAgents The total number of agents to deploy
-	 * @param boundingPolygonKMLFile The KML file defining a bounding polygon of the simulated area
-	 * @param maximumLifeTime The maximum life time of a resource
-	 * @param agentPlacementRandomSeed The see for the random number of generator when placing the agents
-	 * @param trafficPatternEpoch The epoch length in seconds of traffic pattern
-	 * @param trafficPatternStep The epoch step in seconds of traffic pattern
+	 * See COMSETsystem.Configuration and Main.java for detailed description of the parameters.
+	 *
 	 */
-	public void configure(String mapJSONFile, String resourceFile, Long totalAgents, String boundingPolygonKMLFile,
-						  long maximumLifeTime, long agentPlacementRandomSeed, boolean dynamicTraffic, long trafficPatternEpoch, long trafficPatternStep) {
+	public void configure() {
 
-		this.mapJSONFile = mapJSONFile;
+		configuration = Configuration.get();
+		this.resourceFile = configuration.datasetFile;
+		this.totalAgents = configuration.numberOfAgents;
+		this.boundingPolygonKMLFile = configuration.boundingPolygonKMLFile;
+		this.resourceMaximumLifeTime = configuration.resourceMaximumLifetime * timeResolution;
+		this.dynamicTraffic = configuration.dynamicTraffic;
+		this.trafficPatternEpoch = configuration.trafficPatternEpoch * timeResolution;
+		this.trafficPatternStep = configuration.trafficPatternStep * timeResolution;
 
-		this.totalAgents = totalAgents;
-
-		this.boundingPolygonKMLFile = boundingPolygonKMLFile;
-
-		this.ResourceMaximumLifeTime = maximumLifeTime * timeResolution;
-
-		this.resourceFile = resourceFile;
-
-		this.dynamicTraffic = dynamicTraffic;
-
-		this.trafficPatternEpoch = trafficPatternEpoch * timeResolution;
-
-		this.trafficPatternStep = trafficPatternStep * timeResolution;
-
-		MapCreator creator = new MapCreator(this.mapJSONFile, this.boundingPolygonKMLFile, this.timeResolution);
+		MapCreator creator = new MapCreator(configuration.mapJSONFile,
+											this.boundingPolygonKMLFile,
+											this.timeResolution);
 		System.out.println("Creating the map...");
 
 		creator.createMap();
@@ -218,7 +203,7 @@ public class Simulator {
 		// the simulator
 		mapForAgents = map.makeCopy();
 
-		MapWithData mapWD = new MapWithData(map, this.resourceFile, agentPlacementRandomSeed);
+		MapWithData mapWD = new MapWithData(map, this.resourceFile, configuration.agentPlacementRandomSeed);
 
 		// map match resources
 		System.out.println("Loading and map-matching resources...");
@@ -376,13 +361,13 @@ public class Simulator {
 			System.out.println("\nrunning time: " + totalTime);
 
 			System.out.println("\n***Simulation environment***");
-			System.out.println("JSON map file: " + mapJSONFile);
+			System.out.println("JSON map file: " + configuration.mapJSONFile);
 			System.out.println("Resource dataset file: " + resourceFile);
 			System.out.println("Bounding polygon KML file: " + boundingPolygonKMLFile);
 			System.out.println("Number of agents: " + totalAgents);
 			System.out.println("Number of resources: " + totalResources);
-			System.out.println("Resource Maximum Life Time: " + ResourceMaximumLifeTime / timeResolution + " seconds");
-			System.out.println("Agent class: " + agentClass.getName());
+			System.out.println("Resource Maximum Life Time: " + resourceMaximumLifeTime / timeResolution + " seconds");
+			System.out.println("Fleet Manager class: " + fleetManagerClass.getName());
 			System.out.println("Time resolution: " + timeResolution);
 
 			System.out.println("\n***Statistics***");
@@ -584,7 +569,7 @@ public class Simulator {
 
 	public FleetManager createFleetManager() {
 		try {
-			Constructor<? extends FleetManager> cons = this.agentClass.getConstructor(CityMap.class);
+			Constructor<? extends FleetManager> cons = this.fleetManagerClass.getConstructor(CityMap.class);
 			return cons.newInstance(this.mapForAgents);
 		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
 				InvocationTargetException e) {
