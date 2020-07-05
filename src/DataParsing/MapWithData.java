@@ -61,7 +61,7 @@ public class MapWithData {
 	public long createMapWithData(Simulator simulator, FleetManager fleetManager) {
  
 		CSVNewYorkParser parser = new CSVNewYorkParser(resourceFile, zoneId);
-		ArrayList<Resource> resourcesParsed = parser.parse(simulator.timeResolution);
+		ArrayList<Resource> resourcesParsed = parser.parse(Configuration.get().timeResolution);
 		try {
             for (Resource resource : resourcesParsed) {
 				// map matching
@@ -92,7 +92,7 @@ public class MapWithData {
 
 		System.out.println("Building traffic patterns...");
 		TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed, simulator.trafficPatternEpoch,
-				simulator.trafficPatternStep, simulator.dynamicTraffic);
+				simulator.trafficPatternStep, Configuration.get().dynamicTraffic);
 		simulator.trafficPattern = trafficPattern;
 
 		fleetManager.setTrafficPattern(trafficPattern);
@@ -184,7 +184,7 @@ public class MapWithData {
 		long deployTime = earliestResourceTime - 1;
 
 		Random generator = new Random(agentPlacementRandomSeed);
-		for (int i = 0; i < simulator.totalAgents(); i++) {
+		for (int i = 0; i < Configuration.get().numberOfAgents; i++) {
 			int road_id = generator.nextInt(map.roads().size());
 			Road road = map.roads().get(road_id);
 //			long travelTimeFromStartIntersection;

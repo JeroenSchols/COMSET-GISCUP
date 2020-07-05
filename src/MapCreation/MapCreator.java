@@ -92,14 +92,14 @@ public class MapCreator {
 	 * converts it into a map represented by { @code vertices ).
 	 * Uses Json.simple package
 	 *
-	 * @param mapFile the JSON file that will be read
-	 * @param boundingPolygonKMLFile a KML file defining a bounding polygon of the simulated area
+	 * @param configuration  where we get the JSON file that will be read, and
+	 *                       KML file defining a bounding polygon of the simulated area
 	 * modifies {@code vertices }
 	 *
 	 */
-	public MapCreator(String mapFile, String boundingPolygonKMLFile, long timeResolution) {
+	public MapCreator(Configuration configuration, long timeResolution) {
 
-		boundingPolygon = getPolygonFromKML(boundingPolygonKMLFile);
+		boundingPolygon = getPolygonFromKML(configuration.boundingPolygonKMLFile);
 
 		// Initialize intersections to be a TreeMap
 		intersections = new TreeMap<>();
@@ -110,7 +110,7 @@ public class MapCreator {
 		JSONParser parser = new JSONParser();
 		try {
 			// read file
-			Reader reader = new FileReader(mapFile);
+			Reader reader = new FileReader(configuration.mapJSONFile);
 			// create JSONObject based on the file
 			Object obj = parser.parse(reader);
 			JSONObject jsonObject = (JSONObject) obj;
@@ -130,7 +130,7 @@ public class MapCreator {
 						this.projector = new GeoProjector(latitude, longitude);
 						firstVertex = false;
 					}
-					double xy[] = projector.fromLatLon(latitude, longitude);
+					double [] xy = projector.fromLatLon(latitude, longitude);
 					vertices.put(id, new Vertex(longitude, latitude, xy[0], xy[1], id));
 				}
 			}
@@ -203,7 +203,7 @@ public class MapCreator {
 						}
 					}
 					// check if it's a one way street
-					if(tags.containsKey("oneway") && ((String)tags.get("oneway")).equals("yes")) {
+					if(tags.containsKey("oneway") && tags.get("oneway").equals("yes")) {
 						oneway = true;
 					}
 					// set roads
@@ -256,9 +256,7 @@ public class MapCreator {
 		createRoads();
 
 		// Output the map
-		CityMap cityMap = outputCityMap();
-		
-		return cityMap;
+		return outputCityMap();
 	}
 
 
@@ -285,7 +283,7 @@ public class MapCreator {
 	 * Check if a location (x,y) is inside the bounding polygon.
 	 * @param x x coordinate of the location to check against the polygon
 	 * @param y y coordinate of the location to check against the polygon
-	 * @return
+	 * @return indication of being inside Polygon
 	 */
 	public static boolean insidePolygon(double x, double y) {
 		int count = 0;
@@ -301,11 +299,7 @@ public class MapCreator {
 			}
 		}
 		count = count % 2;
-		if (count == 0) {
-			return false;
-		} else {
-			return true;
-		}
+		return count != 0;
 	}
 
 	/**
@@ -315,7 +309,7 @@ public class MapCreator {
 	 */
 	public static List<double[]> getPolygonFromKML(String polygonKMLFile) {
 		String regex = "^\\s+";
-		String line = "";
+		String line;
 		List<double[]> polygon = new ArrayList<>();
 
 		try (BufferedReader br = new BufferedReader(new FileReader(polygonKMLFile))) {
@@ -327,11 +321,10 @@ public class MapCreator {
 					continue;
 				while (!(line = br.readLine()).replaceAll(regex, "").equals("</coordinates>")) {
 					trimmedLine = line.replaceAll(regex,  "");
-					String[] vertices = line.split(" ");
-					for (int i = 0; i < vertices.length; i++) {
-						String vertex = vertices[i];
+					String[] vertices = trimmedLine.split(" ");
+					for (String vertex : vertices) {
 						String[] lonLat = vertex.split(",");
-						double[] pair = {Double.valueOf(lonLat[0]), Double.valueOf(lonLat[1])};
+						double[] pair = {Double.parseDouble(lonLat[0]), Double.parseDouble(lonLat[1])};
 						polygon.add(pair);
 					}
 				}

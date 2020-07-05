@@ -1,29 +1,54 @@
 package COMSETsystem;
 
 /**
- * Singleton class to hold the configuration parameters of the simulation.
+ * Class to hold the configuration parameters of the simulation. Call static method Configuration.make() first to
+ * create a singleton configuration object, then call Configuration.get() to retrieve the singleton.
  */
 public class Configuration {
     // Full path to an OSM JSON map file
-    protected String mapJSONFile;
-
-    // Full path to a TLC New York Yellow trip record file
-    protected String resourceFile;
-
-    protected long numberOfAgents;
+    public final String mapJSONFile;
 
     // Full path to a KML defining the bounding polygon to crop the map
-    protected String boundingPolygonKMLFile;
+    public final String boundingPolygonKMLFile;
 
-    protected long resourceMaximumLifetime;
-    protected long agentPlacementRandomSeed;
-    protected boolean dynamicTraffic;
-    protected long trafficPatternEpoch;
-    protected long trafficPatternStep;
+    // Full path to a TLC New York Yellow trip record file
+    public final String resourceFile;
 
-    private static final Configuration singletonConfiguration = new Configuration();
+    public final long timeResolution = 1000000;
 
-    private Configuration() {}
+    // FIXME: The field numberOfAgents should be protected or private. Most code, beside agent creation and placement
+    //   code don't need to know its value. Also the field dynamicTraffic should also be hidden.
+    // The number of agents that are deployed (at the beginning of the simulation).
+    public final long numberOfAgents;
+    public final boolean dynamicTraffic;
+
+    // Members accessible from COMSETsystem, hidden from others, i.e. they have no business knowing them.
+    protected final long resourceMaximumLifetime;
+    protected final long agentPlacementRandomSeed;
+    protected final long trafficPatternEpoch;
+    protected final long trafficPatternStep;
+
+    protected static Configuration singletonConfiguration;
+
+    private Configuration(String mapJSONFile,
+                          String resourceFile,
+                          long numberOfAgents,
+                          String boundingPolygonKMLFile,
+                          long resourceMaximumLifetime,
+                          long agentPlacementRandomSeed,
+                          boolean dynamicTraffic,
+                          long trafficPatternEpoch,
+                          long trafficPatternStep) {
+        this.mapJSONFile = mapJSONFile;
+        this.resourceFile = resourceFile;
+        this.numberOfAgents = numberOfAgents;
+        this.boundingPolygonKMLFile = boundingPolygonKMLFile;
+        this.resourceMaximumLifetime = resourceMaximumLifetime;
+        this.agentPlacementRandomSeed = agentPlacementRandomSeed;
+        this.dynamicTraffic = dynamicTraffic;
+        this.trafficPatternEpoch = trafficPatternEpoch;
+        this.trafficPatternStep = trafficPatternStep;
+    }
 
     public static void make(String mapJSONFile,
                             String resourceFile,
@@ -34,18 +59,21 @@ public class Configuration {
                             boolean dynamicTraffic,
                             long trafficPatternEpoch,
                             long trafficPatternStep) {
-        singletonConfiguration.mapJSONFile = mapJSONFile;
-        singletonConfiguration.resourceFile = resourceFile;
-        singletonConfiguration.numberOfAgents = numberOfAgents;
-        singletonConfiguration.boundingPolygonKMLFile = boundingPolygonKMLFile;
-        singletonConfiguration.resourceMaximumLifetime = resourceMaximumLifetime;
-        singletonConfiguration.agentPlacementRandomSeed = agentPlacementRandomSeed;
-        singletonConfiguration.dynamicTraffic = dynamicTraffic;
-        singletonConfiguration.trafficPatternEpoch = trafficPatternEpoch;
-        singletonConfiguration.trafficPatternStep = trafficPatternStep;
+        if (singletonConfiguration == null) {
+            singletonConfiguration = new Configuration(mapJSONFile,
+                    resourceFile,
+                    numberOfAgents,
+                    boundingPolygonKMLFile,
+                    resourceMaximumLifetime,
+                    agentPlacementRandomSeed,
+                    dynamicTraffic,
+                    trafficPatternEpoch,
+                    trafficPatternStep);
+        }
     }
 
     public static Configuration get() {
+        assert singletonConfiguration != null;
         return singletonConfiguration;
     }
 }
