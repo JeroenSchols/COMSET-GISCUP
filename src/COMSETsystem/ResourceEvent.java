@@ -140,7 +140,6 @@ public class ResourceEvent extends Event {
 	private void available() throws UnsupportedOperationException {
 		++simulator.score.totalResources;
 
-		simulator.waitingResources.add(this);
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), time);
 		processAgentAction(action);
 		time = expirationTime;
@@ -161,8 +160,6 @@ public class ResourceEvent extends Event {
 		}
 
 		simulator.score.recordExpiration();
-		// FIXME: Remove this. Don't think this is needed anymore.
-		simulator.waitingResources.remove(this);
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 	}

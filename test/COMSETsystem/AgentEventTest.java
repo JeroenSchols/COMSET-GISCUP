@@ -208,8 +208,6 @@ public class AgentEventTest {
         LocationOnRoad locationOnRoad = spy(new LocationOnRoad(testMap.roadFrom1to2, testMap.roadFrom1to2.travelTime));
         when(locationOnRoad.toString()).thenReturn("123,45t");
 
-        mockSimulator.waitingResources = new TreeSet<>();
-
         ResourceEvent resource = new ResourceEvent(
                 new LocationOnRoad(testMap.roadFrom2to3, 20L),
                 new LocationOnRoad(testMap.roadFrom2to3, 10L),

@@ -134,18 +134,18 @@ public class RandomDestinationFleetManager extends FleetManager {
         return nextLocation;
     }
 
-    Long getNearestAvailableAgent(Resource resource, long time) {
+    Long getNearestAvailableAgent(Resource resource, long currentTime) {
         long earliest = Long.MAX_VALUE;
         Long bestAgent = null;
         for (Long id : availableAgent) {
             if (!agentLastLocation.containsKey(id)) continue;
 
-            long elapseTime = time - agentLastAppearTime.get(id);
-            LocationOnRoad locationOnRoad = agentLastLocation.get(id);
-            LocationOnRoad curLoc = trafficPattern.travelRoadForTime(agentLastAppearTime.get(id), locationOnRoad, elapseTime);
-
+            LocationOnRoad curLoc = getCurrentLocation(
+                    agentLastAppearTime.get(id),
+                    agentLastLocation.get(id),
+                    currentTime);
             long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc);
-            long arriveTime = travelTime + time;
+            long arriveTime = travelTime + currentTime;
             if (arriveTime < earliest) {
                 bestAgent = id;
                 earliest = arriveTime;

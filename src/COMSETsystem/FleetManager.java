@@ -6,7 +6,8 @@ public abstract class FleetManager {
 
     protected final CityMap map;
 
-    protected TrafficPattern trafficPattern;
+    // Should not be accessible by subclasses.
+    TrafficPattern trafficPattern;
 
     public enum MapState {
         ROAD_TRAVEL_TIME_CHANGED,
@@ -37,7 +38,13 @@ public abstract class FleetManager {
         this.map = map;
     }
 
-    public void setTrafficPattern(TrafficPattern trafficPattern) {
+    protected void setTrafficPattern(TrafficPattern trafficPattern) {
         this.trafficPattern = trafficPattern;
+    }
+
+    public LocationOnRoad getCurrentLocation(long lastAppearTime, LocationOnRoad lastLocation,
+                                             long currentTime) {
+        long elapseTime = currentTime - lastAppearTime;
+        return trafficPattern.travelRoadForTime(lastAppearTime, lastLocation, elapseTime);
     }
 }
