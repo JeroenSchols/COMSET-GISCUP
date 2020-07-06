@@ -82,8 +82,10 @@ public class MapWithData {
 					earliestResourceTime = resource.getTime();
 				}
 
-				if (resource.getTime() + simulator.resourceMaximumLifeTime +ev.staticTripTime > latestResourceTime) {
-					latestResourceTime = resource.getTime() + simulator.resourceMaximumLifeTime + ev.staticTripTime;
+
+				final long resourceMaximumLifeTime = Configuration.get().resourceMaximumLifeTime;
+				if (resource.getTime() + resourceMaximumLifeTime +ev.staticTripTime > latestResourceTime) {
+					latestResourceTime = resource.getTime() + resourceMaximumLifeTime + ev.staticTripTime;
 				}
 			}
 		} catch (Exception e) {
@@ -91,8 +93,9 @@ public class MapWithData {
 		}
 
 		System.out.println("Building traffic patterns...");
-		TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed, simulator.trafficPatternEpoch,
-				simulator.trafficPatternStep, Configuration.get().dynamicTraffic);
+		TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed,
+				Configuration.get().trafficPatternEpoch,
+				Configuration.get().trafficPatternStep, Configuration.get().dynamicTrafficEnabled);
 		simulator.trafficPattern = trafficPattern;
 
 		fleetManager.setTrafficPattern(trafficPattern);
@@ -242,17 +245,11 @@ public class MapWithData {
 		return events;
 	}
 
-	private static Comparator<Resource> resourceComparator = new Comparator<Resource>() {
-		public int compare(Resource r1, Resource r2) {
-			return Long.compare(r1.getTime(), r2.getTime());
-		}
-	};
-
 	public TrafficPattern buildSlidingTrafficPattern(ArrayList<Resource> resources, long epoch, long step,
 													 boolean dynamicTraffic) {
 		// sort resources by pickup
 
-		Collections.sort(resources, resourceComparator);
+		resources.sort(Comparator.comparingLong(TimestampAbstract::getTime));
 		TrafficPattern trafficPattern = new TrafficPattern(epoch, step);
 		long epochBeginTime = resources.get(0).getPickupTime();
 		int beginResourceIndex = 0;

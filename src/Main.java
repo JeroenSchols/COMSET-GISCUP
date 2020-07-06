@@ -112,19 +112,18 @@ public class Main {
                 agentPlacementSeed = random.nextLong();
             }
 
-            Class<?> agentClass = Class.forName(agentClassName);
-            //noinspection unchecked
-            Simulator simulator = new Simulator((Class<? extends FleetManager>) agentClass);
-
             if (!displayLogging) {
                 LogManager.getLogManager().reset();
             }
 
-            Configuration.make(mapJSONFile, datasetFile, numberOfAgents, boundingPolygonKMLFile,
+            Class<?> fleetManagerClass = Class.forName(agentClassName);
+            //noinspection unchecked
+            Configuration.make((Class<? extends FleetManager>) fleetManagerClass,
+                    mapJSONFile, datasetFile, numberOfAgents, boundingPolygonKMLFile,
                     resourceMaximumLifeTime, agentPlacementSeed, dynamicTraffic, trafficPatternEpoch,
                     trafficPatternStep);
 
-            simulator.configure();
+            Simulator simulator = new Simulator(Configuration.get());
 
             simulator.run();
 

@@ -55,7 +55,7 @@ public class ResourceEvent extends Event {
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.expirationTime = availableTime + simulator.resourceMaximumLifeTime;
+		this.expirationTime = availableTime + Configuration.get().resourceMaximumLifeTime;
 		this.staticTripTime = staticTripTime;
 		this.pickupTime = -1;
 		this.state = State.AVAILABLE;
@@ -75,7 +75,7 @@ public class ResourceEvent extends Event {
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.expirationTime = availableTime + simulator.resourceMaximumLifeTime;
+		this.expirationTime = availableTime + Configuration.get().resourceMaximumLifeTime;
 		this.staticTripTime = staticTripTime;
 		this.pickupTime = -1;
 	}
@@ -133,17 +133,12 @@ public class ResourceEvent extends Event {
 	}
 
 	void dropOff(long dropOffTime) {
-		long tripTime = dropOffTime - pickupTime;
-		simulator.totalResourceTripTime += tripTime;
 		long staticTripTime = simulator.map.travelTimeBetween(pickupLoc, dropoffLoc);
-		simulator.totalAssignments++;
-
-		simulator.resourcePickupTimeCheckRecords.add(new Simulator.IntervalCheckRecord(
-				pickupTime, tripTime, staticTripTime));
+		simulator.score.recordCompletedTrip(dropOffTime, pickupTime, staticTripTime);
 	}
 
 	private void available() throws UnsupportedOperationException {
-		++simulator.totalResources;
+		++simulator.score.totalResources;
 
 		simulator.waitingResources.add(this);
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), time);
@@ -162,11 +157,11 @@ public class ResourceEvent extends Event {
 		if (agentEvent != null) {
 			// We're assigned but hasn't been picked up, so the trip is being aborted.
 			agentEvent.abortResource();
-			simulator.totalAbortions++;
+			simulator.score.recordAbortion();
 		}
 
-		simulator.expiredResources++;
-		simulator.totalResourceWaitTime += simulator.resourceMaximumLifeTime;
+		simulator.score.recordExpiration();
+		// FIXME: Remove this. Don't think this is needed anymore.
 		simulator.waitingResources.remove(this);
 
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);

@@ -5,10 +5,8 @@ import DataParsing.GeoProjector;
 import DataParsing.KdTree;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,7 +95,7 @@ public class MapCreator {
 	 * modifies {@code vertices }
 	 *
 	 */
-	public MapCreator(Configuration configuration, long timeResolution) {
+	public MapCreator(Configuration configuration) {
 
 		boundingPolygon = getPolygonFromKML(configuration.boundingPolygonKMLFile);
 
@@ -215,9 +213,11 @@ public class MapCreator {
 
 						double distance = vertices.get(id1).xy.distance(vertices.get(id2).xy);
 						// Convert km/h to meters per second; apply speed reduction
-						vertices.get(id1).addEdge(vertices.get(id2), distance, maxSpeed * 1000 / 3600 / timeResolution);
+						vertices.get(id1).addEdge(vertices.get(id2), distance,
+								Configuration.toSimulatedSpeed(maxSpeed * 1000 / 3600));
 						if (!oneway) {
-							vertices.get(id2).addEdge(vertices.get(id1), distance, maxSpeed * 1000 / 3600 / timeResolution);
+							vertices.get(id2).addEdge(vertices.get(id1), distance,
+									Configuration.toSimulatedSpeed(maxSpeed * 1000 / 3600));
 						}
 					}
 				}
@@ -341,7 +341,7 @@ public class MapCreator {
 	/**
 	 *  Sets the idCounter to the maximum id in vertices and adds 1
 	 *
-	 * @modifes { @code idCounter }
+	 * @modifies { @code idCounter }
 	 */
 	private void setIdCounter() {
 		idCounter = -1L;
@@ -378,7 +378,6 @@ public class MapCreator {
 			// Remove vertices that have no outgoing roads or incoming roads. 
 			if (roadsFrom.size() == 0 || roadsTo.size() == 0) { 
 				toRemove.add(id);
-				continue;
 			}
 		}
 		// remove all the vertices that have to be removed
@@ -447,7 +446,7 @@ public class MapCreator {
 	 */
 	public void createRoads() {
 		int duplicates = 0;
-		ArrayList<Road> roadsToRemove = new ArrayList<Road>();
+		ArrayList<Road> roadsToRemove = new ArrayList<>();
 		for (Intersection intersection : intersections.values()) {
 			Vertex vertex = intersection.vertex;
 			for (Link link : vertex.linksMapFrom.values()) {
@@ -552,7 +551,7 @@ public class MapCreator {
 					Vertex interTo = link.to;
 					double newLongtitude = (interFrom.longitude + interTo.longitude)/2;
 					double newLatitude = (interFrom.latitude + interTo.latitude)/2;
-					double newXY[] = projector.fromLatLon(newLatitude, newLongtitude);
+					double [] newXY = projector.fromLatLon(newLatitude, newLongtitude);
 					// it is very important that the id of newInter is unique!
 					Vertex newInter = new Vertex(newLongtitude, newLatitude, newXY[0], newXY[1], idCounter++);  
 					for (Link inter1From : interFrom.getLinksFrom()) {
@@ -683,9 +682,7 @@ public class MapCreator {
 		}
 		List<Road> roads = new ArrayList<>();
 		for (Intersection inter : intersections.values()) {
-			for (Road road : inter.getRoadsFrom()) {
-				roads.add(road);
-			}
+			roads.addAll(inter.getRoadsFrom());
 		}
 		// set road speed
 		for (Road road : roads) {

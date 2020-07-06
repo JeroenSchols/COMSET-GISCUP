@@ -29,6 +29,9 @@ import DataParsing.*;
  */
 public class Simulator {
 
+	// Class the contains parameters to configure system
+	final Configuration configuration;
+
 	// The map that everything will happen on.
 	protected CityMap map;
 
@@ -45,17 +48,6 @@ public class Simulator {
 	// The set of resources that with no agent assigned to it yet.
 	protected TreeSet<ResourceEvent> waitingResources = new TreeSet<>(new ResourceEventComparator());
 
-	// TODO: Move this member once we have consolidate the statistics into a separate class because
-	//   all simulator-external accesses are used to compute statistics or to create resource events in
-	//   CreateMapWithData.
-	// The maximum life time of a resource in seconds. This is a parameter of the simulator. 
-	public long resourceMaximumLifeTime;
-
-	// Configuration Properties for this simulation.
-	private Configuration configuration;
-
-	private long timeResolution = 1000000;
-
 	// The beginning time of the simulation
 	protected long simulationStartTime;
 
@@ -63,59 +55,7 @@ public class Simulator {
 	protected long simulationTime;
 
 	// The simulation end time is the expiration time of the last resource.
-	protected long simulationEndTime; 
-
-	// Total trip time of all resources to which agents have been assigned.
-	protected long totalResourceTripTime = 0;
-
-	// Total wait time of all resources. The wait time of a resource is the amount of time
-	// since the resource is introduced to the system until it is picked up by an agent.
-	protected long totalResourceWaitTime = 0;
-
-	// Total search time of all agents. The search time of an agent for a research is the amount of time 
-	// since the agent is labeled as empty, i.e., added to emptyAgents, until it picks up a resource.  
-	protected long totalAgentSearchTime = 0;
-
-	// Total cruise time of all agents. The cruise time of an agent for a research is the amount of time 
-	// since the agent is labeled as empty until it is assigned to a resource.
-	protected long totalAgentCruiseTime = 0;
-
-	// Total approach time of all agents. The approach time of an agent for a research is the amount of time
-	// since the agent is assigned to a resource until agent reaches the resource.
-	protected long totalAgentApproachTime = 0;
-
-	// The number of expired resources.
-	protected long expiredResources = 0;
-
-	// The number of resources that have been introduced to the system.
-	protected long totalResources = 0;
-
-	// The number of assignments that have been made, and dropped off
-	protected long totalAssignments = 0;
-
-	// The number of times an agent fails to reach an assigned resource before the resource expires
-	protected long totalAbortions = 0;
-
-	// A list of all the agents in the system. Not really used in COMSET, but maintained for
-	// a user's debugging purposes.
-	ArrayList<BaseAgent> agents;
-
-	// A class that extends BaseAgent and implements a search routing strategy
-	protected final Class<? extends FleetManager> fleetManagerClass;
-
-	protected FleetManager fleetManager;
-
-	// Traffic pattern epoch in seconds
-	public long trafficPatternEpoch;
-
-	// Traffic pattern step in seconds
-	public long trafficPatternStep;
-
-	// Traffic pattern
-	public TrafficPattern trafficPattern;
-
-	public final Map<Long, AgentEvent> agentMap = new HashMap<>();
-	public final Map<Long, ResourceEvent> resMap = new HashMap<>();
+	protected long simulationEndTime;
 
 	protected static class IntervalCheckRecord {
 		public final long time;
@@ -133,26 +73,32 @@ public class Simulator {
 		}
 	}
 
-	protected final ArrayList<IntervalCheckRecord> approachTimeCheckRecords = new ArrayList<>();
-	protected final ArrayList<IntervalCheckRecord> resourcePickupTimeCheckRecords = new ArrayList<>();
+	protected ScoreInfo score;
+
+	// A list of all the agents in the system. Not really used in COMSET, but maintained for
+	// a user's debugging purposes.
+	ArrayList<BaseAgent> agents;
+
+	protected FleetManager fleetManager;
+
+	// Traffic pattern
+	public TrafficPattern trafficPattern;
+
+	public final Map<Long, AgentEvent> agentMap = new HashMap<>();
+	public final Map<Long, ResourceEvent> resMap = new HashMap<>();
+
 
 	/**
 	 * Constructor of the class Main. This is made such that the type of
 	 * agent/resourceAnalyzer used is not hardcoded and the users can choose
 	 * whichever they wants.
-	 *
-	 * @param fleetManagerClass the agent class that is going to be used in this
-	 * simulation.
-	 */
-	public Simulator(Class<? extends FleetManager> fleetManagerClass) {
-		this.fleetManagerClass = fleetManagerClass;
+	 **/
+	public Simulator(Configuration configuration) {
+		this.configuration = configuration;
+		configure(Configuration.get());
 	}
 
 	public void removeEvent(Event e) {
-		events.remove(e);
-	}
-
-	public void addEvent(Event e) {
 		events.remove(e);
 	}
 
@@ -166,13 +112,10 @@ public class Simulator {
 	 * See COMSETsystem.Configuration and Main.java for detailed description of the parameters.
 	 *
 	 */
-	public void configure() {
-		configuration = Configuration.get();
-		this.resourceMaximumLifeTime = configuration.resourceMaximumLifetime * timeResolution;
-		this.trafficPatternEpoch = configuration.trafficPatternEpoch * timeResolution;
-		this.trafficPatternStep = configuration.trafficPatternStep * timeResolution;
+	public void configure(Configuration configuration) {
+		// Configuration Properties for this simulation.
 
-		MapCreator creator = new MapCreator(configuration, this.timeResolution);
+		MapCreator creator = new MapCreator(configuration);
 		System.out.println("Creating the map...");
 
 		creator.createMap();
@@ -193,7 +136,7 @@ public class Simulator {
 		// map match resources
 		System.out.println("Loading and map-matching resources...");
 
-		fleetManager = createFleetManager();
+		fleetManager = createFleetManager(configuration);
 
 		// The simulation end time is the expiration time of the last resource.
 		// which is return by createMapWithData
@@ -218,7 +161,7 @@ public class Simulator {
 	public void run() {
 		System.out.println("Running the simulation...");
 
-		ScoreInfo score = new ScoreInfo();
+		score = new ScoreInfo(configuration, this);
 		if (map == null) {
 			System.out.println("map is null at beginning of run");
 		}
@@ -279,7 +222,74 @@ public class Simulator {
 	 * It uses Runtime which allows the application to interface with the
 	 * environment in which the application is running. 
 	 */
-	class ScoreInfo {
+	static class ScoreInfo {
+
+		final Configuration configuration;
+		final Simulator simulator;
+
+		// Total trip time of all resources to which agents have been assigned.
+		private long totalResourceTripTime = 0;
+		protected long getTotalResourceTripTime() {
+			return totalResourceTripTime;
+		}
+
+		// Total wait time of all resources. The wait time of a resource is the amount of time
+		// since the resource is introduced to the system until it is picked up by an agent, or it expires
+		private long totalResourceWaitTime = 0;
+		protected long getTotalResourceWaitTime() {
+			return totalResourceWaitTime;
+		}
+		private void accumulateResourceWaitTime(long waitTime) {
+			totalResourceWaitTime += waitTime;
+		}
+
+		// Total search time of all agents. The search time of an agent for a research is the amount of time
+		// since the agent is labeled as empty, i.e., added to emptyAgents, until it picks up a resource.
+		private long totalAgentSearchTime = 0;
+		protected long getTotalAgentSearchTime() {
+			return totalAgentSearchTime;
+		}
+		protected void recordPickup(long currentTime, long startSearchTime, long assignTime, long availableTime,
+									long staticApproachTime) {
+			totalAgentSearchTime += currentTime - startSearchTime;
+			accumulateResourceWaitTime(currentTime - availableTime);
+			totalAgentCruiseTime += assignTime - startSearchTime;
+
+			long approachTime = currentTime - assignTime;
+			this.totalAgentApproachTime += approachTime;
+			approachTimeCheckRecords.add(new Simulator.IntervalCheckRecord(assignTime, approachTime,
+					staticApproachTime));
+		}
+
+		// Total cruise time of all agents. The cruise time of an agent for a research is the amount of time
+		// since the agent is labeled as empty until it is assigned to a resource.
+		private long totalAgentCruiseTime = 0;
+
+		// Total approach time of all agents. The approach time of an agent for a research is the amount of time
+		// since the agent is assigned to a resource until agent reaches the resource.
+		private long totalAgentApproachTime = 0;
+
+		// The number of expired resources.
+		private long expiredResources = 0;
+		protected void recordExpiration() {
+			expiredResources++;
+			accumulateResourceWaitTime(Configuration.get().resourceMaximumLifeTime);
+		}
+
+		// The number of resources that have been introduced to the system.
+		protected long totalResources = 0;
+
+		// The number of assignments that have been made, and dropped off
+		private long totalAssignments = 0;
+
+		// The number of times an agent fails to reach an assigned resource before the resource expires
+		private long totalAbortions = 0;
+		protected void recordAbortion() {
+			totalAbortions++;
+		}
+
+		private final ArrayList<IntervalCheckRecord> approachTimeCheckRecords = new ArrayList<>();
+		private final ArrayList<IntervalCheckRecord> resourcePickupTimeCheckRecords = new ArrayList<>();
 
 		final Runtime runtime = Runtime.getRuntime();
 		final NumberFormat format = NumberFormat.getInstance();
@@ -292,7 +302,9 @@ public class Simulator {
 		 * Constructor for ScoreInfo class. Runs beginning, this method
 		 * initializes all the necessary things.
 		 */
-		ScoreInfo() {
+		ScoreInfo(Configuration configuration, Simulator simulator) {
+			this.configuration = configuration;
+			this.simulator = simulator;
 			startTime = System.nanoTime();
 			// Suppress memory allocation information display
 			// beginning();
@@ -337,6 +349,7 @@ public class Simulator {
 		 * the Performance Report.
 		 */
 		void end() {
+			Configuration configuration = Configuration.get();
 			// Empty the string builder
 			sb.setLength(0);
 
@@ -351,9 +364,10 @@ public class Simulator {
 			System.out.println("Bounding polygon KML file: " + configuration.boundingPolygonKMLFile);
 			System.out.println("Number of agents: " + configuration.numberOfAgents);
 			System.out.println("Number of resources: " + totalResources);
-			System.out.println("Resource Maximum Life Time: " + resourceMaximumLifeTime / timeResolution + " seconds");
-			System.out.println("Fleet Manager class: " + fleetManagerClass.getName());
-			System.out.println("Time resolution: " + timeResolution);
+			System.out.println("Resource Maximum Life Time: " +
+					configuration.resourceMaximumLifeTimeInSeconds + " seconds");
+			System.out.println("Fleet Manager class: " + configuration.fleetManagerClass.getName());
+			System.out.println("Time resolution: " + configuration.timeResolution);
 
 			System.out.println("\n***Statistics***");
 
@@ -362,27 +376,33 @@ public class Simulator {
 				// These agents are in search status and therefore the amount of time they spend on
 				// searching until the end of the simulation should be counted toward the total search time.
 				long totalRemainTime = 0;
-				for (AgentEvent ae : emptyAgents) {
-					totalRemainTime += (simulationEndTime - ae.startSearchTime);
+				for (AgentEvent ae : simulator.emptyAgents) {
+					totalRemainTime += (simulator.simulationEndTime - ae.startSearchTime);
 				}
 
 				sb.append("average agent search time: ")
-						.append(Math.floorDiv((totalAgentSearchTime + totalRemainTime) / timeResolution,
-								(totalAssignments + emptyAgents.size())))
+						.append(Math.floorDiv(
+								Configuration.toSeconds(totalAgentSearchTime + totalRemainTime),
+								(totalAssignments + simulator.emptyAgents.size())))
 						.append(" seconds \n");
 				sb.append("average resource wait time: ")
-						.append(Math.floorDiv(totalResourceWaitTime / timeResolution, totalResources))
+						.append(Math.floorDiv(Configuration.toSeconds(totalResourceWaitTime),
+								totalResources))
 						.append(" seconds \n");
 				sb.append("resource expiration percentage: ")
-						.append(Math.floorDiv(expiredResources * 100, totalResources))
+						.append(Math.floorDiv(expiredResources * 100,
+								totalResources))
 						.append("%\n");
 				sb.append("\n");
 				sb.append("average agent cruise time: ")
-						.append(Math.floorDiv(totalAgentCruiseTime / timeResolution, totalAssignments)).append(" seconds \n");
+						.append(Math.floorDiv(Configuration.toSeconds(totalAgentCruiseTime),
+								totalAssignments)).append(" seconds \n");
 				sb.append("average agent approach time: ")
-						.append(Math.floorDiv(totalAgentApproachTime / timeResolution, totalAssignments)).append(" seconds \n");
+						.append(Math.floorDiv(Configuration.toSeconds(totalAgentApproachTime),
+								totalAssignments)).append(" seconds \n");
 				sb.append("average resource trip time: ")
-						.append(Math.floorDiv(totalResourceTripTime / timeResolution, totalAssignments))
+						.append(Math.floorDiv(Configuration.toSeconds(totalResourceTripTime),
+								totalAssignments))
 						.append(" seconds \n");
 				sb.append("total number of assignments: ")
 						.append(totalAssignments)
@@ -415,7 +435,8 @@ public class Simulator {
 				l2 += ratio * ratio;
 			}
 			System.out.println("Threshold =" + threshold + "; Count =" + below_threshold_count);
-			System.out.println("Resource Pickup Ratios RMS =" + Math.sqrt(l2 / resourcePickupTimeCheckRecords.size())
+			System.out.println("Resource Pickup Ratios RMS =" +
+					Math.sqrt(l2 / resourcePickupTimeCheckRecords.size())
 					+ "; Count =" + resourcePickupTimeCheckRecords.size());
 
 
@@ -438,6 +459,14 @@ public class Simulator {
 			System.out.println("Threshold =" + threshold + "; Count =" + below_threshold_count);
 			System.out.println("Agent Approach Ratios RMS =" + Math.sqrt(l2 / approachTimeCheckRecords.size())
 					+ "; Count =" + approachTimeCheckRecords.size());
+		}
+
+		protected void recordCompletedTrip(long dropOffTime, long pickupTime, long staticTripTime) {
+			long tripTime = dropOffTime - pickupTime;
+			totalResourceTripTime += tripTime;
+			totalAssignments++;
+			resourcePickupTimeCheckRecords.add(new IntervalCheckRecord(
+					pickupTime, tripTime, staticTripTime));
 		}
 	}
 
@@ -488,15 +517,6 @@ public class Simulator {
 	}
 
 	/**
-	 * Sets the events of the simulation.
-	 * 
-	 * @param events The PriorityQueue of events
-	 */
-	public void setEvents(PriorityQueue<Event> events) {
-		this.events = events;
-	}
-
-	/**
 	 * Retrieves the queue of events of the simulation.
 	 * 
 	 * @return {@code events }
@@ -522,15 +542,6 @@ public class Simulator {
 	}
 
 	/**
-	 * Sets the empty agents in the simulation
-	 * 
-	 * @param emptyAgents The TreeSet of agent events to set.
-	 */
-	public void setEmptyAgents(TreeSet<AgentEvent> emptyAgents) {
-		this.emptyAgents = emptyAgents;
-	}
-
-	/**
 	 * Make an agent copy of locationOnRoad so that an agent cannot modify the attributes of the road.
 	 * 
 	 * @param locationOnRoad the location to make a copy for
@@ -543,9 +554,10 @@ public class Simulator {
 		return new LocationOnRoad(roadAgentCopy, locationOnRoad.distanceFromStartIntersection);
 	}
 
-	public FleetManager createFleetManager() {
+	public FleetManager createFleetManager(Configuration configuration) {
 		try {
-			Constructor<? extends FleetManager> cons = this.fleetManagerClass.getConstructor(CityMap.class);
+			Constructor<? extends FleetManager> cons =
+					configuration.fleetManagerClass.getConstructor(CityMap.class);
 			return cons.newInstance(this.mapForAgents);
 		} catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
 				InvocationTargetException e) {

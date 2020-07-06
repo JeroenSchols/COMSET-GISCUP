@@ -20,37 +20,49 @@ public class Configuration {
     //   code don't need to know its value. Also the field dynamicTraffic should also be hidden.
     // The number of agents that are deployed (at the beginning of the simulation).
     public final long numberOfAgents;
-    public final boolean dynamicTraffic;
+    public final boolean dynamicTrafficEnabled;
 
     // Members accessible from COMSETsystem, hidden from others, i.e. they have no business knowing them.
-    protected final long resourceMaximumLifetime;
-    protected final long agentPlacementRandomSeed;
-    protected final long trafficPatternEpoch;
-    protected final long trafficPatternStep;
+    public final long resourceMaximumLifeTime, resourceMaximumLifeTimeInSeconds;
+    // Traffic pattern epoch in seconds
+    public final long trafficPatternEpoch, trafficPatternEpochInSeconds;
+    // Traffic pattern step in seconds
+    public final long trafficPatternStep, trafficPatternStepInSeconds;
+    public final long agentPlacementRandomSeed;
 
     protected static Configuration singletonConfiguration;
 
-    private Configuration(String mapJSONFile,
+    // A class that extends BaseAgent and implements a search routing strategy
+    protected final Class<? extends FleetManager> fleetManagerClass;
+
+    private Configuration(Class<? extends FleetManager> fleetManagerClass,
+                          String mapJSONFile,
                           String resourceFile,
                           long numberOfAgents,
                           String boundingPolygonKMLFile,
-                          long resourceMaximumLifetime,
+                          long resourceMaximumLifeTime,
                           long agentPlacementRandomSeed,
-                          boolean dynamicTraffic,
+                          boolean dynamicTrafficEnabled,
                           long trafficPatternEpoch,
                           long trafficPatternStep) {
+        this.fleetManagerClass = fleetManagerClass;
         this.mapJSONFile = mapJSONFile;
         this.resourceFile = resourceFile;
         this.numberOfAgents = numberOfAgents;
         this.boundingPolygonKMLFile = boundingPolygonKMLFile;
-        this.resourceMaximumLifetime = resourceMaximumLifetime;
+        resourceMaximumLifeTimeInSeconds = resourceMaximumLifeTime;
+        this.resourceMaximumLifeTime = resourceMaximumLifeTimeInSeconds * timeResolution;
         this.agentPlacementRandomSeed = agentPlacementRandomSeed;
-        this.dynamicTraffic = dynamicTraffic;
-        this.trafficPatternEpoch = trafficPatternEpoch;
-        this.trafficPatternStep = trafficPatternStep;
+        this.dynamicTrafficEnabled = dynamicTrafficEnabled;
+
+        trafficPatternEpochInSeconds = trafficPatternEpoch;
+        this.trafficPatternEpoch = trafficPatternEpochInSeconds * timeResolution;
+        trafficPatternStepInSeconds = trafficPatternStep;
+        this.trafficPatternStep = trafficPatternStepInSeconds * timeResolution;
     }
 
-    public static void make(String mapJSONFile,
+    public static void make(Class<? extends FleetManager> fleetManagerClass,
+                            String mapJSONFile,
                             String resourceFile,
                             long numberOfAgents,
                             String boundingPolygonKMLFile,
@@ -60,7 +72,9 @@ public class Configuration {
                             long trafficPatternEpoch,
                             long trafficPatternStep) {
         if (singletonConfiguration == null) {
-            singletonConfiguration = new Configuration(mapJSONFile,
+            singletonConfiguration = new Configuration(
+                    fleetManagerClass,
+                    mapJSONFile,
                     resourceFile,
                     numberOfAgents,
                     boundingPolygonKMLFile,
@@ -75,5 +89,13 @@ public class Configuration {
     public static Configuration get() {
         assert singletonConfiguration != null;
         return singletonConfiguration;
+    }
+
+    public static long toSeconds(long scaledSimulationTime) {
+        return scaledSimulationTime / singletonConfiguration.timeResolution;
+    }
+
+    public static double toSimulatedSpeed(double distancePerSecond) {
+        return distancePerSecond / singletonConfiguration.timeResolution;
     }
 }

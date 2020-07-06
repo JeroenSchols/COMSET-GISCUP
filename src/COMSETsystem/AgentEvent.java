@@ -231,17 +231,8 @@ public class AgentEvent extends Event {
 		long approachTime = time - assignTime;
 		long staticApproachTime = simulator.map.travelTimeBetween(assignLocation, loc);
 
-		simulator.approachTimeCheckRecords.add(new Simulator.IntervalCheckRecord(
-				assignTime, approachTime, staticApproachTime));
-
-		// Resource had been wiating from introductionTime (i.e. when it was available) to now (time that this
-		// pickup event triggered).
-		long waitTime = time - assignedResource.availableTime;
-
-		simulator.totalAgentSearchTime += searchTime;
-		simulator.totalResourceWaitTime += waitTime;
-		simulator.totalAgentCruiseTime += assignTime - startSearchTime;
-		simulator.totalAgentApproachTime += time - assignTime;
+		simulator.score.recordPickup(time, startSearchTime, assignTime, assignedResource.availableTime,
+				staticApproachTime);
 
 		assignedResource.pickup(this, time);
 

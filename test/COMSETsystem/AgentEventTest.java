@@ -123,9 +123,9 @@ public class AgentEventTest {
         // Validate simulation statistics
         // * agent search time is the time it took to travel half o roadFrom2to3
         // * and that customer waited from the time that agent was assigned to it (i.e. TRIGGER_TIME)
-        assertEquals(testMap.roadFrom2to3.travelTime/2, mockSimulator.totalAgentSearchTime);
+        assertEquals(testMap.roadFrom2to3.travelTime/2, mockSimulator.score.getTotalAgentSearchTime());
         assertEquals(TRIGGER_TIME - AVAILABLE_TIME + testMap.roadFrom2to3.travelTime/2,
-                mockSimulator.totalResourceWaitTime);
+                mockSimulator.score.getTotalResourceWaitTime());
 
         // Setup expectations, we expect a call to FleetManager upon reaching end of road2to3 to
         // get next intersection which is intersection 4, i.e. the end of roadFrom3to4.
@@ -170,7 +170,7 @@ public class AgentEventTest {
         // * Trip time was time to go halfwady down roadFrom2to3, all the way on roadFrom3to4 and
         //   halfway on roadFrom4to5
         assertEquals(testMap.roadFrom2to3.travelTime/2 + testMap.roadFrom3to4.travelTime
-                + testMap.roadFrom4to5.travelTime/2, mockSimulator.totalResourceTripTime);
+                + testMap.roadFrom4to5.travelTime/2, mockSimulator.score.getTotalResourceTripTime());
     }
 
     private ResourceEvent makeCustomer(LocationOnRoad pickupLocation,
