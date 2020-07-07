@@ -34,6 +34,8 @@ public class MapWithData {
 	// Time Zone ID of the map; for conversion from the time stamps in a resource dataset file to Linux epochs.
 	protected ZoneId zoneId;
 
+	private ArrayList<Resource> resourcesParsed;
+
 	/**
 	 * Constructor of MapWithData
 	 * @param map reference to the map
@@ -58,10 +60,12 @@ public class MapWithData {
 	 * be created.
 	 * @return long the latest resource time
 	 */
+	// FIXME: Pass in configuration here too instead of accessing it with the singleton.
 	public long createMapWithData(Simulator simulator, FleetManager fleetManager) {
- 
+
+
 		CSVNewYorkParser parser = new CSVNewYorkParser(resourceFile, zoneId);
-		ArrayList<Resource> resourcesParsed = parser.parse(Configuration.get().timeResolution);
+		resourcesParsed = parser.parse(Configuration.get().timeResolution);
 		try {
             for (Resource resource : resourcesParsed) {
 				// map matching
@@ -69,12 +73,13 @@ public class MapWithData {
 				LocationOnRoad dropoffMatch = mapMatch(resource.getDropoffLon(), resource.getDropoffLat());
 
 				// TODO: won't need trip time
-				long staticTripTime = simulator.getMap().travelTimeBetween(pickupMatch, dropoffMatch);
+				long staticTripTime = simulator.mapForAgents.travelTimeBetween(pickupMatch, dropoffMatch);
 
 				resource.setPickupLocation(pickupMatch);
 				resource.setDropoffLocation(dropoffMatch);
 
-				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), staticTripTime, simulator, fleetManager);
+				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), staticTripTime,
+						simulator, fleetManager);
 				events.add(ev);
 
 				//  track earliestResourceTime and latestResourceTime
@@ -92,14 +97,14 @@ public class MapWithData {
 			e.printStackTrace();
 		}
 
+		return latestResourceTime;
+	}
+
+	public TrafficPattern getTrafficPattern() {
 		System.out.println("Building traffic patterns...");
-		TrafficPattern trafficPattern = buildSlidingTrafficPattern(resourcesParsed,
+		return buildSlidingTrafficPattern(resourcesParsed,
 				Configuration.get().trafficPatternEpoch,
 				Configuration.get().trafficPatternStep, Configuration.get().dynamicTrafficEnabled);
-		simulator.trafficPattern = trafficPattern;
-
-		fleetManager.setTrafficPattern(trafficPattern);
-		return latestResourceTime;
 	}
 
 	/**

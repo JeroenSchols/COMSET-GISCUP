@@ -1,7 +1,5 @@
 package COMSETsystem;
 
-import MapCreation.*;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -36,7 +34,7 @@ public class Simulator {
 
 	// A deep copy of map to be passed to agents. 
 	// This is a way to make map unmodifiable.
-	protected CityMap mapForAgents;
+	public CityMap mapForAgents;
 
 	// The event queue.
 	private PriorityQueue<Event> events = new PriorityQueue<>();
@@ -62,7 +60,7 @@ public class Simulator {
 	protected FleetManager fleetManager;
 
 	// Traffic pattern
-	public TrafficPattern trafficPattern;
+	protected TrafficPattern trafficPattern;
 
 	public final Map<Long, AgentEvent> agentMap = new HashMap<>();
 	public final Map<Long, ResourceEvent> resMap = new HashMap<>();
@@ -95,17 +93,8 @@ public class Simulator {
 	public void configure(Configuration configuration) {
 		// Configuration Properties for this simulation.
 
-		MapCreator creator = new MapCreator(configuration);
-		System.out.println("Creating the map...");
+		map = configuration.map;
 
-		creator.createMap();
-
-		// Output the map
-		map = creator.outputCityMap();
-
-		// Pre-compute shortest travel times between all pairs of intersections.
-		System.out.println("Pre-computing all pair travel times...");
-		map.calcTravelTimes();
 
 		// Make a map copy for agents to use so that an agent cannot modify the map used by
 		// the simulator
@@ -121,6 +110,8 @@ public class Simulator {
 		// The simulation end time is the expiration time of the last resource.
 		// which is return by createMapWithData
 		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager);
+		trafficPattern = mapWD.getTrafficPattern();
+		fleetManager.setTrafficPattern(trafficPattern);
 
 		// Deploy agents at random locations of the map.
 		System.out.println("Randomly placing " + configuration.numberOfAgents + " agents on the map...");
@@ -231,15 +222,6 @@ public class Simulator {
 		public int compare(ResourceEvent a1, ResourceEvent a2) {
 			return Long.compare(a1.id, a2.id);
 		}
-	}
-
-	/**
-	 * Retrieves the CityMap instance of this simulation
-	 * 
-	 * @return {@code map }
-	 */
-	public CityMap getMap() {
-		return map;
 	}
 
 	/**

@@ -1,5 +1,7 @@
 package COMSETsystem;
 
+import MapCreation.MapCreator;
+
 /**
  * Class to hold the configuration parameters of the simulation. Call static method Configuration.make() first to
  * create a singleton configuration object, then call Configuration.get() to retrieve the singleton.
@@ -35,6 +37,9 @@ public class Configuration {
     // A class that extends BaseAgent and implements a search routing strategy
     protected final Class<? extends FleetManager> fleetManagerClass;
 
+    // The map that everything will happen on.
+    final CityMap map;
+
     private Configuration(Class<? extends FleetManager> fleetManagerClass,
                           String mapJSONFile,
                           String resourceFile,
@@ -59,6 +64,12 @@ public class Configuration {
         this.trafficPatternEpoch = trafficPatternEpochInSeconds * timeResolution;
         trafficPatternStepInSeconds = trafficPatternStep;
         this.trafficPatternStep = trafficPatternStepInSeconds * timeResolution;
+
+        map = makeCityMap();
+
+        // Pre-compute shortest travel times between all pairs of intersections.
+        System.out.println("Pre-computing all pair travel times...");
+        map.calcTravelTimes();
     }
 
     public static void make(Class<? extends FleetManager> fleetManagerClass,
@@ -86,16 +97,33 @@ public class Configuration {
         }
     }
 
+    /**
+     * Get the singleton instance of the configuration.
+     * @return Configuration instance
+     */
     public static Configuration get() {
         assert singletonConfiguration != null;
         return singletonConfiguration;
     }
 
-    public static long toSeconds(long scaledSimulationTime) {
-        return scaledSimulationTime / singletonConfiguration.timeResolution;
+    /* Beside make() and get(), most methods should be static. Much safer that way to avoid initialization problems
+    where they are called before proper initialization of the singleton.
+     */
+    public long toSeconds(long scaledSimulationTime) {
+        return scaledSimulationTime / timeResolution;
     }
 
-    public static double toSimulatedSpeed(double distancePerSecond) {
-        return distancePerSecond / singletonConfiguration.timeResolution;
+    public double toSimulatedSpeed(double distancePerSecond) {
+        return distancePerSecond / timeResolution;
+    }
+
+    private CityMap makeCityMap() {
+        MapCreator creator = new MapCreator(this);
+        System.out.println("Creating the map...");
+
+        creator.createMap();
+
+        // Output the map
+        return creator.outputCityMap();
     }
 }

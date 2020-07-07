@@ -96,13 +96,9 @@ public class ResourceEvent extends Event {
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id + " triggered at time " + time, this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + this.pickupLoc + "," + this.dropoffLoc, this);
 
-		if (simulator.map == null) {
-			System.out.println("map is null in resource");
-		}
 		if (pickupLoc == null) {
 			System.out.println("intersection is null");
 		}
-
 
 		switch (state) {
 			case AVAILABLE:

@@ -214,10 +214,10 @@ public class MapCreator {
 						double distance = vertices.get(id1).xy.distance(vertices.get(id2).xy);
 						// Convert km/h to meters per second; apply speed reduction
 						vertices.get(id1).addEdge(vertices.get(id2), distance,
-								Configuration.toSimulatedSpeed(maxSpeed * 1000 / 3600));
+								configuration.toSimulatedSpeed(maxSpeed * 1000 / 3600));
 						if (!oneway) {
 							vertices.get(id2).addEdge(vertices.get(id1), distance,
-									Configuration.toSimulatedSpeed(maxSpeed * 1000 / 3600));
+									configuration.toSimulatedSpeed(maxSpeed * 1000 / 3600));
 						}
 					}
 				}

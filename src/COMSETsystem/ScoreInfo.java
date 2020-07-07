@@ -169,11 +169,11 @@ class ScoreInfo {
 
             sb.append("average agent search time: ")
                     .append(Math.floorDiv(
-                            Configuration.toSeconds(totalAgentSearchTime + totalRemainTime),
+                            configuration.toSeconds(totalAgentSearchTime + totalRemainTime),
                             (totalAssignments + simulator.emptyAgents.size())))
                     .append(" seconds \n");
             sb.append("average resource wait time: ")
-                    .append(Math.floorDiv(Configuration.toSeconds(totalResourceWaitTime),
+                    .append(Math.floorDiv(configuration.toSeconds(totalResourceWaitTime),
                             totalResources))
                     .append(" seconds \n");
             sb.append("resource expiration percentage: ")
@@ -182,13 +182,13 @@ class ScoreInfo {
                     .append("%\n");
             sb.append("\n");
             sb.append("average agent cruise time: ")
-                    .append(Math.floorDiv(Configuration.toSeconds(totalAgentCruiseTime),
+                    .append(Math.floorDiv(configuration.toSeconds(totalAgentCruiseTime),
                             totalAssignments)).append(" seconds \n");
             sb.append("average agent approach time: ")
-                    .append(Math.floorDiv(Configuration.toSeconds(totalAgentApproachTime),
+                    .append(Math.floorDiv(configuration.toSeconds(totalAgentApproachTime),
                             totalAssignments)).append(" seconds \n");
             sb.append("average resource trip time: ")
-                    .append(Math.floorDiv(Configuration.toSeconds(totalResourceTripTime),
+                    .append(Math.floorDiv(configuration.toSeconds(totalResourceTripTime),
                             totalAssignments))
                     .append(" seconds \n");
             sb.append("total number of assignments: ")

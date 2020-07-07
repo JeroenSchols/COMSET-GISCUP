@@ -38,7 +38,7 @@ public abstract class FleetManager {
         this.map = map;
     }
 
-    protected void setTrafficPattern(TrafficPattern trafficPattern) {
+    void setTrafficPattern(TrafficPattern trafficPattern) {
         this.trafficPattern = trafficPattern;
     }
 
