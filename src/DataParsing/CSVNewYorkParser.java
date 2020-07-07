@@ -94,6 +94,9 @@ public class CSVNewYorkParser {
 				if (!(MapCreator.insidePolygon(pickupLon, pickupLat) && MapCreator.insidePolygon(dropoffLon, dropoffLat))) {
 					continue;
 				}
+				if (pickupLat == dropoffLat && pickupLon == dropoffLon) {
+					continue;
+				}
 				resources.add(new Resource(pickupLat, pickupLon, dropoffLat, dropoffLon, time, dropoffTime)); //create new resource with the above fields
 				resource_count += 1;
 				//if (resource_count == 100)
