@@ -1,12 +1,11 @@
 # COMSET
 
 This project provides the COMSET simulator described in the
-[2020 GISCUP Problem Definition](https://sigspatial2020.sigspatial.org/giscup2019/problem). 
-COMSET simulates crowdsourced taxicabs (called <i>agents</i>) searching for customers
+[2020 GISCUP Problem Definition](https://sigspatial2020.sigspatial.org/giscup2020/problem). 
+COMSET simulates taxicabs (called <i>agents</i>) searching for customers
 (called <i>resources</i>) to pick up in a city. 
 The simulator serves as a standard testbed such that GISCUP contestants can develop
-and test their own fleet management algorithms.
-It will also serve as a testbed to evaluate submissions.
+and test their own search algorithms. It will also serve as a testbed to evaluate submissions.
 
 ## Overall Logic
 
@@ -15,7 +14,7 @@ and cropped by an input bounding polygon.
 Resources (passengers) are read from an input
 [TLC Trip Record Data Yellow](https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
 data file<sup>1</sup>.
-Each resource corresponds to one trip record in the file.
+Each resource corresponds to one trip record in the file, except that any trip such that its pickup location is identical to its dropoff location is discarded.
 Resources are cropped such that only those with
 both pickup and dropoff locations within the bounding polygon are kept.
 A certain number of agents (taxicabs) are deployed at random locations on the map. 
@@ -29,19 +28,19 @@ Thus there isn’t a global variable time; the simulator just goes from event to
 
 For GISCUP 2020 Competition, contestants will write a **FleetManager** class to control the entire fleet
 of agents.
-After the system randomly place an agent it notifies the **FleetManager** of the agent's location,
+After the system randomly places an agent it notifies the **FleetManager** of the agent's location,
 at which point the **FleetManager** begins planning the agent's movements.
-When a resource become available, the **FleetManager** can assign an agent to pickup the resource.
-After resource pickup, the **FleetManager** plans the agents route to the resource's dropoff location.
-The **FleetManager** also controls the cruising paths of empty agents.
+When a resource becomes available, the **FleetManager** can assign an agent to pickup the resource.
+After resource pickup, the **FleetManager** plans the agent's path to the resource's dropoff location.
+The **FleetManager** also controls the cruising paths of agents that has not pickuped a resource.
 Essentially, the **FleetManager** has full control of every agent's detailed movement.
 
-Resources will expire **ResourceMaximumLiftTime** seconds after its introduction if it
+Resources will expire after **ResourceMaximumLiftTime** seconds after its introduction if it
 has not been picked up.
 Expired resources are not eligible for assignment to agents.
 Picked up resources will never expire.
-Consequently, the **FleetManager** must plan the route of an agent to reach the resource's pickup
-location before expiration. But after pick-up the **FleetManager no longer needs to consider expiraton.
+Consequently, the **FleetManager** must plan the path of an agent to reach the resource's pickup
+location before expiration.
 
 The performance measures, including the average search time, the average wait time,
 and the expiration percentage, are printed out at the end of the simulation.
@@ -70,11 +69,11 @@ This procedure is repeated until the agent is assigned to a resource.
 
 When a resource becomes available, **RandomDestinationFleetManager** will assign the agent that can
 reach the resource in the shortest amount of time, and direct that agent on
-the shortest path to the pickup
+the shortest travel time path to the pickup
 location. Upon picking up the resource, **RandomDestinationFleetManager** will direct the agent on
-the shortest path to the dropoff point.
+the shortest travel time path to the dropoff point.
 
-The simulator provides am abstract class called <b>COMSETsystem.FleetManaeger</b>
+The simulator provides an abstract class called <b>COMSETsystem.FleetManaeger</b>
 which defines a base class
 of an agent implementation.
 The CUP contestants should extend from this class to implement their own sub-class,
@@ -109,7 +108,7 @@ The simulation calls this method to notify the **FleetManager** that the resourc
 * resource has been picked up by an agent.
 
 #### onReachIntersection
-Calls to this method notifies that an agent has reach an intersection and is ready for new travel
+Calls to this method notifies that an agent has reached an intersection and is ready for new travel
 directions.
 This is called whenever any agent without an assigned resources reaches an intersection.
 This method allows the **FleetManager** to plan any agent's cruising path, the path it takes when it
@@ -119,7 +118,7 @@ reach resources for pickup.
 
 #### OnReachIntersectionWithResource
 Calls to this method notifies that an agent with an picked up resource reaches an intersection.
-This method allows the **FleetMangaer** to plan the route of the agent to the resource's dropoff point.
+This method allows the **FleetMangaer** to plan the path of the agent to the resource's dropoff point.
 
 ### Prerequisites
 
@@ -154,9 +153,9 @@ using the naive random-destination search strategy.
 The resources are the trip records for June 1st, 2016 starting from 8:00am until 10:00pm.
 The simulation should be finished in a few minutes, and you should get something like the following:
 
-average agent search time: 464 seconds<br>
-average resource wait time: 197 seconds<br>
-resource expiration percentage: 4%<br>
+average agent search time: 405 seconds<br>
+average resource wait time: 262 seconds<br>
+resource expiration percentage: 7%<br>
 
 In fact, if you run the simulator without changing anything in the code
 that is downloaded from GitHub, you should get exactly the same results as shown above.
@@ -180,31 +179,26 @@ A contestant should set <b>comset.agent_class</b> to point to the proposed solut
 that are needed by the solution. 
 
 ## Dynamic Travel Speeds of Agents
-Unlike 2019, travel speed on road segments will vary over the course of the day to simulate
-the effect of traffic conditions. The travel speed will not depend on the number of agents in
-the road segment.
+Unlike 2019, the travel speeds of agents on road segments will vary over the course of a day based on the traffic pattern reflected in the TLC Trip Record data. The travel speed will not depend on the number of agents in
+the road segment. 
 
 The travel speed at a road segment will be
-updated every Q minutes (e.g., N=15) during a simulation.
+updated every one minute during a simulation.
 The travel speed is computed based on the road segment's speed limit and the
-TLC Trip Record data to reflect the traffic condition over the time of a day.
+TLC Trip Record data to reflect the traffic pattern over the time of a day.
 The calibration goes as follows.
 
-1. Compute the average trip duration of all trips recorded in the TLC Trip Record data that fall into the current Q-minute interval; call it the `TLC_average_trip_duration`.
+1. For every minute of a day, compute the average trip duration of all trips recorded in the TLC Trip Record data that fall into a 15-minute time window starting at the current minute; call it the `TLC_average_trip_duration`.
 2. For each trip, compute the shortest travel time from the pickup location of the trip to the dropoff location using speed limits.
 3. Compute the average shortest travel time of all trips; call it the `map_average_trip_duration`.
-4. For each road segment, `travel_speed = speed_limit * ((map_average_trip_duration)/(TLC_average_trip_duration))`.
+4. For each road segment, `travel_speed_of_current_minute = speed_limit * ((map_average_trip_duration)/(TLC_average_trip_duration))`.
 
 In other words, we adjust the travel speeds so that the average trip time produced by
-COMSET is consistent
+COMSET is consistent with that of the real data.
 
-## 2020 Authors
+COMSET provides built-in functions CityMap::travelTimeBetween() and CityMap::shortestTravelTimePath() for computing the shortest travel time and the shortest travel time path between two locations on the map, respectively. It should be noted that the results returned by these functions are based on the speed limits, not the dynamic travel speed. 
 
-* **Po-Han Chen**
-* **Steven Tjiang**
-* **Bo Xu**
-
-## 2019 Authors
+## Authors
 
 * **Robert van Barlingen**
 * **João Ferreira**
