@@ -5,7 +5,7 @@ This project provides the COMSET simulator described in the
 COMSET simulates taxicabs (called <i>agents</i>) searching for customers
 (called <i>resources</i>) to pick up in a city. 
 The simulator serves as a standard testbed such that GISCUP contestants can develop
-and test their own search algorithms. It will also serve as a testbed to evaluate submissions.
+and test their own fleet management algorithms. It will also serve as a testbed to evaluate submissions.
 
 ## Overall Logic
 
@@ -32,15 +32,15 @@ After the system randomly places an agent it notifies the **FleetManager** of th
 at which point the **FleetManager** begins planning the agent's movements.
 When a resource becomes available, the **FleetManager** can assign an agent to pickup the resource.
 After resource pickup, the **FleetManager** plans the agent's path to the resource's dropoff location.
-The **FleetManager** also controls the cruising paths of agents that has not pickuped a resource.
+The **FleetManager** also controls the cruising paths of empty agents.
 Essentially, the **FleetManager** has full control of every agent's detailed movement.
 
-Resources will expire after **ResourceMaximumLiftTime** seconds after its introduction if it
+Resources will expire **ResourceMaximumLiftTime** seconds after its introduction if it
 has not been picked up.
 Expired resources are not eligible for assignment to agents.
 Picked up resources will never expire.
 Consequently, the **FleetManager** must plan the path of an agent to reach the resource's pickup
-location before expiration.
+location before expiration. But after pick-up the **FleetManager** no longer needs to consider expiraton.
 
 The performance measures, including the average search time, the average wait time,
 and the expiration percentage, are printed out at the end of the simulation.
@@ -153,9 +153,9 @@ using the naive random-destination search strategy.
 The resources are the trip records for June 1st, 2016 starting from 8:00am until 10:00pm.
 The simulation should be finished in a few minutes, and you should get something like the following:
 
-average agent search time: 405 seconds<br>
-average resource wait time: 262 seconds<br>
-resource expiration percentage: 7%<br>
+average agent search time: 464 seconds<br>
+average resource wait time: 197 seconds<br>
+resource expiration percentage: 4%<br>
 
 In fact, if you run the simulator without changing anything in the code
 that is downloaded from GitHub, you should get exactly the same results as shown above.
@@ -199,6 +199,11 @@ COMSET is consistent with that of the real data.
 COMSET provides built-in functions CityMap::travelTimeBetween() and CityMap::shortestTravelTimePath() for computing the shortest travel time and the shortest travel time path between two locations on the map, respectively. It should be noted that the results returned by these functions are based on the speed limits, not the dynamic travel speed. 
 
 ## Authors
+## 2020 Authors
+
+* **Po-Han Chen**
+* **Steven Tjiang**
+* **Bo Xu**
 
 * **Robert van Barlingen**
 * **João Ferreira**
