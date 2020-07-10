@@ -205,6 +205,8 @@ COMSET provides built-in functions CityMap::travelTimeBetween() and CityMap::sho
 * **Steven Tjiang**
 * **Bo Xu**
 
+## 2019 Authors
+
 * **Robert van Barlingen**
 * **João Ferreira**
 * **Tijana Klimovic**
