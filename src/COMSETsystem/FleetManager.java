@@ -9,10 +9,6 @@ public abstract class FleetManager {
     // Should not be accessible by subclasses.
     TrafficPattern trafficPattern;
 
-    public enum MapState {
-        ROAD_TRAVEL_TIME_CHANGED,
-    }
-
     public enum ResourceState {
         AVAILABLE,
         PICKED_UP,
@@ -22,8 +18,6 @@ public abstract class FleetManager {
 
     public abstract void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time);
 
-    public abstract void onMapStateChanged(Road road, MapState state);
-
     public abstract AgentAction onResourceAvailabilityChange(Resource resource, ResourceState state,
                                                              LocationOnRoad currentLoc, long time);
 
@@ -31,8 +25,6 @@ public abstract class FleetManager {
 
     public abstract Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc,
                                                                  Resource resource);
-
-    public abstract boolean isResourceWaitingPickup(Resource resource);
 
     public FleetManager(CityMap map) {
         this.map = map;

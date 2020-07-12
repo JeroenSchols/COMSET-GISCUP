@@ -15,8 +15,13 @@ public class RandomDestinationFleetManager extends FleetManager {
 
     Map<Long, LinkedList<Intersection>> agentRoutes = new HashMap<>();
 
-
-
+    /**
+     * The simulation calls onAgentIntroduced to notify the **FleetManager** that a new agent has been randomly
+     * placed and is available for assignment.
+     * @param agentId a unique id for each agent and can be used to associated information with agents.
+     * @param currentLoc the current location of the agent.
+     * @param time the simulation time.
+     */
     @Override
     public void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time) {
         agentLastAppearTime.put(agentId, time);
@@ -24,11 +29,18 @@ public class RandomDestinationFleetManager extends FleetManager {
         availableAgent.add(agentId);
     }
 
-    @Override
-    public void onMapStateChanged(Road road, FleetManager.MapState state) {
-
-    }
-
+    /**
+     * The simulation calls this method to notify the **FleetManager** that the resource's state has changed:
+     * + resource becomes available for pickup
+     * + resource expired
+     * + resource has been dropped off by its assigned agent
+     * + resource has been picked up by an agent.
+     * @param resource This object contains information about the Resource useful to the fleet manager
+     * @param state the new state of the resource
+     * @param currentLoc current location of the resources
+     * @param time the simulation time
+     * @return AgentAction that tells the agents what to do.
+     */
     @Override
     public AgentAction onResourceAvailabilityChange(Resource resource,
                                                     ResourceState state,
@@ -89,11 +101,17 @@ public class RandomDestinationFleetManager extends FleetManager {
         return action;
     }
 
-    @Override
-    public boolean isResourceWaitingPickup(Resource resource) {
-        return waitingResources.contains(resource);
-    }
-
+    /**
+     * Calls to this method notifies that an agent has reach an intersection and is ready for new travel directions.
+     * This is called whenever any agent without an assigned resources reaches an intersection. This method allows
+     * the **FleetManager** to plan any agent's cruising path, the path it takes when it has no assigned resource.
+     * The intention is that the **FleetManager** will plan the cruising, to minimize the time it takes to
+     * reach resources for pickup.
+     * @param agentId unique id of the agent
+     * @param time current simulation time.
+     * @param currentLoc current location of the agent.
+     * @return the next intersection for the agent to navigate to.
+     */
     @Override
     public Intersection onReachIntersection(long agentId, long time, LocationOnRoad currentLoc) {
         if (agentId == 240902L && time == 1464800008L) {
@@ -115,6 +133,15 @@ public class RandomDestinationFleetManager extends FleetManager {
         return nextLocation;
     }
 
+    /**
+     * Calls to this method notifies that an agent with an picked up resource reaches an intersection.
+     * This method allows the **FleetMangaer** to plan the route of the agent to the resource's dropoff point.
+     * @param agentId the unique id of the agent
+     * @param time current simulation time
+     * @param currentLoc current location of agent
+     * @param resource information of the resource associated with the agent.
+     * @return the next intersection for the agent to navigate to.
+     */
     @Override
     public Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc,
                                                         Resource resource) {
@@ -191,13 +218,7 @@ public class RandomDestinationFleetManager extends FleetManager {
         int destinationIndex = random.nextInt(map.intersections().size());
         Intersection[] intersectionArray =
                 map.intersections().values().toArray(new Intersection[0]);
-//        for (int i = 0; i < intersectionArray.length; i++)
-//            for (int j = i + 1; j < intersectionArray.length; j++) {
-//                if (intersectionArray[i].id == intersectionArray[j].id) {
-//                    System.out.println("something is wrong");
-//                }
-//            }
-        Intersection destinationIntersection = intersectionArray[destinationIndex];
+       Intersection destinationIntersection = intersectionArray[destinationIndex];
         if (destinationIntersection == sourceIntersection) {
             // destination cannot be the source
             // if destination is the source, choose a neighbor to be the destination
