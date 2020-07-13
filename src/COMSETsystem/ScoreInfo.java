@@ -212,6 +212,7 @@ class ScoreInfo {
         double threshold = 2.0;
 //        int print_limit = Integer.MAX_VALUE;
 //        double threshold = Double.MAX_VALUE;
+        System.out.println("time,simulated_raio,expected_ratio,difference");
         for (final IntervalCheckRecord checkRecord: resourcePickupTimeCheckRecords) {
             final double ratio = checkRecord.ratio();
             if (ratio < threshold) {
@@ -237,6 +238,7 @@ class ScoreInfo {
         threshold = 2.0;
 //        print_limit = Integer.MAX_VALUE;
 //        threshold = Double.MAX_VALUE;
+        System.out.println("time,simulated_raio,expected_ratio,difference");
         for (final IntervalCheckRecord checkRecord: approachTimeCheckRecords) {
             final double ratio = checkRecord.ratio();
             if (ratio < threshold) {
