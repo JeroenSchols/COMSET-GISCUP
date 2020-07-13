@@ -210,11 +210,14 @@ class ScoreInfo {
         int below_threshold_count = 0;
         int print_limit = 10;
         double threshold = 2.0;
+//        int print_limit = Integer.MAX_VALUE;
+//        double threshold = Double.MAX_VALUE;
         for (final IntervalCheckRecord checkRecord: resourcePickupTimeCheckRecords) {
             final double ratio = checkRecord.ratio();
             if (ratio < threshold) {
                 if (print_limit > 0) {
-                    System.out.println(checkRecord.time + "," + ratio);
+                    double reference_ratio = simulator.trafficPattern.getSpeedFactor(checkRecord.time);
+                    System.out.println(checkRecord.time + "," + ratio + "," + reference_ratio + "," + (ratio - reference_ratio));
                 }
                 print_limit--;
                 below_threshold_count++;
@@ -232,11 +235,14 @@ class ScoreInfo {
         below_threshold_count = 0;
         print_limit = 10;
         threshold = 2.0;
+//        print_limit = Integer.MAX_VALUE;
+//        threshold = Double.MAX_VALUE;
         for (final IntervalCheckRecord checkRecord: approachTimeCheckRecords) {
             final double ratio = checkRecord.ratio();
             if (ratio < threshold) {
                 if (print_limit > 0) {
-                    System.out.println(checkRecord.time + "," + ratio);
+                    double reference_ratio = simulator.trafficPattern.getSpeedFactor(checkRecord.time);
+                    System.out.println(checkRecord.time + "," + ratio + "," + reference_ratio + "," + (ratio - reference_ratio));
                 }
                 print_limit--;
                 below_threshold_count++;

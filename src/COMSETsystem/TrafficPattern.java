@@ -43,6 +43,17 @@ public class TrafficPattern {
         }
     }
 
+    double getSpeedFactor(long time) {
+        if (time < this.firstEpochBeginTime) {
+            return this.firstEpochSpeedFactor;
+        }
+        if (time >= this.lastEpochBeginTime) {
+            return this.lastEpochSpeedFactor;
+        }
+        int patternIndex = (int) ((time - this.firstEpochBeginTime) / step);
+        return this.trafficPattern.get(patternIndex).speed_factor;
+    }
+
     // compute the dynamic travel time to travel a certain distance of a link starting at a certain time
     public double dynamicForwardTravelTime(double time, double unadjustedSpeed, double distance) {
         double totalDistance = 0.0;
