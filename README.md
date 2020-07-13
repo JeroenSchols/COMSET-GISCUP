@@ -59,9 +59,8 @@ Thus COMSET is designed to only work with the data before July of 2016.
 
 In order to run the COMSET simulator, the project should simply be cloned,
 built, and then it is ready to run.
-The simulator comes up with a naive search strategies implemented in
-**UserExamples.RandomDestinationFleetManager**.
-With this strategy, for empty agents
+We provide a naive **UserExamples.RandomDestinationFleetManager** as an example and as documentation.
+For empty agents
 the **RandomDestinationFleetManager** randomly chooses an intersection on the map as a
 destination and travels to the destination along the shortest travel time path.
 When the destination is reached, the agent randomly chooses another intersection as the next destination.
@@ -75,7 +74,7 @@ the shortest travel time path to the dropoff point.
 
 The simulator provides an abstract class called <b>COMSETsystem.FleetManaeger</b>
 which defines a base class
-of an agent implementation.
+of a **FleetManager** implementation.
 The CUP contestants should extend from this class to implement their own sub-class,
 just as <b>UserExamples.RandomDestinationFleetManager</b> extends <b>COMSETsystem.FleetManager</b>.
 
@@ -169,13 +168,13 @@ If you are using Eclipse, change the -Xmx setting in eclipse.ini.
 
 ## Submission
 A contestant should submit the entire COMSET system including the proposed solution
-implemented as a sub-class of COMSETsystem.BaseAgent.
+implemented as a sub-class of **COMSETsystem.FleetManager**.
 Store this sub-class in the <b>UserExamples</b> folder or another folder created by the participant.
 There should not be any modifications to the COMSET code base as released at GitHub.
 A contestant may modify the COMSET code for debugging purposes during the development of their solution.
 However, when submitting the solution, the COMSET code should be exactly the same as released at GitHub.
 The only file that a contestant is allowed to modify is <b>etc/configure.properties</b>.
-A contestant should set <b>comset.agent_class</b> to point to the proposed solution and may add properties
+A contestant should set <b>comsset.fleetmanager_class</b> to point to the proposed solution and may add properties
 that are needed by the solution. 
 
 ## Dynamic Travel Speeds of Agents
