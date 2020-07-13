@@ -1,7 +1,10 @@
 package COMSETsystem;
 
 /**
- * Location on a road represented by the travel time from the start intersection of the road.
+ * Location on a road represented by the static travel time from the start intersection of the road.
+ * The static travel time is the travel time based on the speed information recorded in the map.
+ * Unlike the dynamic travel time (see COMSETsystem::TrafficPattern), the static travel time is fixed
+ * for a road and does not change over the time of a day.
  */
 public class StaticTravelTimeLocationOnRoad {
 
