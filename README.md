@@ -72,7 +72,7 @@ the shortest travel time path to the pickup
 location. Upon picking up the resource, **RandomDestinationFleetManager** will direct the agent on
 the shortest travel time path to the dropoff point.
 
-The simulator provides an abstract class called <b>COMSETsystem.FleetManaeger</b>
+The simulator provides an abstract class called <b>COMSETsystem.FleetManager</b>
 which defines a base class
 of a **FleetManager** implementation.
 The CUP contestants should extend from this class to implement their own sub-class,
@@ -98,7 +98,7 @@ Here are the class methods that contestants must provide:
 The simulation calls this method to notify the **FleetManager** that a new agent has been randomly
 placed and is available for assignment.
 
-#### onResourceAvailableChange
+#### onResourceAvailablilityChange
 The simulation calls this method to notify the **FleetManager** that the resource's state has changed:
 
 * resource becomes available for pickup
