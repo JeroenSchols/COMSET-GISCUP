@@ -240,6 +240,7 @@ public class MapWithData {
 		TrafficPattern trafficPattern = new TrafficPattern(step);
 		long epochBeginTime = resources.get(0).getPickupTime();
 		int beginResourceIndex = 0;
+		double lastKnownSpeedFactor = 0.3; // default to 0.3 if no trip data available
 		while (true) {
 			ArrayList<Resource> epochResources = new ArrayList<>();
 			long epochEndTime = epochBeginTime + epoch;
@@ -254,8 +255,14 @@ public class MapWithData {
 				break;
 			} else {
 				if (dynamicTraffic) {
-					double speedFactor = getSpeedFactor(epochResources);
-					trafficPattern.addTrafficPatternItem(epochBeginTime, speedFactor);
+					if (epochResources.size() == 0) {
+						// use the previous epoch if available
+						trafficPattern.addTrafficPatternItem(epochBeginTime, lastKnownSpeedFactor);
+					} else {
+						double speedFactor = getSpeedFactor(epochResources);
+						trafficPattern.addTrafficPatternItem(epochBeginTime, speedFactor);
+						lastKnownSpeedFactor = speedFactor;
+					}
 				} else {
 					trafficPattern.addTrafficPatternItem(epochBeginTime, 1.0);
 				}
