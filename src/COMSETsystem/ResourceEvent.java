@@ -93,7 +93,8 @@ public class ResourceEvent extends Event {
 	 */
 	@Override
 	Event trigger() throws UnsupportedOperationException {
-		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id + " triggered at time " + time, this);
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id +
+				" triggered at time " + getTime(), this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + this.pickupLoc + "," + this.dropoffLoc, this);
 
 		if (pickupLoc == null) {
@@ -136,9 +137,9 @@ public class ResourceEvent extends Event {
 	private void available() throws UnsupportedOperationException {
 		++simulator.score.totalResources;
 
-		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), time);
+		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), getTime());
 		processAgentAction(action);
-		time = expirationTime;
+		setTime(expirationTime);
 		state = State.EXPIRED;
 	}
 
@@ -147,7 +148,7 @@ public class ResourceEvent extends Event {
 		assert !isPickedup() : "Resource expiring after having been picked up";
 
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
-				simulator.agentCopy(pickupLoc), time);
+				simulator.agentCopy(pickupLoc), getTime());
 		processAgentAction(action);
 		if (agentEvent != null) {
 			// We're assigned but hasn't been picked up, so the trip is being aborted.
@@ -169,7 +170,7 @@ public class ResourceEvent extends Event {
 		ResourceEvent resourceEvent = simulator.resMap.get(agentAction.resId);
 
 		if (agentEvent != null && resourceEvent != null && !agentEvent.hasResPickup()) {
-			agentEvent.assignTo(resourceEvent, time);
+			agentEvent.assignTo(resourceEvent, getTime());
 			resourceEvent.assignTo(agentEvent);
 		}
 	}

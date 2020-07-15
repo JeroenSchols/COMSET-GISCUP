@@ -132,30 +132,36 @@ public class Simulator {
 	public void run() {
 		System.out.println("Running the simulation...");
 
+		long eventCount = 0;
+
 		score = new ScoreInfo(configuration, this);
 		if (map == null) {
 			System.out.println("map is null at beginning of run");
 		}
+
 		try (ProgressBar pb = new ProgressBar("Progress:", 100, ProgressBarStyle.ASCII)) {
 			assert events.peek() != null;
-			simulationStartTime = simulationTime = events.peek().time;
+			simulationStartTime = simulationTime = events.peek().getTime();
 			long totalSimulationTime = simulationEndTime - simulationStartTime;
 
 			while (!events.isEmpty()) {
 				assert events.peek() != null;
-				simulationTime = events.peek().time;
+				long nextTime = events.peek().getTime();
+				assert (nextTime >= simulationTime);
+				simulationTime = nextTime;
 
 				// Extend total simulation time for agent which is still delivering resource
 				totalSimulationTime = Math.max(totalSimulationTime, simulationTime - simulationStartTime);
 
+				eventCount++;
 				Event toTrigger = events.poll();
-				pb.stepTo((long)(((float)(toTrigger.time - simulationStartTime))
+				pb.stepTo((long)(((float)(toTrigger.getTime() - simulationStartTime))
 						/ totalSimulationTime * 100.0));
 
 				if (simulationTime <= simulationEndTime || (toTrigger instanceof AgentEvent && ((AgentEvent) toTrigger).hasResPickup())) {
 					Event e = toTrigger.trigger();
 					if (e != null) {
-						events.add(e);
+						addEvent(e);
 					}
 				}
 			}
@@ -231,6 +237,11 @@ public class Simulator {
 	 */
 	public PriorityQueue<Event> getEvents() {
 		return events;
+	}
+
+	public void addEvent(Event event) {
+		assert(event.getTime() >= simulationTime);
+		events.add(event);
 	}
 
 	/**

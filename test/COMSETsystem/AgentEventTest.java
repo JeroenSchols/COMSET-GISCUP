@@ -6,8 +6,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.TreeSet;
-
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -63,14 +61,14 @@ public class AgentEventTest {
         // Verify that next AgentEvent will trigger when reaching the end of road1
         assertEquals(AgentEvent.State.INTERSECTION_REACHED, nextEvent.state);
         assertEquals(testMap.roadFrom1to2, nextEvent.loc.road);
-        assertEquals(TRIGGER_TIME + initTimeFromStartIntersection, nextEvent.time);
+        assertEquals(TRIGGER_TIME + initTimeFromStartIntersection, nextEvent.getTime());
 
         nextEvent = (AgentEvent) agentEvent.trigger();
 
         // Verify that next AgentEvent will trigger when reaching the end of road2
         assertEquals(AgentEvent.State.INTERSECTION_REACHED, nextEvent.state);
         assertEquals(testMap.roadFrom2to3, nextEvent.loc.road);
-        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + initTimeFromStartIntersection, nextEvent.time);
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + initTimeFromStartIntersection, nextEvent.getTime());
     }
 
     /**
@@ -105,7 +103,7 @@ public class AgentEventTest {
 
         // Verify that pickup was detected with correct pickuptime.
         assertEquals(AgentEvent.State.PICKING_UP, pickUpEvent.state);
-        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime/2, pickUpEvent.time);
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime/2, pickUpEvent.getTime());
         assertEquals(testMap.roadFrom2to3, pickUpEvent.loc.road);
 
         // Trigger pickup Event
@@ -113,7 +111,7 @@ public class AgentEventTest {
 
         // Verify returned travel event represents travel to the end of the roadFrom2to3
         assertEquals(AgentEvent.State.INTERSECTION_REACHED, travelToDropoffEvent.state);
-        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime, travelToDropoffEvent.time);
+        assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime, travelToDropoffEvent.getTime());
         assertEquals(testMap.roadFrom2to3, travelToDropoffEvent.loc.road);
         assertTrue(travelToDropoffEvent.isPickup);
 
@@ -139,7 +137,7 @@ public class AgentEventTest {
 
         assertEquals(AgentEvent.State.INTERSECTION_REACHED, travelToDropOffEvent2.state);
         assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime,
-                travelToDropOffEvent2.time);
+                travelToDropOffEvent2.getTime());
         assertEquals(testMap.roadFrom3to4, travelToDropOffEvent2.loc.road);
         assertTrue(travelToDropOffEvent2.isPickup);
 
@@ -150,7 +148,7 @@ public class AgentEventTest {
         assertEquals(
                 TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime
                         + testMap.roadFrom4to5.travelTime/2,
-                dropoffEvent.time);
+                dropoffEvent.getTime());
         assertEquals(testMap.roadFrom4to5, dropoffEvent.loc.road);
 
         // trigger drop-off
@@ -162,7 +160,7 @@ public class AgentEventTest {
         assertFalse(backToCruisingEvent.isPickup);
         assertNull(backToCruisingEvent.assignedResource);
         assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime
-                + testMap.roadFrom4to5.travelTime, backToCruisingEvent.time);
+                + testMap.roadFrom4to5.travelTime, backToCruisingEvent.getTime());
         assertEquals(TRIGGER_TIME + testMap.roadFrom2to3.travelTime + testMap.roadFrom3to4.travelTime
                 + testMap.roadFrom4to5.travelTime/2, backToCruisingEvent.startSearchTime);
 
