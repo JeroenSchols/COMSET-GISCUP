@@ -195,52 +195,14 @@ public class MapWithData {
 		for (int i = 0; i < Configuration.get().numberOfAgents; i++) {
 			int road_id = generator.nextInt(map.roads().size());
 			Road road = map.roads().get(road_id);
-//			long travelTimeFromStartIntersection;
-//			if (road.travelTime != 0L) {
-//				travelTimeFromStartIntersection = generator.nextInt((int) road.travelTime);
-//			} else {
-//				travelTimeFromStartIntersection = 0L;
-//			}
-
-			//Link link = road.links.get(generator.nextInt(road.links.size()));
-			//double distanceFromStartVertex = generator.nextDouble() * link.length;
-			//LocationOnRoad locationOnRoad = LocationOnRoad.createFromRoadStart(road);
 			double distanceFromStartIntersection = generator.nextDouble() * road.length;
 			LocationOnRoad locationOnRoad = new LocationOnRoad(road, distanceFromStartIntersection);
-			//DistanceLocationOnLink locationOnRoad = new DistanceLocationOnLink(link, distanceFromStartVertex);
 
 			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator, fleetManager);
 			simulator.addEmptyAgent(ev);
 			events.add(ev);
 		}
 	}
-
-//	/**
-//	 * Creates agent events that are randomly placed on map.
-//	 *
-//	 * @param simulator a reference to the simulator object
-//	 */
-//	public ArrayList<BaseAgent> placeAgentsRandomly(Simulator simulator) {
-//		ArrayList<BaseAgent> agents = new ArrayList<BaseAgent>();
-//		long deployTime = earliestResourceTime - 1;
-//
-//		Random generator = new Random(agentPlacementRandomSeed);
-//		for (int i = 0; i < simulator.totalAgents(); i++) {
-//			Road road = map.roads().get(generator.nextInt(map.roads().size()));
-//            long travelTimeFromStartIntersection;
-//            if (road.travelTime != 0) {
-//                travelTimeFromStartIntersection = (long) (generator.nextInt((int) road.travelTime));
-//            } else {
-//                travelTimeFromStartIntersection = 0L;
-//            }
-//			LocationOnRoad locationOnRoad = new LocationOnRoad(road, travelTimeFromStartIntersection);
-//			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator);
-//			simulator.addEmptyAgent(ev);
-//			events.add(ev);
-//			agents.add(ev.agent);
-//		}
-//		return agents;
-//	}
 
 	/**
 	 * 
@@ -250,12 +212,32 @@ public class MapWithData {
 		return events;
 	}
 
+	/**
+	 * Build a traffic pattern to adjust travel speed at each road over the time of a day.
+	 * The travel speed is computed based on the road segment's speed limit and the TLC Trip Record data to
+	 * reflect the traffic pattern over the time of a day. The calibration goes as follows.
+	 *
+	 * 1. For every step (e.g., minute) of a day, compute the average trip duration of all trips recorded in the
+	 * TLC Trip Record data that fall into a epoch time window (e.g., 15 minutes) starting at the current minute;
+	 * call it the TLC_average_trip_duration.
+	 * 2. For each trip, compute the shortest travel time from the pickup location of the trip to the
+	 * dropoff location using speed limits.
+	 * 3. Compute the average shortest travel time of all trips; call it the map_average_trip_duration.
+	 * 4. For each road segment, travel_speed_of_current_minute = speed_limit * ((map_average_trip_duration)/(TLC_average_trip_duration)).
+	 *
+	 * In other words, we adjust the travel speeds so that the average trip time produced by COMSET is consistent with that of the real data.
+	 *
+	 * @param resources
+	 * @param epoch
+	 * @param step
+	 * @param dynamicTraffic
+	 * @return
+	 */
 	public TrafficPattern buildSlidingTrafficPattern(ArrayList<Resource> resources, long epoch, long step,
 													 boolean dynamicTraffic) {
 		// sort resources by pickup
-
 		resources.sort(Comparator.comparingLong(TimestampAbstract::getTime));
-		TrafficPattern trafficPattern = new TrafficPattern(epoch, step);
+		TrafficPattern trafficPattern = new TrafficPattern(step);
 		long epochBeginTime = resources.get(0).getPickupTime();
 		int beginResourceIndex = 0;
 		while (true) {
@@ -284,11 +266,14 @@ public class MapWithData {
 				}
 			}
 		}
-		//trafficPattern.printOut();
-		trafficPattern.setTrafficPatternArray();
 		return trafficPattern;
 	}
 
+	/**
+	 * Compute speed factor from a set of resources.
+	 * @param resources
+	 * @return
+	 */
 	public double getSpeedFactor(ArrayList<Resource> resources) {
 		long totalActualTravelTime = 0;
 		long totalSimulatedTravelTime = 0;
