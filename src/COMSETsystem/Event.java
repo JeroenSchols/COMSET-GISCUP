@@ -14,7 +14,7 @@ public abstract class Event implements Comparable<Event> {
 	private static int maxId = 0;
 
 	// The time at which the event is to be triggered
-	long time;
+	private long time;
 
 	// A reference to the Simulator
 	Simulator simulator;
@@ -69,9 +69,9 @@ public abstract class Event implements Comparable<Event> {
 	 */
 	@Override
 	public int compareTo(Event o) {
-		if (this.time < o.time)
+		if (this.getTime() < o.getTime())
 			return -1;
-		else if (this.time > o.time)
+		else if (this.getTime() > o.getTime())
 			return 1;
 		else if (this.getClass().equals(o.getClass())) { // tie on time; if two events are the same type compare id
 			if (this.id < o.id)
@@ -90,6 +90,16 @@ public abstract class Event implements Comparable<Event> {
 				return 1;
 			}
 		}
+	}
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		// Thou shall never change the time when the event is on the simulator queue!
+		assert !simulator.getEvents().contains(this);
+		this.time = time;
 	}
 }
 
