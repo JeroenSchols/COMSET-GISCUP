@@ -260,8 +260,15 @@ public class MapWithData {
 						trafficPattern.addTrafficPatternItem(epochBeginTime, lastKnownSpeedFactor);
 					} else {
 						double speedFactor = getSpeedFactor(epochResources);
-						trafficPattern.addTrafficPatternItem(epochBeginTime, speedFactor);
-						lastKnownSpeedFactor = speedFactor;
+						if (speedFactor < 0.0) { // didn't get a valid speed factor
+							trafficPattern.addTrafficPatternItem(epochBeginTime, lastKnownSpeedFactor);
+						} else {
+							if (speedFactor > 1.0) { // cap speed factor to 1
+								speedFactor = 1.0;
+							}
+							trafficPattern.addTrafficPatternItem(epochBeginTime, speedFactor);
+							lastKnownSpeedFactor = speedFactor;
+						}
 					}
 				} else {
 					trafficPattern.addTrafficPatternItem(epochBeginTime, 1.0);
@@ -294,6 +301,10 @@ public class MapWithData {
 			totalActualTravelTime += actualTravelTime;
 			totalSimulatedTravelTime += simulatedTravelTime;
 		}
-		return ((double)totalSimulatedTravelTime) / totalActualTravelTime;
+		if (totalActualTravelTime == 0) {
+			return -1.0;
+		} else {
+			return ((double) totalSimulatedTravelTime) / totalActualTravelTime;
+		}
 	}
 }
