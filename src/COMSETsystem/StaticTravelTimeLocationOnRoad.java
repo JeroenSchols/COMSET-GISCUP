@@ -18,7 +18,7 @@ public class StaticTravelTimeLocationOnRoad {
 
     public StaticTravelTimeLocationOnRoad(LocationOnRoad locationOnRoad) {
         this.road = locationOnRoad.road;
-        this.travelTimeFromStartIntersection = Math.round(locationOnRoad.distanceFromStartIntersection / road.speed);
+        this.travelTimeFromStartIntersection = locationOnRoad.getStaticTravelTimeOnRoad();
     }
 
     /**

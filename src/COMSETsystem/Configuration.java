@@ -16,7 +16,8 @@ public class Configuration {
     // Full path to a TLC New York Yellow trip record file
     public final String resourceFile;
 
-    public final long timeResolution = 1000000;
+    public static long timeResolution = 1000000;
+    public static double minimumDistance = 54/(double)timeResolution;
 
     // FIXME: The field numberOfAgents should be protected or private. Most code, beside agent creation and placement
     //   code don't need to know its value. Also the field dynamicTraffic should also be hidden.

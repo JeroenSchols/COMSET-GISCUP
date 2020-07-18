@@ -60,7 +60,7 @@ class ScoreInfo {
     private long expiredResources = 0;
     protected void recordExpiration() {
         expiredResources++;
-        accumulateResourceWaitTime(Configuration.get().resourceMaximumLifeTime);
+        accumulateResourceWaitTime(configuration.resourceMaximumLifeTime);
     }
 
     // The number of resources that have been introduced to the system.
@@ -136,7 +136,6 @@ class ScoreInfo {
      * the Performance Report.
      */
     void end() {
-        Configuration configuration = Configuration.get();
         // Empty the string builder
         sb.setLength(0);
 
@@ -203,48 +202,28 @@ class ScoreInfo {
 
         System.out.print(sb.toString());
 
-        // TODO: Remove debugging code below when done.
-
+        // TODO: Add configuration to control these checks.
         System.out.println("********** pickup time checks");
-        double l2 = 0.0;
-        int below_threshold_count = 0;
-        int print_limit = 10;
-        double threshold = 2.0;
-//        int print_limit = Integer.MAX_VALUE;
-//        double threshold = Double.MAX_VALUE;
-        System.out.println("time,simulated_raio,expected_ratio,difference");
-        for (final IntervalCheckRecord checkRecord: resourcePickupTimeCheckRecords) {
-            final double ratio = checkRecord.ratio();
-            if (ratio < threshold) {
-                if (print_limit > 0) {
-                    double reference_ratio = simulator.trafficPattern.getSpeedFactor(checkRecord.time);
-                    System.out.println(checkRecord.time + "," + ratio + "," + reference_ratio + "," + (ratio - reference_ratio));
-                }
-                print_limit--;
-                below_threshold_count++;
-            }
-            l2 += ratio * ratio;
-        }
-        System.out.println("Threshold =" + threshold + "; Count =" + below_threshold_count);
-        System.out.println("Resource Pickup Ratios RMS =" +
-                Math.sqrt(l2 / resourcePickupTimeCheckRecords.size())
-                + "; Count =" + resourcePickupTimeCheckRecords.size());
-
+        checkAndPrintIntervalRecords(resourcePickupTimeCheckRecords, 10, 0.02);
+        // checkAndPrintIntervalRecords(resourcePickupTimeCheckRecords, Integer.MAX_VALUE, 0.0);
 
         System.out.println("********** Approach time checks");
-        l2 = 0.0;
-        below_threshold_count = 0;
-        print_limit = 10;
-        threshold = 2.0;
-//        print_limit = Integer.MAX_VALUE;
-//        threshold = Double.MAX_VALUE;
-        System.out.println("time,simulated_raio,expected_ratio,difference");
-        for (final IntervalCheckRecord checkRecord: approachTimeCheckRecords) {
-            final double ratio = checkRecord.ratio();
-            if (ratio < threshold) {
+        checkAndPrintIntervalRecords(approachTimeCheckRecords, 10, 0.02);
+        // checkAndPrintIntervalRecords(approachTimeCheckRecords, Integer.MAX_VALUE, 0.0);
+    }
+
+    private void checkAndPrintIntervalRecords(ArrayList<IntervalCheckRecord> checkRecords, int print_limit,
+                                              double threshold) {
+        double l2 = 0.0;
+        int below_threshold_count = 0;
+        System.out.println("time,simulated_ratio,expected_ratio,difference");
+        for (final IntervalCheckRecord checkRecord: checkRecords) {
+            final double ratio = computeRatio(checkRecord);
+            final double reference_ratio = simulator.trafficPattern.getSpeedFactor(checkRecord.time);
+            final double diff = ratio-reference_ratio;
+            if (Math.abs(diff) > threshold) {
                 if (print_limit > 0) {
-                    double reference_ratio = simulator.trafficPattern.getSpeedFactor(checkRecord.time);
-                    System.out.println(checkRecord.time + "," + ratio + "," + reference_ratio + "," + (ratio - reference_ratio));
+                    System.out.println(checkRecord.time + "," + ratio + "," + reference_ratio + "," + diff);
                 }
                 print_limit--;
                 below_threshold_count++;
@@ -252,8 +231,18 @@ class ScoreInfo {
             l2 += ratio * ratio;
         }
         System.out.println("Threshold =" + threshold + "; Count =" + below_threshold_count);
-        System.out.println("Agent Approach Ratios RMS =" + Math.sqrt(l2 / approachTimeCheckRecords.size())
-                + "; Count =" + approachTimeCheckRecords.size());
+        System.out.println("Ratios RMS =" +
+                Math.sqrt(l2 / resourcePickupTimeCheckRecords.size())
+                + "; Count =" + resourcePickupTimeCheckRecords.size());
+    }
+
+    private double computeRatio(IntervalCheckRecord checkRecord) {
+        // Take care of the special case of a match in which both interval and expected_interval are zeroes.
+        // Think of this case as taking the limit as we approach 0/0. We assume that the default
+        // speedfactor applies.
+        return (checkRecord.interval == 0 && checkRecord.expected_interval == 0) ?
+                simulator.trafficPattern.getSpeedFactor(checkRecord.time) :
+                checkRecord.expected_interval/(double)checkRecord.interval;
     }
 
     protected void recordCompletedTrip(long dropOffTime, long pickupTime, long staticTripTime) {
@@ -273,10 +262,6 @@ class ScoreInfo {
             this.time = time;
             this.interval = interval;
             this.expected_interval = expected_interval;
-        }
-
-        double ratio() {
-            return (interval == 0 && expected_interval == 0) ? 1.0 : expected_interval/(double)interval;
         }
     }
 }

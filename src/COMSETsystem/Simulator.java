@@ -9,6 +9,8 @@ import me.tongfei.progressbar.*;
 
 import DataParsing.*;
 
+import javax.xml.stream.Location;
+
 /**
  * The Simulator class defines the major steps of the simulation. It is
  * responsible for loading the map, creating the necessary number of agents,
@@ -73,7 +75,7 @@ public class Simulator {
 	 **/
 	public Simulator(Configuration configuration) {
 		this.configuration = configuration;
-		configure(Configuration.get());
+		configure();
 	}
 
 	public void removeEvent(Event e) {
@@ -90,7 +92,7 @@ public class Simulator {
 	 * See COMSETsystem.Configuration and Main.java for detailed description of the parameters.
 	 *
 	 */
-	public void configure(Configuration configuration) {
+	private void configure() {
 		// Configuration Properties for this simulation.
 
 		map = configuration.map;
@@ -270,7 +272,7 @@ public class Simulator {
 		Intersection from = mapForAgents.intersections().get(locationOnRoad.road.from.id);
 		Intersection to = mapForAgents.intersections().get(locationOnRoad.road.to.id);
 		Road roadAgentCopy = from.roadsMapFrom.get(to);
-		return new LocationOnRoad(roadAgentCopy, locationOnRoad.distanceFromStartIntersection);
+		return LocationOnRoad.copyWithReplacedRoad(roadAgentCopy, locationOnRoad);
 	}
 
 	public FleetManager createFleetManager(Configuration configuration) {

@@ -1,17 +1,34 @@
 package COMSETsystem;
 
+import javax.xml.stream.Location;
+
 public class LocationOnRoad {
     public Road road;
-    public double distanceFromStartIntersection;
+    private double distanceFromStartIntersection;
 
     public LocationOnRoad(Road road, double distanceFromStartIntersection) {
         this.road = road;
         this.distanceFromStartIntersection = distanceFromStartIntersection;
     }
 
-    public boolean upstreamTo(LocationOnRoad aLoc) {
-        assert this.road.id == aLoc.road.id : "two links must be on the same road";
-        return this.distanceFromStartIntersection <= aLoc.distanceFromStartIntersection;
+    public LocationOnRoad(LocationOnRoad locationOnRoad, double displacement) {
+        this.road = locationOnRoad.road;
+        this.distanceFromStartIntersection = locationOnRoad.distanceFromStartIntersection+ displacement;
+        assert 0 <= this.distanceFromStartIntersection && this.distanceFromStartIntersection <= road.length;
+    }
+
+    public boolean upstreamTo(LocationOnRoad destination) {
+        return getDisplacementOnRoad(destination) >= 0;
+    }
+
+    public double getDisplacementOnRoad(LocationOnRoad destination) {
+        assert this.road.id == destination.road.id : "two links must be on the same road";
+        double displacement = destination.distanceFromStartIntersection - this.distanceFromStartIntersection;
+        return Math.abs(displacement) < Configuration.minimumDistance ? 0.0 : displacement;
+    }
+
+    public long getStaticTravelTimeOnRoad() {
+        return Math.round(distanceFromStartIntersection/road.speed);
     }
 
     public boolean atEndIntersection() {
@@ -26,6 +43,10 @@ public class LocationOnRoad {
     // create location at the start of a road
     public static LocationOnRoad createFromRoadStart(Road road) {
         return new LocationOnRoad(road, 0);
+    }
+
+    public static LocationOnRoad copyWithReplacedRoad(Road road, LocationOnRoad locationOnRoad) {
+        return new LocationOnRoad(road, locationOnRoad.distanceFromStartIntersection);
     }
 
     public String toString() {

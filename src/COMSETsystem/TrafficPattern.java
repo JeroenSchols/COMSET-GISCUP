@@ -56,6 +56,7 @@ public class TrafficPattern {
 
     // compute the dynamic travel time to travel a certain distance of a link starting at a certain time
     public double dynamicForwardTravelTime(double time, double unadjustedSpeed, double distance) {
+
         double totalDistance = 0.0;
         double totalTime = 0.0;
         double currentTime = time;
@@ -133,7 +134,7 @@ public class TrafficPattern {
     public double roadForwardTravelTime(double time, LocationOnRoad loc1, LocationOnRoad loc2) {
         assert loc1.upstreamTo(loc2) : "loc1 must be upstream to loc2";
 
-        return dynamicForwardTravelTime(time, loc1.road.speed, loc2.distanceFromStartIntersection - loc1.distanceFromStartIntersection);
+        return dynamicForwardTravelTime(time, loc1.road.speed, loc1.getDisplacementOnRoad(loc2));
     }
 
     // compute the travel distance along a link for a certain time starting at a given time
@@ -212,7 +213,7 @@ public class TrafficPattern {
             // reached the end of road before travel time is used out
             return LocationOnRoad.createFromRoadEnd(locationOnRoad.road);
         } else {
-            return new LocationOnRoad(locationOnRoad.road, locationOnRoad.distanceFromStartIntersection + traveledDistance);
+            return new LocationOnRoad(locationOnRoad, traveledDistance);
         }
     }
 }

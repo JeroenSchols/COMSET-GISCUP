@@ -103,14 +103,11 @@ public class AgentEvent extends Event {
 	}
 
 	void assignTo(ResourceEvent resourceEvent, long assignTime) throws UnsupportedOperationException {
-
 		this.assignedResource = resourceEvent;
-
-
 		this.assignTime = assignTime;
 		long elapseTime = assignTime - lastAppearTime;
 		// TODO: to delete this sanity check
-		if (lastAppearLocation.road.id != loc.road.id || lastAppearLocation.distanceFromStartIntersection > loc.distanceFromStartIntersection) {
+		if (lastAppearLocation.road.id != loc.road.id || lastAppearLocation.getDisplacementOnRoad(loc) < 0) {
 			System.out.println("last appear location has to be on the same road as loc and upstream to it.");
 		}
 		LocationOnRoad currentLocation = simulator.trafficPattern.travelRoadForTime(lastAppearTime, lastAppearLocation, elapseTime);
