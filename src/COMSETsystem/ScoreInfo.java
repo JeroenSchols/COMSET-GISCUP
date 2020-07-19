@@ -153,7 +153,7 @@ class ScoreInfo {
         System.out.println("Resource Maximum Life Time: " +
                 configuration.resourceMaximumLifeTimeInSeconds + " seconds");
         System.out.println("Fleet Manager class: " + configuration.fleetManagerClass.getName());
-        System.out.println("Time resolution: " + configuration.timeResolution);
+        System.out.println("Time resolution: " + Configuration.timeResolution);
 
         System.out.println("\n***Statistics***");
 
@@ -221,7 +221,7 @@ class ScoreInfo {
             final double ratio = computeRatio(checkRecord);
             final double reference_ratio = simulator.trafficPattern.getSpeedFactor(checkRecord.time);
             final double diff = ratio-reference_ratio;
-            if (Math.abs(diff) > threshold) {
+            if (Math.abs(diff) > threshold || Double.isNaN(diff)) {
                 if (print_limit > 0) {
                     System.out.println(checkRecord.time + "," + ratio + "," + reference_ratio + "," + diff);
                 }
