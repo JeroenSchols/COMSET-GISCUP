@@ -50,7 +50,7 @@ public class Link implements Comparable<Link> {
 		this.to = to;
 		this.length = length;
 		this.speed = speed;
-		this.travelTime = (int)(Math.ceil(length/speed));
+		this.travelTime = (long)(Math.round(length/speed));
 		this.road = null;
 		minX = Math.min(from.xy.getX(), to.getX());
 		minY = Math.min(from.xy.getY(), to.getY());
