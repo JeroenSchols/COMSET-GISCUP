@@ -24,7 +24,7 @@ public class LocationOnRoad {
     public double getDisplacementOnRoad(LocationOnRoad destination) {
         assert this.road.id == destination.road.id : "two links must be on the same road";
         double displacement = destination.distanceFromStartIntersection - this.distanceFromStartIntersection;
-        return Math.abs(displacement) < Configuration.minimumDistance ? 0.0 : displacement;
+        return displacement;
     }
 
     public long getStaticTravelTimeOnRoad() {
