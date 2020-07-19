@@ -4,6 +4,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import me.tongfei.progressbar.*;
 
 
@@ -156,7 +158,7 @@ public class Simulator {
 
 				eventCount++;
 				// FIXME: do we need a @nullable
-				Event toTrigger = events.poll();
+				@NonNull Event toTrigger = events.poll();
 				pb.stepTo((long)(((float)(toTrigger.getTime() - simulationStartTime))
 						/ totalSimulationTime * 100.0));
 
