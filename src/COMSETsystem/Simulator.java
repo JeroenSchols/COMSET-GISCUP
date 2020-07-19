@@ -9,8 +9,6 @@ import me.tongfei.progressbar.*;
 
 import DataParsing.*;
 
-import javax.xml.stream.Location;
-
 /**
  * The Simulator class defines the major steps of the simulation. It is
  * responsible for loading the map, creating the necessary number of agents,
@@ -111,13 +109,14 @@ public class Simulator {
 
 		// The simulation end time is the expiration time of the last resource.
 		// which is return by createMapWithData
-		this.simulationEndTime = mapWD.createMapWithData(this, fleetManager);
-		trafficPattern = mapWD.getTrafficPattern();
+		this.simulationEndTime = mapWD.createMapWithData(configuration, this, fleetManager);
+		trafficPattern = mapWD.getTrafficPattern(configuration.trafficPatternEpoch, configuration.trafficPatternStep,
+				configuration.dynamicTrafficEnabled);
 		fleetManager.setTrafficPattern(trafficPattern);
 
 		// Deploy agents at random locations of the map.
 		System.out.println("Randomly placing " + configuration.numberOfAgents + " agents on the map...");
-		mapWD.placeAgentsRandomly(this, fleetManager);
+		mapWD.placeAgentsRandomly(this, fleetManager, configuration.numberOfAgents);
 
 		// Initialize the event queue.
 		events = mapWD.getEvents();
@@ -156,6 +155,7 @@ public class Simulator {
 				totalSimulationTime = Math.max(totalSimulationTime, simulationTime - simulationStartTime);
 
 				eventCount++;
+				// FIXME: do we need a @nullable here will depend if this runs in Eclipse.
 				Event toTrigger = events.poll();
 				pb.stepTo((long)(((float)(toTrigger.getTime() - simulationStartTime))
 						/ totalSimulationTime * 100.0));

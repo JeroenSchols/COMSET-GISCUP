@@ -49,13 +49,16 @@ public class ResourceEvent extends Event {
 	 * @param pickupLoc this resource's location when it becomes available.
 	 * @param dropoffLoc this resource's destination location.
 	 * @param simulator the simulator object.
+	 * @param fleetManager the fleet manager object.
+	 * @param resourceMaximumLifeTime time interval that resource waits and expires after that.
 	 */
-	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long staticTripTime, Simulator simulator, FleetManager fleetManager) {
+	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long staticTripTime,
+						 Simulator simulator, FleetManager fleetManager, long resourceMaximumLifeTime) {
 		super(availableTime, simulator, fleetManager);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.expirationTime = availableTime + Configuration.get().resourceMaximumLifeTime;
+		this.expirationTime = availableTime + resourceMaximumLifeTime;
 		this.staticTripTime = staticTripTime;
 		this.pickupTime = -1;
 		this.state = State.AVAILABLE;
@@ -69,13 +72,15 @@ public class ResourceEvent extends Event {
 	 * @param dropoffLoc this resource's destination location.
 	 * @param staticTripTime the time it takes to go from pickUpLoc and dropoffLoc under static traffic condition
 	 * @param simulator the simulator object.
+	 * @param resourceMaximumLifeTime time interval that resource waits and expires after that.
 	 */
-	protected ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long staticTripTime, Simulator simulator) {
+	protected ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime,
+							long staticTripTime, Simulator simulator, long resourceMaximumLifeTime) {
 		super(availableTime);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.expirationTime = availableTime + Configuration.get().resourceMaximumLifeTime;
+		this.expirationTime = availableTime + resourceMaximumLifeTime;
 		this.staticTripTime = staticTripTime;
 		this.pickupTime = -1;
 	}

@@ -56,16 +56,17 @@ public class MapWithData {
 	 * for each passenger record obtained from the resource file and adds them to the events
 	 * priority queue.
 	 *
+	 * @param configuration configuration object containing run-time parameters
 	 * @param simulator Simulator object with whose methods agent and resource events can
 	 * be created.
 	 * @return long the latest resource time
 	 */
 	// FIXME: Pass in configuration here too instead of accessing it with the singleton.
-	public long createMapWithData(Simulator simulator, FleetManager fleetManager) {
+	public long createMapWithData(Configuration configuration, Simulator simulator, FleetManager fleetManager) {
 
 
 		CSVNewYorkParser parser = new CSVNewYorkParser(resourceFile, zoneId);
-		resourcesParsed = parser.parse(Configuration.get().timeResolution);
+		resourcesParsed = parser.parse(Configuration.timeResolution);
 		try {
             for (Resource resource : resourcesParsed) {
 				// map matching
@@ -79,7 +80,7 @@ public class MapWithData {
 				resource.setDropoffLocation(dropoffMatch);
 
 				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), staticTripTime,
-						simulator, fleetManager);
+						simulator, fleetManager, configuration.resourceMaximumLifeTime);
 				events.add(ev);
 
 				//  track earliestResourceTime and latestResourceTime
@@ -88,7 +89,7 @@ public class MapWithData {
 				}
 
 
-				final long resourceMaximumLifeTime = Configuration.get().resourceMaximumLifeTime;
+				final long resourceMaximumLifeTime = configuration.resourceMaximumLifeTime;
 				if (resource.getTime() + resourceMaximumLifeTime +ev.staticTripTime > latestResourceTime) {
 					latestResourceTime = resource.getTime() + resourceMaximumLifeTime + ev.staticTripTime;
 				}
@@ -100,11 +101,12 @@ public class MapWithData {
 		return latestResourceTime;
 	}
 
-	public TrafficPattern getTrafficPattern() {
+	public TrafficPattern getTrafficPattern(long trafficPatternEpoch, long trafficPatternStep,
+											boolean dynamicTrafficEnabled) {
 		System.out.println("Building traffic patterns...");
-		return buildSlidingTrafficPattern(resourcesParsed,
-				Configuration.get().trafficPatternEpoch,
-				Configuration.get().trafficPatternStep, Configuration.get().dynamicTrafficEnabled);
+		return buildSlidingTrafficPattern(resourcesParsed, trafficPatternEpoch, trafficPatternStep,
+				dynamicTrafficEnabled);
+
 	}
 
 	/**
@@ -186,13 +188,14 @@ public class MapWithData {
 	/**
 	 * Creates agent events that are randomly placed on map.
 	 *
+	 * @param numberOfAgents number of agents to be simulated
 	 * @param simulator a reference to the simulator object
 	 */
-	public void placeAgentsRandomly(Simulator simulator, FleetManager fleetManager) {
+	public void placeAgentsRandomly(Simulator simulator, FleetManager fleetManager, long numberOfAgents) {
 		long deployTime = earliestResourceTime - 1;
 
 		Random generator = new Random(agentPlacementRandomSeed);
-		for (int i = 0; i < Configuration.get().numberOfAgents; i++) {
+		for (int i = 0; i < numberOfAgents; i++) {
 			int road_id = generator.nextInt(map.roads().size());
 			Road road = map.roads().get(road_id);
 			double distanceFromStartIntersection = generator.nextDouble() * road.length;
@@ -227,11 +230,11 @@ public class MapWithData {
 	 *
 	 * In other words, we adjust the travel speeds so that the average trip time produced by COMSET is consistent with that of the real data.
 	 *
-	 * @param resources
-	 * @param epoch
-	 * @param step
-	 * @param dynamicTraffic
-	 * @return
+	 * @param resources set of resources that will be used to compute speed factors.
+	 * @param epoch the window of time that determines the speed factor
+	 * @param step the resolution of the time-of-day speed depenence.
+	 * @param dynamicTraffic true if we will be simulated with time-of-day dependent traffic.
+	 * @return traffic pattern
 	 */
 	public TrafficPattern buildSlidingTrafficPattern(ArrayList<Resource> resources, long epoch, long step,
 													 boolean dynamicTraffic) {
@@ -284,9 +287,10 @@ public class MapWithData {
 	}
 
 	/**
-	 * Compute speed factor from a set of resources.
-	 * @param resources
-	 * @return
+	 * Compute speed factor from a set of resources. Speed factor is based on actual travel times
+	 * compared to ideal travel time between picku and location based on distance.
+	 * @param resources the set of resources that will determine the speed factor.
+	 * @return speed factor
 	 */
 	public double getSpeedFactor(ArrayList<Resource> resources) {
 		long totalActualTravelTime = 0;

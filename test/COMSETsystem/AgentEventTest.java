@@ -174,7 +174,7 @@ public class AgentEventTest {
     private ResourceEvent makeCustomer(LocationOnRoad pickupLocation,
                                        LocationOnRoad dropoffLocation) {
         return new ResourceEvent(pickupLocation, dropoffLocation,
-                AVAILABLE_TIME, 0, mockSimulator, mockFleetManager);
+                AVAILABLE_TIME, 0, mockSimulator, mockFleetManager, Configuration.get().resourceMaximumLifeTime);
     }
 
     @Test
@@ -188,7 +188,7 @@ public class AgentEventTest {
                 100L,
                 1000L,
                 mockSimulator,
-                mockFleetManager
+                mockFleetManager, Configuration.get().resourceMaximumLifeTime
         );
 
         AgentEvent spyEvent = spy(new AgentEvent(locationOnRoad, 100, mockSimulator, mockFleetManager));
@@ -212,7 +212,7 @@ public class AgentEventTest {
                 100L,
                 1000L,
                 mockSimulator,
-                mockFleetManager
+                mockFleetManager, Configuration.get().resourceMaximumLifeTime
         );
         resource.state = ResourceEvent.State.EXPIRED;
 
