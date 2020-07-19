@@ -23,10 +23,10 @@ import MapCreation.MapCreator;
 public class CSVNewYorkParser {
 
 	// absolute path to csv file to be parsed
-	private String path; 
+	private final String path;
 
 	// list of all resources
-	private ArrayList<Resource> resources = new ArrayList<>();    
+	private final ArrayList<Resource> resources = new ArrayList<>();
 
 	DateTimeFormatter dtf;
 
@@ -53,7 +53,7 @@ public class CSVNewYorkParser {
 	 * @return long value of the timestamp string
 	 */
 	private Long dateConversion(String timestamp) {
-		long l = 0L;
+		long l;
 		LocalDateTime ldt = LocalDateTime.parse(timestamp, dtf);
 		ZonedDateTime zdt = ZonedDateTime.of(ldt, zoneId);
 		l = zdt.toEpochSecond(); //Returns Linux epoch, i.e., the number of seconds since January 1, 1970, 00:00:00 GMT until time specified in zdt

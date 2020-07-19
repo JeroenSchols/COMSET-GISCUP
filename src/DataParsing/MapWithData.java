@@ -15,7 +15,7 @@ public class MapWithData {
 	public CityMap map;     
 
 	// Full path of the file containing the resources to be loaded to the simulator
-	private String resourceFile;    
+	private final String resourceFile;
 
 	// Priority queue of events
 	public PriorityQueue<Event> events;

@@ -4,7 +4,7 @@ import javax.xml.stream.Location;
 
 public class LocationOnRoad {
     public Road road;
-    private double distanceFromStartIntersection;
+    private final double distanceFromStartIntersection;
 
     public LocationOnRoad(Road road, double distanceFromStartIntersection) {
         this.road = road;

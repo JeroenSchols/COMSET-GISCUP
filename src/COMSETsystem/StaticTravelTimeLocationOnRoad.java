@@ -27,7 +27,7 @@ public class StaticTravelTimeLocationOnRoad {
      * @return double[] a double array {lat, lon}
      */
     public double[] toLatLon() {
-        double latLon[] = new double[2];
+        double[] latLon = new double[2];
         int i;
         for (i = 0; i < road.links.size() && road.links.get(i).beginTime <= this.travelTimeFromStartIntersection; i++);
         i--;
@@ -46,7 +46,7 @@ public class StaticTravelTimeLocationOnRoad {
     }
 
     public String toString() {
-        double latLon[] = toLatLon();
+        double[] latLon = toLatLon();
         return "(" + road + "," + this.travelTimeFromStartIntersection + ",(" + latLon[0] + "," + latLon[1] + "))";
     }
 }

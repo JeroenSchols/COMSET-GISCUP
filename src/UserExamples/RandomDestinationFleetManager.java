@@ -5,12 +5,12 @@ import COMSETsystem.*;
 import java.util.*;
 
 public class RandomDestinationFleetManager extends FleetManager {
-    private Map<Long, Long> agentLastAppearTime = new HashMap<>();
-    private Map<Long, LocationOnRoad> agentLastLocation = new HashMap<>();
-    private Map<Long, Resource> resourceAssignment = new HashMap<>();
-    private Set<Resource> waitingResources = new TreeSet<>(Comparator.comparingLong((Resource r) -> r.id));
-    private Set<Long> availableAgent = new TreeSet<>(Comparator.comparingLong((Long id) -> id));
-    private Map<Long, Random> agentRnd = new HashMap<>();
+    private final Map<Long, Long> agentLastAppearTime = new HashMap<>();
+    private final Map<Long, LocationOnRoad> agentLastLocation = new HashMap<>();
+    private final Map<Long, Resource> resourceAssignment = new HashMap<>();
+    private final Set<Resource> waitingResources = new TreeSet<>(Comparator.comparingLong((Resource r) -> r.id));
+    private final Set<Long> availableAgent = new TreeSet<>(Comparator.comparingLong((Long id) -> id));
+    private final Map<Long, Random> agentRnd = new HashMap<>();
 
 
     Map<Long, LinkedList<Intersection>> agentRoutes = new HashMap<>();

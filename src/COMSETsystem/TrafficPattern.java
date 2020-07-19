@@ -13,7 +13,7 @@ public class TrafficPattern {
     private double firstEpochSpeedFactor;
     private double lastEpochSpeedFactor;
 
-    private ArrayList<TrafficPatternItem> trafficPattern;
+    private final ArrayList<TrafficPatternItem> trafficPattern;
 
     public TrafficPattern(long step) {
         this.step = step;
@@ -39,7 +39,7 @@ public class TrafficPattern {
             this.speed_factor = speed_factor;
         }
         public String toString() {
-            return String.valueOf(this.epochBeginTime)+","+String.valueOf(this.speed_factor);
+            return this.epochBeginTime +","+ this.speed_factor;
         }
     }
 

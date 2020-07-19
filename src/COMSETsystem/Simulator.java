@@ -157,8 +157,8 @@ public class Simulator {
 				totalSimulationTime = Math.max(totalSimulationTime, simulationTime - simulationStartTime);
 
 				eventCount++;
-				// FIXME: do we need a @nullable
-				@NonNull Event toTrigger = events.poll();
+				Event toTrigger = events.poll();
+				assert toTrigger != null;
 				pb.stepTo((long)(((float)(toTrigger.getTime() - simulationStartTime))
 						/ totalSimulationTime * 100.0));
 
