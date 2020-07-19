@@ -234,13 +234,8 @@ public class Simulator {
 		}
 	}
 
-	/**
-	 * Retrieves the queue of events of the simulation.
-	 * 
-	 * @return {@code events }
-	 */
-	public PriorityQueue<Event> getEvents() {
-		return events;
+	public boolean hasEvent(Event event) {
+		return events.contains(event);
 	}
 
 	public void addEvent(Event event) {

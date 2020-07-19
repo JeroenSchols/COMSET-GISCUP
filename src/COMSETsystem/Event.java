@@ -98,7 +98,7 @@ public abstract class Event implements Comparable<Event> {
 
 	public void setTime(long time) {
 		// Thou shall never change the time when the event is on the simulator queue!
-		assert !simulator.getEvents().contains(this);
+		assert !simulator.hasEvent(this);
 		this.time = time;
 	}
 }

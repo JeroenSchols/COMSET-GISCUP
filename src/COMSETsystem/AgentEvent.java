@@ -106,16 +106,10 @@ public class AgentEvent extends Event {
 		this.assignedResource = resourceEvent;
 		this.assignTime = assignTime;
 		long elapseTime = assignTime - lastAppearTime;
-		// TODO: to delete this sanity check
-		if (lastAppearLocation.road.id != loc.road.id || lastAppearLocation.getDisplacementOnRoad(loc) < 0) {
-			System.out.println("last appear location has to be on the same road as loc and upstream to it.");
-		}
+		assert lastAppearLocation.road.id != loc.road.id || lastAppearLocation.getDisplacementOnRoad(loc) < 0 :
+			"last appear location has to be on the same road as loc and upstream to it.";
 		LocationOnRoad currentLocation = simulator.trafficPattern.travelRoadForTime(lastAppearTime, lastAppearLocation, elapseTime);
 		this.assignLocation = currentLocation;
-
-		// FIXME: This needs to be reconciled above by moving the call to travelRoadForTime
-		//   in getCurrentLocation
-		// this.assignLocation = getCurrentLocation(time);
 
 		if (isOnSameRoad(loc, assignedResource.pickupLoc)) {
 			// check if loc is closer to the start of the road than pickupLoc
@@ -128,27 +122,6 @@ public class AgentEvent extends Event {
 			}
 		}
 	}
-
-	// FIXME: This should call the code marked in the above FIXME
-//	/**
-//	 * Compute this agent's current location based on the current time. This should work for agent's
-//	 * in all states.
-//	 * @param time This should be the current simulation time.
-//	 * @return the current location
-//	 */
-//	private LocationOnRoad getCurrentLocation(long time) throws UnsupportedOperationException {
-//
-//		switch(state) {
-//			case INTERSECTION_REACHED:
-//			case PICKING_UP:
-//			case DROPPING_OFF:
-//				break;
-//			default:
-//				throw new UnsupportedOperationException("getCurrentLocation called on unsupported state");
-//		}
-//		return new LocationOnRoad(loc.road,
-//				loc.travelTimeFromStartIntersection - (this.time - time));
-//	}
 
 	void abortResource() {
 		// FIXME: THis is really bad that we have to remove ourselves. SHould really have a reschedule
