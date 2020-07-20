@@ -6,6 +6,15 @@ COMSET simulates taxicabs (called <i>agents</i>) searching for customers
 (called <i>resources</i>) to pick up in a city. 
 The simulator serves as a standard testbed such that GISCUP contestants can develop
 and test their own fleet management algorithms. It will also serve as a testbed to evaluate submissions.
+### Licensing
+
+The GISCUP follows the rules and policies of ACM regarding Code of Ethics, Conflict of Interest Policy,
+Policy Against Harassment, and all the other 
+guides as specified in 
+https://www.acm.org/special-interest-groups/volunteer-resources.
+
+COMSET is licensed under an MIT license. The participants of GISCUP'20 shall license their CUP submissions under an
+MIT license as well." to the "Submission and Evaluation
 
 ## Overall Logic
 
