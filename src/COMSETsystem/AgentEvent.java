@@ -38,7 +38,6 @@ public class AgentEvent extends Event {
 	// The location at which the event is triggered.
 	LocationOnRoad loc;
 
-	ResourceEvent assignedResource;
 
 	boolean isPickup = false;
 
@@ -50,9 +49,8 @@ public class AgentEvent extends Event {
 	 */
 	long startSearchTime;
 
-	// TODO: for test, to remove
+	ResourceEvent assignedResource;
 	long assignTime;
-
 	LocationOnRoad assignLocation;
 
 	long lastAppearTime;
@@ -103,13 +101,13 @@ public class AgentEvent extends Event {
 	}
 
 	void assignTo(ResourceEvent resourceEvent, long assignTime) throws UnsupportedOperationException {
-		this.assignedResource = resourceEvent;
-		this.assignTime = assignTime;
 		long elapseTime = assignTime - lastAppearTime;
 		assert lastAppearLocation.road.id != loc.road.id || lastAppearLocation.getDisplacementOnRoad(loc) < 0 :
 			"last appear location has to be on the same road as loc and upstream to it.";
 		LocationOnRoad currentLocation = simulator.trafficPattern.travelRoadForTime(lastAppearTime, lastAppearLocation, elapseTime);
 		this.assignLocation = currentLocation;
+		this.assignTime = assignTime;
+		assignResource(resourceEvent);
 
 		if (isOnSameRoad(loc, assignedResource.pickupLoc)) {
 			// check if loc is closer to the start of the road than pickupLoc
@@ -124,9 +122,9 @@ public class AgentEvent extends Event {
 	}
 
 	void abortResource() {
-		// FIXME: THis is really bad that we have to remove ourselves. SHould really have a reschedule
+		// Since we were on the event queue, we need to remove ourselves before rescheduling ourselves.
 		simulator.removeEvent(this);
-		assignedResource = null;
+		unassignResource();
 		isPickup = false;
 		if (state == State.PICKING_UP) {
 			moveToEndIntersection();
@@ -242,7 +240,8 @@ public class AgentEvent extends Event {
 		AgentAction action = fleetManager.onResourceAvailabilityChange(assignedResource.copyResource(), FleetManager.ResourceState.DROPPED_OFF, simulator.agentCopy(loc), getTime());
 
 		if (!isValidAssignmentAction(action)) {
-			assignedResource = null;
+			unassignResource();
+			simulator.markAgentEmpty(this);
 			moveToEndIntersection();
 			return;
 		}
@@ -250,7 +249,7 @@ public class AgentEvent extends Event {
 
 		ResourceEvent resourceEvent = simulator.resMap.get(action.resId);
 		if (action.agentId == id) {
-			assignedResource = resourceEvent;
+			assignResource(resourceEvent);
 			assignedResource.assignTo(this);
 			assignTime = getTime();
 			assignLocation = loc;
@@ -268,7 +267,7 @@ public class AgentEvent extends Event {
 			agentEvent.assignTo(resourceEvent, getTime());
 			resourceEvent.assignTo(agentEvent);
 
-			assignedResource = null;
+			unassignResource();
 			moveToEndIntersection();
 		}
 	}
@@ -303,5 +302,23 @@ public class AgentEvent extends Event {
 
 	private boolean isOnSameRoad(LocationOnRoad loc1, LocationOnRoad loc2) {
 		return loc1.road.equals(loc2.road);
+	}
+
+	/**
+	 * @param resourceEvent Assign this rosource to this agent
+	 */
+	private void assignResource(ResourceEvent resourceEvent) {
+		assert assignedResource == null;
+		assignedResource = resourceEvent;
+		simulator.markAgentServing(this);
+	}
+
+	/**
+	 * Unassign the resource current assigned to this agent.
+	 */
+	private void unassignResource() {
+		assert assignedResource != null;
+		assignedResource = null;
+		simulator.markAgentEmpty(this);
 	}
 }

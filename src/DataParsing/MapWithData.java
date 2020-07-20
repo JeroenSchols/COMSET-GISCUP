@@ -202,7 +202,7 @@ public class MapWithData {
 			LocationOnRoad locationOnRoad = new LocationOnRoad(road, distanceFromStartIntersection);
 
 			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator, fleetManager);
-			simulator.addEmptyAgent(ev);
+			simulator.markAgentEmpty(ev);
 			events.add(ev);
 		}
 	}

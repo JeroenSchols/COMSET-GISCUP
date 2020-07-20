@@ -44,6 +44,9 @@ public class Simulator {
 	// The set of empty agents.
 	protected TreeSet<AgentEvent> emptyAgents = new TreeSet<>(new AgentEventComparator());
 
+	// The set of agents serving resources
+	protected TreeSet<AgentEvent> servingAgents = new TreeSet<>(new AgentEventComparator());
+
 	// The beginning time of the simulation
 	protected long simulationStartTime;
 
@@ -161,12 +164,7 @@ public class Simulator {
 				assert toTrigger != null;
 				pb.stepTo((long)(((float)(toTrigger.getTime() - simulationStartTime))
 						/ totalSimulationTime * 100.0));
-
-				// FIXME: We want to run the simulation until all the agents have dropped off their resources
-				//   but having the simulator poke its nose into events to deal with this is not ideal. We should
-				//   instead have code that checks that all agents are empty.
-				if (simulationTime <= simulationEndTime ||
-						(toTrigger instanceof AgentEvent && ((AgentEvent) toTrigger).hasResPickup())) {
+				if (simulationTime <= simulationEndTime || servingAgents.size() > 0) {
 					Event e = toTrigger.trigger();
 					if (e != null) {
 						addEvent(e);
@@ -248,19 +246,20 @@ public class Simulator {
 	}
 
 	/**
-	 * Gets the empty agents in the simulation
-	 * 
-	 * @return {@code emptyAgents }
+	 * @param agent Add this agent to the set of empty agents
 	 */
-	public TreeSet<AgentEvent> getEmptyAgents() {
-		return emptyAgents;
+	public void markAgentEmpty(AgentEvent agent) {
+		servingAgents.remove(agent);
+		emptyAgents.add(agent);
 	}
 
 	/**
-	 * @param agent Add this agent to the set of empty agents
+	 * @param agent Add this agent to the set of serving agents. A serving has been assigned a resource and is either
+	 *              on its way to pickup or dropoff
 	 */
-	public void addEmptyAgent(AgentEvent agent) {
-		this.emptyAgents.add(agent);
+	public void markAgentServing(AgentEvent agent) {
+		emptyAgents.remove(agent);
+		servingAgents.add(agent);
 	}
 
 	/**

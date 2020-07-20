@@ -39,6 +39,7 @@ class ScoreInfo {
     protected void recordApproachTime(long currentTime, long startSearchTime, long assignTime, long availableTime,
                                       long staticApproachTime) {
         totalAgentSearchTime += currentTime - startSearchTime;
+        totalSearches++;
         accumulateResourceWaitTime(currentTime - availableTime);
         totalAgentCruiseTime += assignTime - startSearchTime;
 
@@ -68,6 +69,9 @@ class ScoreInfo {
 
     // The number of assignments that have been made, and dropped off
     private long totalAssignments = 0;
+
+    // The number of times agents begin searching, i.e. they are just cruising around before picking up a resource.
+    private long totalSearches = 0;
 
     // The number of times an agent fails to reach an assigned resource before the resource expires
     private long totalAbortions = 0;
@@ -154,6 +158,9 @@ class ScoreInfo {
                 configuration.resourceMaximumLifeTimeInSeconds + " seconds");
         System.out.println("Fleet Manager class: " + configuration.fleetManagerClass.getName());
         System.out.println("Time resolution: " + Configuration.timeResolution);
+        System.out.println("Simulation Start Time: " + simulator.simulationStartTime);
+        System.out.println("Simulation End Time: " + simulator.simulationEndTime);
+        System.out.println("Final Simulation Time: " + simulator.simulationTime);
 
         System.out.println("\n***Statistics***");
 
@@ -161,6 +168,8 @@ class ScoreInfo {
             // Collect the "search" time for the agents that are empty at the end of the simulation.
             // These agents are in search status and therefore the amount of time they spend on
             // searching until the end of the simulation should be counted toward the total search time.
+            // FIXME: Move this loop into the simulator and just add the time to totalAgentSearchTime and increment
+            //   totalSearches.  This will allow us to make emptyAgents private.
             long totalRemainTime = 0;
             for (AgentEvent ae : simulator.emptyAgents) {
                 totalRemainTime += (simulator.simulationEndTime - ae.startSearchTime);
@@ -196,6 +205,9 @@ class ScoreInfo {
             sb.append("total number of abortions: ")
                     .append(totalAbortions)
                     .append("\n");
+            sb.append("total number of searches: ")
+                    .append(totalSearches)
+                    .append("\n");
         } else {
             sb.append("No resources.\n");
         }
@@ -219,6 +231,8 @@ class ScoreInfo {
         System.out.println("time,simulated_ratio,expected_ratio,difference");
         for (final IntervalCheckRecord checkRecord: checkRecords) {
             final double ratio = computeRatio(checkRecord);
+            // FIXME: store speedfactor in IntervalCheckRecord and we can get rid of this dependence on simulator and
+            //  trafficPattern
             final double reference_ratio = simulator.trafficPattern.getSpeedFactor(checkRecord.time);
             final double diff = ratio-reference_ratio;
             if (Math.abs(diff) > threshold || Double.isNaN(diff)) {
@@ -240,6 +254,8 @@ class ScoreInfo {
         // Take care of the special case of a match in which both interval and expected_interval are zeroes.
         // Think of this case as taking the limit as we approach 0/0. We assume that the default
         // speedfactor applies.
+        // FIXME: store speedfactor in IntervalCheckRecord and we can get rid of this dependence on simulator and
+        //  trafficPattern
         return (checkRecord.interval == 0 && checkRecord.expected_interval == 0) ?
                 simulator.trafficPattern.getSpeedFactor(checkRecord.time) :
                 checkRecord.expected_interval/(double)checkRecord.interval;
