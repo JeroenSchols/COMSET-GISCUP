@@ -55,7 +55,9 @@ public class CityMapTest {
         simpleMap.roadFrom1to2.speed = 1; // m/s
 
         // The two locations are so close that rounding error causes the travel time in the
-        // converted StaticLocationOnRoad object to be the same
+        // converted StaticLocationOnRoad object to be the same but because travelTimeBetween
+        // use the double-typed distances to determine which route to take, it will recognize that
+        // the origin is past the destination on the road.
         LocationOnRoad origin = SimpleMap.makeLocationFromRoad(simpleMap.roadFrom1to2, 0.30005);
         LocationOnRoad destination = SimpleMap.makeLocationFromRoad(simpleMap.roadFrom1to2, 0.3);
 
@@ -66,5 +68,5 @@ public class CityMapTest {
         // 3600 + 300 + (1000-Round(300.05)) = 4600
         assertEquals(4600, spyMap.travelTimeBetween(origin, destination));
     }
-
 }
+
