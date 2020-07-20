@@ -19,7 +19,7 @@ public class SimpleMap {
     public final Intersection intersection3;
     public final Intersection intersection4;
     public final Intersection intersection5;
-    public final Road roadFrom1to2;
+    public final Road roadFrom1to2; // 1km long
     public final Road roadFrom2to3;
     public final Road roadFrom3to4;
     public final Road roadFrom4to5;
@@ -44,7 +44,7 @@ public class SimpleMap {
     }
 
     public static LocationOnRoad makeLocationFromRoad(Road road, double fraction) {
-        return new LocationOnRoad(road, (long) (road.travelTime * fraction));
+        return new LocationOnRoad(road, (long) (road.length * fraction));
     }
 
 
@@ -54,7 +54,7 @@ public class SimpleMap {
         vertex3 = makeVertex(100.0, 102.0, 3);
         vertex4 = makeVertex(100.0, 103.0, 4);
         vertex5 = makeVertex(100.0, 104.0, 5);
-        link1to2 = new Link(vertex1, vertex2, 1000, 50);
+        link1to2 = new Link(vertex1, vertex2, 1000, 1);
         link2to3 = new Link(vertex2, vertex3, 1200, 60);
         link3to4 = new Link(vertex3, vertex4, 800, 20);
         link4to5 = new Link(vertex4, vertex5, 900, 10);
