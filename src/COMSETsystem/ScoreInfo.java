@@ -36,8 +36,8 @@ class ScoreInfo {
     protected long getTotalAgentSearchTime() {
         return totalAgentSearchTime;
     }
-    protected void recordPickup(long currentTime, long startSearchTime, long assignTime, long availableTime,
-                                long staticApproachTime) {
+    protected void recordApproachTime(long currentTime, long startSearchTime, long assignTime, long availableTime,
+                                      long staticApproachTime) {
         totalAgentSearchTime += currentTime - startSearchTime;
         accumulateResourceWaitTime(currentTime - availableTime);
         totalAgentCruiseTime += assignTime - startSearchTime;
@@ -76,7 +76,7 @@ class ScoreInfo {
     }
 
     private final ArrayList<IntervalCheckRecord> approachTimeCheckRecords = new ArrayList<>();
-    private final ArrayList<IntervalCheckRecord> resourcePickupTimeCheckRecords = new ArrayList<>();
+    private final ArrayList<IntervalCheckRecord> completedTripTime = new ArrayList<>();
 
     final Runtime runtime = Runtime.getRuntime();
     final NumberFormat format = NumberFormat.getInstance();
@@ -153,7 +153,7 @@ class ScoreInfo {
         System.out.println("Resource Maximum Life Time: " +
                 configuration.resourceMaximumLifeTimeInSeconds + " seconds");
         System.out.println("Fleet Manager class: " + configuration.fleetManagerClass.getName());
-        System.out.println("Time resolution: " + configuration.timeResolution);
+        System.out.println("Time resolution: " + Configuration.timeResolution);
 
         System.out.println("\n***Statistics***");
 
@@ -203,8 +203,8 @@ class ScoreInfo {
         System.out.print(sb.toString());
 
         // TODO: Add configuration to control these checks.
-        System.out.println("********** pickup time checks");
-        checkAndPrintIntervalRecords(resourcePickupTimeCheckRecords, 10, 0.02);
+        System.out.println("********** Complated Trips time checks");
+        checkAndPrintIntervalRecords(completedTripTime, 10, 0.02);
         // checkAndPrintIntervalRecords(resourcePickupTimeCheckRecords, Integer.MAX_VALUE, 0.0);
 
         System.out.println("********** Approach time checks");
@@ -221,7 +221,7 @@ class ScoreInfo {
             final double ratio = computeRatio(checkRecord);
             final double reference_ratio = simulator.trafficPattern.getSpeedFactor(checkRecord.time);
             final double diff = ratio-reference_ratio;
-            if (Math.abs(diff) > threshold) {
+            if (Math.abs(diff) > threshold || Double.isNaN(diff)) {
                 if (print_limit > 0) {
                     System.out.println(checkRecord.time + "," + ratio + "," + reference_ratio + "," + diff);
                 }
@@ -232,8 +232,8 @@ class ScoreInfo {
         }
         System.out.println("Threshold =" + threshold + "; Count =" + below_threshold_count);
         System.out.println("Ratios RMS =" +
-                Math.sqrt(l2 / resourcePickupTimeCheckRecords.size())
-                + "; Count =" + resourcePickupTimeCheckRecords.size());
+                Math.sqrt(l2 / completedTripTime.size())
+                + "; Count =" + completedTripTime.size());
     }
 
     private double computeRatio(IntervalCheckRecord checkRecord) {
@@ -249,7 +249,7 @@ class ScoreInfo {
         long tripTime = dropOffTime - pickupTime;
         totalResourceTripTime += tripTime;
         totalAssignments++;
-        resourcePickupTimeCheckRecords.add(new IntervalCheckRecord(
+        completedTripTime.add(new IntervalCheckRecord(
                 pickupTime, tripTime, staticTripTime));
     }
 

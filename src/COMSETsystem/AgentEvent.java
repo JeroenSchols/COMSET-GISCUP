@@ -205,7 +205,7 @@ public class AgentEvent extends Event {
 		long approachTime = getTime() - assignTime;
 		long staticApproachTime = simulator.map.travelTimeBetween(assignLocation, loc);
 
-		simulator.score.recordPickup(getTime(), startSearchTime, assignTime, assignedResource.availableTime,
+		simulator.score.recordApproachTime(getTime(), startSearchTime, assignTime, assignedResource.availableTime,
 				staticApproachTime);
 
 		assignedResource.pickup(this, getTime());
@@ -281,10 +281,7 @@ public class AgentEvent extends Event {
 	}
 
 	private void update(long time, LocationOnRoad loc, State state, long lastAppearTime, LocationOnRoad lastAppearLocation) {
-		// assert time >= this.time;
-		if (time < simulator.simulationTime) {
-			assert false;
-		}
+		assert time >= simulator.simulationTime : "trying to update event to the past time";
 		this.setTime(time);
 		this.loc = loc;
 		this.state = state;

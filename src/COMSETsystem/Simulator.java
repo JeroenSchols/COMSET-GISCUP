@@ -162,7 +162,11 @@ public class Simulator {
 				pb.stepTo((long)(((float)(toTrigger.getTime() - simulationStartTime))
 						/ totalSimulationTime * 100.0));
 
-				if (simulationTime <= simulationEndTime || (toTrigger instanceof AgentEvent && ((AgentEvent) toTrigger).hasResPickup())) {
+				// FIXME: We want to run the simulation until all the agents have dropped off their resources
+				//   but having the simulator poke its nose into events to deal with this is not ideal. We should
+				//   instead have code that checks that all agents are empty.
+				if (simulationTime <= simulationEndTime ||
+						(toTrigger instanceof AgentEvent && ((AgentEvent) toTrigger).hasResPickup())) {
 					Event e = toTrigger.trigger();
 					if (e != null) {
 						addEvent(e);
