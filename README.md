@@ -14,7 +14,7 @@ guides as specified in
 https://www.acm.org/special-interest-groups/volunteer-resources.
 
 COMSET is licensed under an MIT license. The participants of GISCUP'20 shall license their CUP submissions under an
-MIT license as well." to the "Submission and Evaluation
+MIT license as well.
 
 ## Overall Logic
 
