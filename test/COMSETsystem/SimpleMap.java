@@ -44,7 +44,7 @@ public class SimpleMap {
     }
 
     public static LocationOnRoad makeLocationFromRoad(Road road, double fraction) {
-        return new LocationOnRoad(road, (long) (road.length * fraction));
+        return new LocationOnRoad(road, road.length * fraction);
     }
 
 

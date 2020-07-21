@@ -216,11 +216,11 @@ class ScoreInfo {
 
         // TODO: Add configuration to control these checks.
         System.out.println("********** Complated Trips time checks");
-        checkAndPrintIntervalRecords(completedTripTime, 10, 0.02);
+        checkAndPrintIntervalRecords(completedTripTime, 10, 0.06);
         // checkAndPrintIntervalRecords(resourcePickupTimeCheckRecords, Integer.MAX_VALUE, 0.0);
 
         System.out.println("********** Approach time checks");
-        checkAndPrintIntervalRecords(approachTimeCheckRecords, 10, 0.02);
+        checkAndPrintIntervalRecords(approachTimeCheckRecords, 10, 0.06);
         // checkAndPrintIntervalRecords(approachTimeCheckRecords, Integer.MAX_VALUE, 0.0);
     }
 

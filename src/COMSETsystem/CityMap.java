@@ -98,27 +98,24 @@ public class CityMap {
 	 * @param destination The location to arrive at
 	 * @return the time in seconds it takes to go from source to destination
 	 */
-	public long travelTimeBetween (StaticTravelTimeLocationOnRoad source, StaticTravelTimeLocationOnRoad destination) {
+	public long travelTimeBetween (LocationOnRoad source, LocationOnRoad destination) {
 		long travelTime = -1;
-		if (source.road == destination.road && source.travelTimeFromStartIntersection <= destination.travelTimeFromStartIntersection) { 
+		StaticTravelTimeLocationOnRoad sourceTravelTimeLocation = new StaticTravelTimeLocationOnRoad(source);
+		StaticTravelTimeLocationOnRoad destinationTravelTimeLocation = new StaticTravelTimeLocationOnRoad(destination);
+
+		if (source.road == destination.road && source.getDisplacementOnRoad(destination) >= 0) {
 			// If the two locations are on the same road and source is closer to the start intersection than destination, 
 			// then the travel time is the difference of travelTimeFromStartIntersection between source and destination.
-			travelTime = destination.travelTimeFromStartIntersection - source.travelTimeFromStartIntersection;
+			travelTime = destinationTravelTimeLocation.travelTimeFromStartIntersection - sourceTravelTimeLocation.travelTimeFromStartIntersection;
 		} else {
-			long travelTimeToEndIntersectionOfSource = source.road.travelTime - source.travelTimeFromStartIntersection;
-			long travelTimeFromStartIntersectionOfDestination = destination.travelTimeFromStartIntersection;
+			long travelTimeToEndIntersectionOfSource = sourceTravelTimeLocation.road.travelTime - sourceTravelTimeLocation.travelTimeFromStartIntersection;
+			long travelTimeFromStartIntersectionOfDestination = destinationTravelTimeLocation.travelTimeFromStartIntersection;
 			long travelTimeFromEndIntersectionOfSourceToStartIntersectionOfDestination = travelTimeBetween(source.road.to, destination.road.from);
 			travelTime = travelTimeToEndIntersectionOfSource + travelTimeFromEndIntersectionOfSourceToStartIntersectionOfDestination + travelTimeFromStartIntersectionOfDestination;
 		}
 		return travelTime;
 	}
-
-	public long travelTimeBetween(LocationOnRoad source, LocationOnRoad destination) {
-		StaticTravelTimeLocationOnRoad sourceTravelTimeLocation = new StaticTravelTimeLocationOnRoad(source);
-		StaticTravelTimeLocationOnRoad destinationTravelTimeLocation = new StaticTravelTimeLocationOnRoad(destination);
-		return travelTimeBetween(sourceTravelTimeLocation, destinationTravelTimeLocation);
-	}
-
+	
 	/**
 	 * @return { @code projector }
 	 */
