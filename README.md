@@ -162,16 +162,16 @@ The resources are the trip records for June 1st, 2016 starting from 8:00am until
 The simulation should be finished in a few minutes, and you should get something close to the following:
 
 ```
-average agent search time: 464 seconds
-average resource wait time: 198 seconds
-resource expiration percentage: 4%
+average agent search time: 446 seconds
+average resource wait time: 169 seconds
+resource expiration percentage: 2%
 
-average agent cruise time: 269 seconds
-average agent approach time: 180 seconds
+average agent cruise time: 273 seconds
+average agent approach time: 157 seconds
 average resource trip time: 672 seconds
-total number of assignments: 226272
-total number of abortions: 10074
-total number of searches: 226272
+total number of assignments: 229979
+total number of abortions: 6367
+total number of searches: 229979
 ```
 
 In fact, if you run the simulator without changing anything in the code
