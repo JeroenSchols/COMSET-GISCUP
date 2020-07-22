@@ -16,7 +16,7 @@ public class Road implements Comparable<Road> {
 	// length of the road segment in meters
 	public double length;
 	// travel time of the road segment in seconds
-	public long travelTime;
+	public double travelTime;
 	// average speed in m/s
 	public double speed;
 	// a unique id
@@ -49,6 +49,7 @@ public class Road implements Comparable<Road> {
 		this.id = road.id;
 		this.length = road.length;
 		this.travelTime = road.travelTime;
+		this.speed = road.speed;
 		this.from = from;
 		this.to= to;
 		this.links = links;
