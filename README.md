@@ -159,11 +159,20 @@ With the configuration file coming up with the system,
 the above command will run simulation on the Manhattan road network with 5000 agents
 using the naive random-destination search strategy.
 The resources are the trip records for June 1st, 2016 starting from 8:00am until 10:00pm.
-The simulation should be finished in a few minutes, and you should get something like the following:
+The simulation should be finished in a few minutes, and you should get something close to the following:
 
-average agent search time: 464 seconds<br>
-average resource wait time: 197 seconds<br>
-resource expiration percentage: 4%<br>
+```
+average agent search time: 464 seconds
+average resource wait time: 198 seconds
+resource expiration percentage: 4%
+
+average agent cruise time: 269 seconds
+average agent approach time: 180 seconds
+average resource trip time: 672 seconds
+total number of assignments: 226272
+total number of abortions: 10074
+total number of searches: 226272
+```
 
 In fact, if you run the simulator without changing anything in the code
 that is downloaded from GitHub, you should get exactly the same results as shown above.
