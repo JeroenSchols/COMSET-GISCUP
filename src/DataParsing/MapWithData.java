@@ -254,33 +254,34 @@ public class MapWithData {
 				}
 				resourceIndex += 1;
 			}
-			if (resourceIndex == resources.size()) {
-				break;
-			} else {
-				if (dynamicTraffic) {
-					if (epochResources.size() == 0) {
-						// use the previous epoch if available
+
+			if (dynamicTraffic) {
+				if (epochResources.size() == 0) {
+					// use the previous epoch if available
+					trafficPattern.addTrafficPatternItem(epochBeginTime, lastKnownSpeedFactor);
+				} else {
+					double speedFactor = getSpeedFactor(epochResources);
+					if (speedFactor < 0.0) { // didn't get a valid speed factor
 						trafficPattern.addTrafficPatternItem(epochBeginTime, lastKnownSpeedFactor);
 					} else {
-						double speedFactor = getSpeedFactor(epochResources);
-						if (speedFactor < 0.0) { // didn't get a valid speed factor
-							trafficPattern.addTrafficPatternItem(epochBeginTime, lastKnownSpeedFactor);
-						} else {
-							if (speedFactor > 1.0) { // cap speed factor to 1
-								speedFactor = 1.0;
-							}
-							trafficPattern.addTrafficPatternItem(epochBeginTime, speedFactor);
-							lastKnownSpeedFactor = speedFactor;
+						if (speedFactor > 1.0) { // cap speed factor to 1
+							speedFactor = 1.0;
 						}
+						trafficPattern.addTrafficPatternItem(epochBeginTime, speedFactor);
+						lastKnownSpeedFactor = speedFactor;
 					}
-				} else {
-					trafficPattern.addTrafficPatternItem(epochBeginTime, 1.0);
 				}
-				//System.out.println(epochResources.size()+","+speedFactor);
-				epochBeginTime += step;
-				while (beginResourceIndex < resources.size() && resources.get(beginResourceIndex).getPickupTime() < epochBeginTime) {
-					beginResourceIndex += 1;
-				}
+			} else {
+				trafficPattern.addTrafficPatternItem(epochBeginTime, 1.0);
+			}
+
+			epochBeginTime += step;
+			while (beginResourceIndex < resources.size() && resources.get(beginResourceIndex).getPickupTime() < epochBeginTime) {
+				beginResourceIndex += 1;
+			}
+
+			if (resourceIndex == resources.size()) {
+				break;
 			}
 		}
 		return trafficPattern;
