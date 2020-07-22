@@ -14,7 +14,7 @@ public class Link implements Comparable<Link> {
 	// length of the link segment in meters
 	public final double length;
 	// travel time of the link segment in seconds
-	public final long travelTime;
+	public final double travelTime;
 	// travel speed of the link segment in meters per second
 	public final double speed;
 	// a unique id
@@ -22,7 +22,7 @@ public class Link implements Comparable<Link> {
 	// reference to a Road object that contains this link
 	public Road road;
 	// the amount of time it takes to travel from the start of the road to the start vertex of this link 
-	public long beginTime = -1;
+	public double beginTime = -1;
 
 	// min and max coordinates of the link
 	public double minX;
@@ -50,7 +50,7 @@ public class Link implements Comparable<Link> {
 		this.to = to;
 		this.length = length;
 		this.speed = speed;
-		this.travelTime = (long)(Math.round(length/speed));
+		this.travelTime = length/speed;
 		this.road = null;
 		minX = Math.min(from.xy.getX(), to.getX());
 		minY = Math.min(from.xy.getY(), to.getY());

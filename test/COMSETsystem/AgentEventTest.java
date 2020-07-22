@@ -56,7 +56,7 @@ public class AgentEventTest {
     @Test
     public void testTrigger_cruising() throws Exception {
         long stubTravelTime = 10;
-        long initTimeFromStartIntersection = testMap.roadFrom1to2.travelTime / 2;
+        double initTimeFromStartIntersection = testMap.roadFrom1to2.travelTime / 2;
         // Construction agent reaching intersection2
         LocationOnRoad locAtMiddleOfRoad = new LocationOnRoad(testMap.roadFrom1to2, initTimeFromStartIntersection);
 

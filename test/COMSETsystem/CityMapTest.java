@@ -41,11 +41,11 @@ public class CityMapTest {
         LocationOnRoad destination = SimpleMap.makeLocationFromRoad(simpleMap.roadFrom1to2, 0.3);
 
         // setup mock return value for navigation back from intersection2 to intersection1
-        doReturn(3600L).when(spyMap).travelTimeBetween(simpleMap.intersection2, simpleMap.intersection1);
+        doReturn(3600.0).when(spyMap).travelTimeBetween(simpleMap.intersection2, simpleMap.intersection1);
 
         // 3600 + time from start of road to destination + time from origin to end of road
         // 3600 + 300 + (1000-310)
-        assertEquals(4590, spyMap.travelTimeBetween(origin, destination));
+        assertEquals(4590, (long)(spyMap.travelTimeBetween(origin, destination)));
     }
 
     @Test
@@ -62,11 +62,11 @@ public class CityMapTest {
         LocationOnRoad destination = SimpleMap.makeLocationFromRoad(simpleMap.roadFrom1to2, 0.3);
 
         // setup mock return value for navigation back from intersection2 to intersection1
-        doReturn(3600L).when(spyMap).travelTimeBetween(simpleMap.intersection2, simpleMap.intersection1);
+        doReturn(3600.0).when(spyMap).travelTimeBetween(simpleMap.intersection2, simpleMap.intersection1);
 
         // 3600 + time from start of road to destination + time from origin to end of road
         // 3600 + 300 + (1000-Round(300.05)) = 4600
-        assertEquals(4600, spyMap.travelTimeBetween(origin, destination));
+        assertEquals(4600, (long)(spyMap.travelTimeBetween(origin, destination)));
     }
 }
 

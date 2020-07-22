@@ -85,7 +85,7 @@ public class CityMap {
 	 * @param destination The intersection to arrive at
 	 * @return the time in seconds it takes to go from source to destination
 	 */
-	public long travelTimeBetween (Intersection source, Intersection destination) {
+	public double travelTimeBetween (Intersection source, Intersection destination) {
 		return immutablePathTable.get(source.pathTableIndex).get(destination.pathTableIndex).travelTime;
 	}
 
@@ -99,21 +99,21 @@ public class CityMap {
 	 * @return the time in seconds it takes to go from source to destination
 	 */
 	public long travelTimeBetween (LocationOnRoad source, LocationOnRoad destination) {
-		long travelTime = -1;
-		StaticTravelTimeLocationOnRoad sourceTravelTimeLocation = new StaticTravelTimeLocationOnRoad(source);
-		StaticTravelTimeLocationOnRoad destinationTravelTimeLocation = new StaticTravelTimeLocationOnRoad(destination);
+		double travelTime = -1;
 
 		if (source.road == destination.road && source.getDisplacementOnRoad(destination) >= 0) {
 			// If the two locations are on the same road and source is closer to the start intersection than destination, 
 			// then the travel time is the difference of travelTimeFromStartIntersection between source and destination.
-			travelTime = destinationTravelTimeLocation.travelTimeFromStartIntersection - sourceTravelTimeLocation.travelTimeFromStartIntersection;
+			travelTime = travelTime = source.getDisplacementOnRoad(destination) / source.road.speed;
 		} else {
-			long travelTimeToEndIntersectionOfSource = sourceTravelTimeLocation.road.travelTime - sourceTravelTimeLocation.travelTimeFromStartIntersection;
-			long travelTimeFromStartIntersectionOfDestination = destinationTravelTimeLocation.travelTimeFromStartIntersection;
-			long travelTimeFromEndIntersectionOfSourceToStartIntersectionOfDestination = travelTimeBetween(source.road.to, destination.road.from);
+			LocationOnRoad endIntersectionOfSource = new LocationOnRoad(source.road, source.road.length);
+			double travelTimeToEndIntersectionOfSource = source.getDisplacementOnRoad(endIntersectionOfSource) / source.road.speed;
+			LocationOnRoad startIntersectionOfDestination = new LocationOnRoad(destination.road, 0);
+			double travelTimeFromStartIntersectionOfDestination = startIntersectionOfDestination.getDisplacementOnRoad(destination) / destination.road.speed;
+			double travelTimeFromEndIntersectionOfSourceToStartIntersectionOfDestination = travelTimeBetween(source.road.to, destination.road.from);
 			travelTime = travelTimeToEndIntersectionOfSource + travelTimeFromEndIntersectionOfSourceToStartIntersectionOfDestination + travelTimeFromStartIntersectionOfDestination;
 		}
-		return travelTime;
+		return Math.round(travelTime);
 	}
 	
 	/**
@@ -163,7 +163,7 @@ public class CityMap {
 		for (Intersection source : intersections.values()) {
 			// 'reset' every queue entry
 			for (DijkstraQueueEntry entry : queueEntry.values()) {
-				entry.cost = Long.MAX_VALUE;
+				entry.cost = Double.MAX_VALUE;
 				entry.inQueue = true;
 			}
 
@@ -181,7 +181,7 @@ public class CityMap {
 				for (Road r : entry.intersection.getRoadsFrom()) {
 					DijkstraQueueEntry v = queueEntry.get(r.to);
 					if (!v.inQueue) continue;
-					long ncost = entry.cost + r.travelTime;
+					double ncost = entry.cost + r.travelTime;
 					if (v.cost > ncost) {
 						queue.remove(v);
 						v.cost = ncost;
@@ -232,7 +232,7 @@ public class CityMap {
 
 	private class DijkstraQueueEntry implements Comparable<DijkstraQueueEntry> {
 		Intersection intersection;
-		long cost = Long.MAX_VALUE;
+		double cost = Double.MAX_VALUE;
 		boolean inQueue = true;
 
 		DijkstraQueueEntry(Intersection intersection) {
@@ -256,10 +256,10 @@ public class CityMap {
 	}
 
 	private class PathTableEntry {
-		final long travelTime;
+		final double travelTime;
 		final int predecessor;
 
-		PathTableEntry(long travelTime, int predecessor) {
+		PathTableEntry(double travelTime, int predecessor) {
 			this.travelTime = travelTime;
 			this.predecessor = predecessor;
 		}
