@@ -4,11 +4,10 @@ import java.util.Set;
 
 public abstract class FleetManager {
 
-    protected CityMap map;
+    protected final CityMap map;
 
-    public enum MapState {
-        ROAD_TRAVEL_TIME_CHANGED,
-    }
+    // Should not be accessible by subclasses.
+    TrafficPattern trafficPattern;
 
     public enum ResourceState {
         AVAILABLE,
@@ -18,8 +17,6 @@ public abstract class FleetManager {
     }
 
     public abstract void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time);
-
-    public abstract void onMapStateChanged(Road road, MapState state);
 
     public abstract AgentAction onResourceAvailabilityChange(Resource resource, ResourceState state,
                                                              LocationOnRoad currentLoc, long time);
@@ -31,5 +28,15 @@ public abstract class FleetManager {
 
     public FleetManager(CityMap map) {
         this.map = map;
+    }
+
+    void setTrafficPattern(TrafficPattern trafficPattern) {
+        this.trafficPattern = trafficPattern;
+    }
+
+    public LocationOnRoad getCurrentLocation(long lastAppearTime, LocationOnRoad lastLocation,
+                                             long currentTime) {
+        long elapseTime = currentTime - lastAppearTime;
+        return trafficPattern.travelRoadForTime(lastAppearTime, lastLocation, elapseTime);
     }
 }

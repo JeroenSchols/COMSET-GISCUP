@@ -5,18 +5,23 @@ import COMSETsystem.*;
 import java.util.*;
 
 public class RandomDestinationFleetManager extends FleetManager {
-    private Map<Long, Long> agentLastAppearTime = new HashMap<>();
-    private Map<Long, LocationOnRoad> agentLastLocation = new HashMap<>();
-    private Map<Long, Resource> resourceAssignment = new HashMap<>();
-    private Set<Resource> waitingResources = new TreeSet<>(Comparator.comparingLong((Resource r) -> r.id));
-    private Set<Long> availableAgent = new TreeSet<>(Comparator.comparingLong((Long id) -> id));
-    private Map<Long, Random> agentRnd = new HashMap<>();
+    private final Map<Long, Long> agentLastAppearTime = new HashMap<>();
+    private final Map<Long, LocationOnRoad> agentLastLocation = new HashMap<>();
+    private final Map<Long, Resource> resourceAssignment = new HashMap<>();
+    private final Set<Resource> waitingResources = new TreeSet<>(Comparator.comparingLong((Resource r) -> r.id));
+    private final Set<Long> availableAgent = new TreeSet<>(Comparator.comparingLong((Long id) -> id));
+    private final Map<Long, Random> agentRnd = new HashMap<>();
 
 
     Map<Long, LinkedList<Intersection>> agentRoutes = new HashMap<>();
 
-
-
+    /**
+     * The simulation calls onAgentIntroduced to notify the **FleetManager** that a new agent has been randomly
+     * placed and is available for assignment.
+     * @param agentId a unique id for each agent and can be used to associated information with agents.
+     * @param currentLoc the current location of the agent.
+     * @param time the simulation time.
+     */
     @Override
     public void onAgentIntroduced(long agentId, LocationOnRoad currentLoc, long time) {
         agentLastAppearTime.put(agentId, time);
@@ -24,11 +29,18 @@ public class RandomDestinationFleetManager extends FleetManager {
         availableAgent.add(agentId);
     }
 
-    @Override
-    public void onMapStateChanged(Road road, FleetManager.MapState state) {
-
-    }
-
+    /**
+     * The simulation calls this method to notify the **FleetManager** that the resource's state has changed:
+     * + resource becomes available for pickup
+     * + resource expired
+     * + resource has been dropped off by its assigned agent
+     * + resource has been picked up by an agent.
+     * @param resource This object contains information about the Resource useful to the fleet manager
+     * @param state the new state of the resource
+     * @param currentLoc current location of the resources
+     * @param time the simulation time
+     * @return AgentAction that tells the agents what to do.
+     */
     @Override
     public AgentAction onResourceAvailabilityChange(Resource resource,
                                                     ResourceState state,
@@ -53,6 +65,7 @@ public class RandomDestinationFleetManager extends FleetManager {
             for (Resource res : waitingResources) {
                 // If res is in waitingResources, then it must have not expired yet
                 // testing null pointer exception
+
                 long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc);
 
                 // if the resource is reachable before expiration
@@ -76,6 +89,11 @@ public class RandomDestinationFleetManager extends FleetManager {
             agentLastAppearTime.put(resource.assignedAgentId, time);
         } else if (state == ResourceState.EXPIRED) {
             waitingResources.remove(resource);
+            if (resource.assignedAgentId != -1) {
+                agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
+                availableAgent.add(resource.assignedAgentId);
+                resourceAssignment.remove(resource.assignedAgentId);
+            }
         } else if (state == ResourceState.PICKED_UP) {
             agentRoutes.put(resource.assignedAgentId, new LinkedList<>());
         }
@@ -83,8 +101,22 @@ public class RandomDestinationFleetManager extends FleetManager {
         return action;
     }
 
+    /**
+     * Calls to this method notifies that an agent has reach an intersection and is ready for new travel directions.
+     * This is called whenever any agent without an assigned resources reaches an intersection. This method allows
+     * the **FleetManager** to plan any agent's cruising path, the path it takes when it has no assigned resource.
+     * The intention is that the **FleetManager** will plan the cruising, to minimize the time it takes to
+     * reach resources for pickup.
+     * @param agentId unique id of the agent
+     * @param time current simulation time.
+     * @param currentLoc current location of the agent.
+     * @return the next intersection for the agent to navigate to.
+     */
     @Override
     public Intersection onReachIntersection(long agentId, long time, LocationOnRoad currentLoc) {
+        if (agentId == 240902L && time == 1464800008L) {
+            System.out.println("here");
+        }
         agentLastAppearTime.put(agentId, time);
 
         LinkedList<Intersection> route = agentRoutes.getOrDefault(agentId, new LinkedList<>());
@@ -96,11 +128,20 @@ public class RandomDestinationFleetManager extends FleetManager {
 
         Intersection nextLocation = route.poll();
         Road nextRoad = currentLoc.road.to.roadTo(nextLocation);
-        LocationOnRoad locationOnRoad = new LocationOnRoad(nextRoad, 0);
+        LocationOnRoad locationOnRoad = LocationOnRoad.createFromRoadStart(nextRoad);
         agentLastLocation.put(agentId, locationOnRoad);
         return nextLocation;
     }
 
+    /**
+     * Calls to this method notifies that an agent with an picked up resource reaches an intersection.
+     * This method allows the **FleetMangaer** to plan the route of the agent to the resource's dropoff point.
+     * @param agentId the unique id of the agent
+     * @param time current simulation time
+     * @param currentLoc current location of agent
+     * @param resource information of the resource associated with the agent.
+     * @return the next intersection for the agent to navigate to.
+     */
     @Override
     public Intersection onReachIntersectionWithResource(long agentId, long time, LocationOnRoad currentLoc,
                                                         Resource resource) {
@@ -115,23 +156,23 @@ public class RandomDestinationFleetManager extends FleetManager {
 
         Intersection nextLocation = route.poll();
         Road nextRoad = currentLoc.road.to.roadTo(nextLocation);
-        LocationOnRoad locationOnRoad = new LocationOnRoad(nextRoad, 0);
+        LocationOnRoad locationOnRoad = LocationOnRoad.createFromRoadStart(nextRoad);
         agentLastLocation.put(agentId, locationOnRoad);
         return nextLocation;
     }
 
-    Long getNearestAvailableAgent(Resource resource, long time) {
+    Long getNearestAvailableAgent(Resource resource, long currentTime) {
         long earliest = Long.MAX_VALUE;
         Long bestAgent = null;
         for (Long id : availableAgent) {
             if (!agentLastLocation.containsKey(id)) continue;
 
-            long elapseTime = time - agentLastAppearTime.get(id);
-            LocationOnRoad locationOnRoad = agentLastLocation.get(id);
-            LocationOnRoad curLoc = new LocationOnRoad(locationOnRoad.road, locationOnRoad.travelTimeFromStartIntersection + elapseTime);
-
+            LocationOnRoad curLoc = getCurrentLocation(
+                    agentLastAppearTime.get(id),
+                    agentLastLocation.get(id),
+                    currentTime);
             long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc);
-            long arriveTime = travelTime + time;
+            long arriveTime = travelTime + currentTime;
             if (arriveTime < earliest) {
                 bestAgent = id;
                 earliest = arriveTime;
@@ -177,7 +218,7 @@ public class RandomDestinationFleetManager extends FleetManager {
         int destinationIndex = random.nextInt(map.intersections().size());
         Intersection[] intersectionArray =
                 map.intersections().values().toArray(new Intersection[0]);
-        Intersection destinationIntersection = intersectionArray[destinationIndex];
+       Intersection destinationIntersection = intersectionArray[destinationIndex];
         if (destinationIntersection == sourceIntersection) {
             // destination cannot be the source
             // if destination is the source, choose a neighbor to be the destination

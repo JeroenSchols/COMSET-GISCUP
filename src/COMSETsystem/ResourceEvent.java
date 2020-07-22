@@ -40,7 +40,7 @@ public class ResourceEvent extends Event {
 	State state;
 
 	// The shortest travel time from pickupLoc to dropoffLoc
-	public long tripTime;
+	public final long staticTripTime;
 
 	/**
 	 * Constructor for class ResourceEvent.
@@ -49,14 +49,18 @@ public class ResourceEvent extends Event {
 	 * @param pickupLoc this resource's location when it becomes available.
 	 * @param dropoffLoc this resource's destination location.
 	 * @param simulator the simulator object.
+	 * @param fleetManager the fleet manager object.
+	 * @param resourceMaximumLifeTime time interval that resource waits and expires after that.
 	 */
-	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long tripTime, Simulator simulator, FleetManager fleetManager) {
+	public ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long staticTripTime,
+						 Simulator simulator, FleetManager fleetManager, long resourceMaximumLifeTime) {
 		super(availableTime, simulator, fleetManager);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
-		this.tripTime = tripTime;
+		this.expirationTime = availableTime + resourceMaximumLifeTime;
+		this.staticTripTime = staticTripTime;
+		this.pickupTime = -1;
 		this.state = State.AVAILABLE;
 	}
 
@@ -66,16 +70,19 @@ public class ResourceEvent extends Event {
 	 * @param availableTime time when this agent is introduced to the system.
 	 * @param pickupLoc this resource's location when it becomes available.
 	 * @param dropoffLoc this resource's destination location.
-	 * @param tripTime the time it takes to go from pickUpLoc and dropoffLoc
+	 * @param staticTripTime the time it takes to go from pickUpLoc and dropoffLoc under static traffic condition
 	 * @param simulator the simulator object.
+	 * @param resourceMaximumLifeTime time interval that resource waits and expires after that.
 	 */
-	protected ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime, long tripTime, Simulator simulator) {
+	protected ResourceEvent(LocationOnRoad pickupLoc, LocationOnRoad dropoffLoc, long availableTime,
+							long staticTripTime, Simulator simulator, long resourceMaximumLifeTime) {
 		super(availableTime);
 		this.pickupLoc = pickupLoc;
 		this.dropoffLoc = dropoffLoc;
 		this.availableTime = availableTime;
-		this.expirationTime = availableTime + simulator.ResourceMaximumLifeTime;
-		this.tripTime = tripTime;
+		this.expirationTime = availableTime + resourceMaximumLifeTime;
+		this.staticTripTime = staticTripTime;
+		this.pickupTime = -1;
 	}
 
 	/**
@@ -90,29 +97,28 @@ public class ResourceEvent extends Event {
 	 * agent from the PriorityQueue and from activeAgents.
 	 */
 	@Override
-	Event trigger() {
-		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id + " triggered at time " + time, this);
+	Event trigger() throws UnsupportedOperationException {
+		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "******** ResourceEvent id = "+ id +
+				" triggered at time " + getTime(), this);
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Loc = " + this.pickupLoc + "," + this.dropoffLoc, this);
 
-		if (simulator.map == null) {
-			System.out.println("map is null in resource");
-		}
 		if (pickupLoc == null) {
 			System.out.println("intersection is null");
 		}
 
-		Event e = null;
 		switch (state) {
 			case AVAILABLE:
 				available();
-				e = this;
-				break;
+				return this;
 			case EXPIRED:
+			default:
 				expire();
-				break;
+				return null;
 		}
+	}
 
-		return e;
+	void assignTo(AgentEvent event) {
+		this.agentEvent = event;
 	}
 
 	Resource copyResource() {
@@ -121,41 +127,46 @@ public class ResourceEvent extends Event {
 
 	void pickup(AgentEvent agentEvent, long pickupTime) {
 		this.pickupTime = pickupTime;
-		this.agentEvent = agentEvent;
 		simulator.removeEvent(this);
 	}
 
-	void dropOff(long dropOffTime) {
-		long tripTime = dropOffTime - pickupTime;
-		simulator.totalResourceTripTime += tripTime;
-		simulator.totalAssignments++;
+	boolean isPickedup() {
+		return pickupTime > 0;
 	}
 
-	private void available() {
-		++simulator.totalResources;
+	void dropOff(long dropOffTime) {
+		long staticTripTime = simulator.map.travelTimeBetween(pickupLoc, dropoffLoc);
+		simulator.score.recordCompletedTrip(dropOffTime, pickupTime, staticTripTime);
+	}
 
-		simulator.waitingResources.add(this);
-		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), time);
+	private void available() throws UnsupportedOperationException {
+		++simulator.score.totalResources;
+
+		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.AVAILABLE, simulator.agentCopy(pickupLoc), getTime());
 		processAgentAction(action);
-		time = expirationTime;
+		setTime(expirationTime);
 		state = State.EXPIRED;
 	}
 
-	private void expire() {
-		simulator.expiredResources++;
-		simulator.totalResourceWaitTime += simulator.ResourceMaximumLifeTime;
-		simulator.waitingResources.remove(this);
+	private void expire() throws UnsupportedOperationException {
+		// Expiration can only happen if the resource has not been picked up.
+		assert !isPickedup() : "Resource expiring after having been picked up";
 
 		AgentAction action = fleetManager.onResourceAvailabilityChange(copyResource(), ResourceState.EXPIRED,
-				simulator.agentCopy(pickupLoc), time);
+				simulator.agentCopy(pickupLoc), getTime());
 		processAgentAction(action);
 		if (agentEvent != null) {
+			// We're assigned but hasn't been picked up, so the trip is being aborted.
 			agentEvent.abortResource();
+			simulator.score.recordAbortion();
 		}
+
+		simulator.score.recordExpiration();
+
 		Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Expired.", this);
 	}
 
-	private void processAgentAction(AgentAction agentAction) {
+	private void processAgentAction(AgentAction agentAction) throws UnsupportedOperationException {
 		if (agentAction == null) {
 			return;
 		}
@@ -164,7 +175,8 @@ public class ResourceEvent extends Event {
 		ResourceEvent resourceEvent = simulator.resMap.get(agentAction.resId);
 
 		if (agentEvent != null && resourceEvent != null && !agentEvent.hasResPickup()) {
-			agentEvent.assignTo(resourceEvent, time);
+			agentEvent.assignTo(resourceEvent, getTime());
+			resourceEvent.assignTo(agentEvent);
 		}
 	}
 }

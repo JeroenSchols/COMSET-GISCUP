@@ -1,44 +1,55 @@
 package COMSETsystem;
 
-/**
- * Location on a road represented by the travel time from the start intersection of the road.
- */
+import javax.xml.stream.Location;
+
 public class LocationOnRoad {
+    public Road road;
+    private final double distanceFromStartIntersection;
 
-	public Road road;
-	public long travelTimeFromStartIntersection;
+    public LocationOnRoad(Road road, double distanceFromStartIntersection) {
+        this.road = road;
+        this.distanceFromStartIntersection = distanceFromStartIntersection;
+    }
 
-	public LocationOnRoad(Road road, long travelTimeFromStartIntersection) {
-		this.road = road;
-		this.travelTimeFromStartIntersection = travelTimeFromStartIntersection;
-	}
+    public LocationOnRoad(LocationOnRoad locationOnRoad, double displacement) {
+        this.road = locationOnRoad.road;
+        this.distanceFromStartIntersection = locationOnRoad.distanceFromStartIntersection+ displacement;
+        assert 0 <= this.distanceFromStartIntersection && this.distanceFromStartIntersection <= road.length;
+    }
 
-	/**
-	 * Get a lat,lon representation of the location
-	 * 
-	 * @return double[] a double array {lat, lon}
-	 */
-	public double[] toLatLon() {
-		double latLon[] = new double[2];
-		int i;
-		for (i = 0; i < road.links.size() && road.links.get(i).beginTime <= this.travelTimeFromStartIntersection; i++);
-		i--;
-		// interpolate
-		Link link = road.links.get(i);
-		long travelTimeFromStartVertex = this.travelTimeFromStartIntersection - link.beginTime;
-		if (link.travelTime == 0) {
-			latLon[0] = (link.from.latitude + link.to.latitude) / 2;
-			latLon[1] = (link.from.longitude + link.to.longitude) / 2;
-		} else {
-			latLon[0] = link.from.latitude + (link.to.latitude - link.from.latitude) * (((double)travelTimeFromStartVertex) / link.travelTime);
-			latLon[1] = link.from.longitude + (link.to.longitude - link.from.longitude) * (((double)travelTimeFromStartVertex) / link.travelTime);    		
-		}
+    public boolean upstreamTo(LocationOnRoad destination) {
+        return getDisplacementOnRoad(destination) >= 0;
+    }
 
-		return latLon;     
-	}
+    public double getDisplacementOnRoad(LocationOnRoad destination) {
+        assert this.road.id == destination.road.id : "two links must be on the same road";
+        double displacement = destination.distanceFromStartIntersection - this.distanceFromStartIntersection;
+        return displacement;
+    }
 
-	public String toString() {
-		double latLon[] = toLatLon();
-		return "(" + road + "," + this.travelTimeFromStartIntersection + ",(" + latLon[0] + "," + latLon[1] + "))";
-	}
+    public long getStaticTravelTimeOnRoad() {
+        return Math.round(distanceFromStartIntersection/road.speed);
+    }
+
+    public boolean atEndIntersection() {
+        return this.distanceFromStartIntersection == this.road.length;
+    }
+
+    // create location at the end of a road
+    public static LocationOnRoad createFromRoadEnd(Road road) {
+        return new LocationOnRoad(road, road.length);
+    }
+
+    // create location at the start of a road
+    public static LocationOnRoad createFromRoadStart(Road road) {
+        return new LocationOnRoad(road, 0);
+    }
+
+    public static LocationOnRoad copyWithReplacedRoad(Road road, LocationOnRoad locationOnRoad) {
+        return new LocationOnRoad(road, locationOnRoad.distanceFromStartIntersection);
+    }
+
+    public String toString() {
+        return "(road: " + road.id + ", distanceFromStartIntersection: " + distanceFromStartIntersection;
+    }
 }

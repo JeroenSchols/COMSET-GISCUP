@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.*;
 
@@ -26,7 +26,7 @@ public class FleetManagerTest {
     @Mock
     Resource mockResource;
 
-    SimpleMap testMap = new SimpleMap();
+    final SimpleMap testMap = new SimpleMap();
 
     /**
      * Test onReachIntersection creates a route when there is no route and returns the first
@@ -63,7 +63,7 @@ public class FleetManagerTest {
         Intersection intersection = spyFleetManager.onReachIntersection(1L, 1000, currentLoc);
 
         assertEquals(testMap.intersection3, intersection);
-        verify(spyFleetManager, times(0)).planRoute(anyLong(), anyObject());
+        verify(spyFleetManager, times(0)).planRoute(anyLong(), any(LocationOnRoad.class));
         // Check the remaining part of the route has the left over part of the route
         // Argument to containsKey and get must have long type        assertTrue(spyFleetManager.agentRoutes.containsKey(1L));
         assertEquals(testMap.intersection4, spyFleetManager.agentRoutes.get(1L).getFirst());
@@ -109,7 +109,7 @@ public class FleetManagerTest {
                 1L, 1000, currentLoc, mockResource);
 
         assertEquals(testMap.intersection3, intersection);
-        verify(spyFleetManager, times(0)).planRoute(anyLong(), anyObject());
+        verify(spyFleetManager, times(0)).planRoute(anyLong(), any(LocationOnRoad.class));
         // Check the remaining part of the route has the left over part of the route
         // Argument to containsKey and get must have long type        assertTrue(spyFleetManager.agentRoutes.containsKey(1L));
         assertEquals(testMap.intersection4, spyFleetManager.agentRoutes.get(1L).getFirst());

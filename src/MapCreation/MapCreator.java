@@ -5,10 +5,8 @@ import DataParsing.GeoProjector;
 import DataParsing.KdTree;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,14 +90,14 @@ public class MapCreator {
 	 * converts it into a map represented by { @code vertices ).
 	 * Uses Json.simple package
 	 *
-	 * @param fileName the JSON file that will be read
-	 * @param boundingPolygonKMLFile a KML file defining a bounding polygon of the simulated area
+	 * @param configuration  where we get the JSON file that will be read, and
+	 *                       KML file defining a bounding polygon of the simulated area
 	 * modifies {@code vertices }
 	 *
 	 */
-	public MapCreator(String mapFile, String boundingPolygonKMLFile, double speedReduction) {
+	public MapCreator(Configuration configuration) {
 
-		boundingPolygon = getPolygonFromKML(boundingPolygonKMLFile);
+		boundingPolygon = getPolygonFromKML(configuration.boundingPolygonKMLFile);
 
 		// Initialize intersections to be a TreeMap
 		intersections = new TreeMap<>();
@@ -110,7 +108,7 @@ public class MapCreator {
 		JSONParser parser = new JSONParser();
 		try {
 			// read file
-			Reader reader = new FileReader(mapFile);
+			Reader reader = new FileReader(configuration.mapJSONFile);
 			// create JSONObject based on the file
 			Object obj = parser.parse(reader);
 			JSONObject jsonObject = (JSONObject) obj;
@@ -130,7 +128,7 @@ public class MapCreator {
 						this.projector = new GeoProjector(latitude, longitude);
 						firstVertex = false;
 					}
-					double xy[] = projector.fromLatLon(latitude, longitude);
+					double [] xy = projector.fromLatLon(latitude, longitude);
 					vertices.put(id, new Vertex(longitude, latitude, xy[0], xy[1], id));
 				}
 			}
@@ -203,7 +201,7 @@ public class MapCreator {
 						}
 					}
 					// check if it's a one way street
-					if(tags.containsKey("oneway") && ((String)tags.get("oneway")).equals("yes")) {
+					if(tags.containsKey("oneway") && tags.get("oneway").equals("yes")) {
 						oneway = true;
 					}
 					// set roads
@@ -214,11 +212,12 @@ public class MapCreator {
 						long id2 = (long)jsonvertices.get(i+1);
 
 						double distance = vertices.get(id1).xy.distance(vertices.get(id2).xy);
-
 						// Convert km/h to meters per second; apply speed reduction
-						vertices.get(id1).addEdge(vertices.get(id2), distance, maxSpeed * 1000 / 3600 / speedReduction);
+						vertices.get(id1).addEdge(vertices.get(id2), distance,
+								configuration.toSimulatedSpeed(maxSpeed * 1000 / 3600));
 						if (!oneway) {
-							vertices.get(id2).addEdge(vertices.get(id1), distance, maxSpeed * 1000 / 3600 / speedReduction);
+							vertices.get(id2).addEdge(vertices.get(id1), distance,
+									configuration.toSimulatedSpeed(maxSpeed * 1000 / 3600));
 						}
 					}
 				}
@@ -257,9 +256,7 @@ public class MapCreator {
 		createRoads();
 
 		// Output the map
-		CityMap cityMap = outputCityMap();
-		
-		return cityMap;
+		return outputCityMap();
 	}
 
 
@@ -286,7 +283,7 @@ public class MapCreator {
 	 * Check if a location (x,y) is inside the bounding polygon.
 	 * @param x x coordinate of the location to check against the polygon
 	 * @param y y coordinate of the location to check against the polygon
-	 * @return
+	 * @return indication of being inside Polygon
 	 */
 	public static boolean insidePolygon(double x, double y) {
 		int count = 0;
@@ -302,11 +299,7 @@ public class MapCreator {
 			}
 		}
 		count = count % 2;
-		if (count == 0) {
-			return false;
-		} else {
-			return true;
-		}
+		return count != 0;
 	}
 
 	/**
@@ -316,7 +309,7 @@ public class MapCreator {
 	 */
 	public static List<double[]> getPolygonFromKML(String polygonKMLFile) {
 		String regex = "^\\s+";
-		String line = "";
+		String line;
 		List<double[]> polygon = new ArrayList<>();
 
 		try (BufferedReader br = new BufferedReader(new FileReader(polygonKMLFile))) {
@@ -328,11 +321,10 @@ public class MapCreator {
 					continue;
 				while (!(line = br.readLine()).replaceAll(regex, "").equals("</coordinates>")) {
 					trimmedLine = line.replaceAll(regex,  "");
-					String[] vertices = line.split(" ");
-					for (int i = 0; i < vertices.length; i++) {
-						String vertex = vertices[i];
+					String[] vertices = trimmedLine.split(" ");
+					for (String vertex : vertices) {
 						String[] lonLat = vertex.split(",");
-						double[] pair = {Double.valueOf(lonLat[0]), Double.valueOf(lonLat[1])};
+						double[] pair = {Double.parseDouble(lonLat[0]), Double.parseDouble(lonLat[1])};
 						polygon.add(pair);
 					}
 				}
@@ -349,7 +341,7 @@ public class MapCreator {
 	/**
 	 *  Sets the idCounter to the maximum id in vertices and adds 1
 	 *
-	 * @modifes { @code idCounter }
+	 * @modifies { @code idCounter }
 	 */
 	private void setIdCounter() {
 		idCounter = -1L;
@@ -386,7 +378,6 @@ public class MapCreator {
 			// Remove vertices that have no outgoing roads or incoming roads. 
 			if (roadsFrom.size() == 0 || roadsTo.size() == 0) { 
 				toRemove.add(id);
-				continue;
 			}
 		}
 		// remove all the vertices that have to be removed
@@ -454,6 +445,8 @@ public class MapCreator {
 	 * Create roads to connect intersections
 	 */
 	public void createRoads() {
+		int duplicates = 0;
+		ArrayList<Road> roadsToRemove = new ArrayList<>();
 		for (Intersection intersection : intersections.values()) {
 			Vertex vertex = intersection.vertex;
 			for (Link link : vertex.linksMapFrom.values()) {
@@ -476,12 +469,48 @@ public class MapCreator {
 				// add the link that connects to the end intersection
 				road.addLink(currentLink);
 				road.to = currentLink.to.intersection;
-				intersection.roadsMapFrom.put(road.to, road);
-				road.to.roadsMapTo.put(intersection,  road);
+
+				// check if there is duplicate from-to pair
+				// in the case of duplicate, keep the shorter road
+				Road toAbandon = null;
+				for (Road aRoad : intersection.roadsMapFrom.values()) {
+					if (aRoad.to.id == road.to.id) {
+						if (road.travelTime >= aRoad.travelTime) {
+							// abandon new road
+							toAbandon = road;
+						} else {
+							// abandon old road
+							toAbandon = aRoad;
+						}
+						break;
+					}
+				}
+				if (toAbandon != null) {
+					roadsToRemove.add(toAbandon);
+				}
+				if (toAbandon == null || toAbandon.id != road.id) {
+					// add new road
+					intersection.roadsMapFrom.put(road.to, road);
+					road.to.roadsMapTo.put(intersection, road);
+				}
 			}
+		}
+		for (Road road : roadsToRemove) {
+			removeRoad(road);
 		}
 	}
 
+	public void removeRoad(Road road) {
+		// remove intermediate vertices
+		for (int link_order = 0; link_order < road.links.size() - 1; link_order++) {
+			vertices.remove(road.links.get(link_order).to.id);
+		}
+		// remove the from-links of the start vertex
+		Link firstLink = road.links.get(0);
+		firstLink.from.linksMapFrom.remove(firstLink.to);
+		Link lastLink = road.links.get(road.links.size() - 1);
+		lastLink.to.linksMapTo.remove(lastLink.from);
+	}
 	/**
 	 * Removes all dead end vertices, i.e. the vertices that do not have 
 	 * incoming links or outgoing links.
@@ -522,7 +551,7 @@ public class MapCreator {
 					Vertex interTo = link.to;
 					double newLongtitude = (interFrom.longitude + interTo.longitude)/2;
 					double newLatitude = (interFrom.latitude + interTo.latitude)/2;
-					double newXY[] = projector.fromLatLon(newLatitude, newLongtitude);
+					double [] newXY = projector.fromLatLon(newLatitude, newLongtitude);
 					// it is very important that the id of newInter is unique!
 					Vertex newInter = new Vertex(newLongtitude, newLatitude, newXY[0], newXY[1], idCounter++);  
 					for (Link inter1From : interFrom.getLinksFrom()) {
@@ -653,9 +682,11 @@ public class MapCreator {
 		}
 		List<Road> roads = new ArrayList<>();
 		for (Intersection inter : intersections.values()) {
-			for (Road road : inter.getRoadsFrom()) {
-				roads.add(road);
-			}
+			roads.addAll(inter.getRoadsFrom());
+		}
+		// set road speed
+		for (Road road : roads) {
+			road.setSpeed();
 		}
 		return new CityMap(intersections, roads, projector, kdTree);
 	}
