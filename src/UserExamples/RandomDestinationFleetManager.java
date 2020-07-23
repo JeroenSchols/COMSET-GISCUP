@@ -65,7 +65,9 @@ public class RandomDestinationFleetManager extends FleetManager {
             for (Resource res : waitingResources) {
                 // If res is in waitingResources, then it must have not expired yet
                 // testing null pointer exception
-
+                // Warning: map.travelTimeBetween returns the travel time based on speed limits, not
+                // the dynamic travel time. Thus the travel time returned by map.travelTimeBetween may be different
+                // than the actual travel time.
                 long travelTime = map.travelTimeBetween(currentLoc, res.pickupLoc);
 
                 // if the resource is reachable before expiration
@@ -171,6 +173,9 @@ public class RandomDestinationFleetManager extends FleetManager {
                     agentLastAppearTime.get(id),
                     agentLastLocation.get(id),
                     currentTime);
+            // Warning: map.travelTimeBetween returns the travel time based on speed limits, not
+            // the dynamic travel time. Thus the travel time returned by map.travelTimeBetween may be different
+            // than the actual travel time.
             long travelTime = map.travelTimeBetween(curLoc, resource.pickupLoc);
             long arriveTime = travelTime + currentTime;
             if (arriveTime < earliest) {

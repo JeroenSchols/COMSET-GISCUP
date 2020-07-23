@@ -79,7 +79,10 @@ public class CityMap {
 
 	/**
 	 * Gets the time it takes to move from one intersection to the next
-	 * intersection. This assumes traversal at pre-defined travel speed of the roads.
+	 * intersection.
+	 *
+	 * Warning: This function assumes traversal at the speed limits of the roads; the computed travel time
+	 * may be different than the actual travel time.
 	 *
 	 * @param source The intersection to depart from
 	 * @param destination The intersection to arrive at
@@ -92,7 +95,9 @@ public class CityMap {
 
 	/**
 	 * Gets the time it takes to move from a location on a first road to a location on a second road. 
-	 * This assumes traversal at speedlimit of the roads.
+	 *
+	 * Warning: This function assumes traversal at the speed limit of the roads; the computed travel time
+	 * may be different than the actual travel time.
 	 *
 	 * @param source The location to depart from
 	 * @param destination The location to arrive at

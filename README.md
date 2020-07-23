@@ -213,7 +213,7 @@ The calibration goes as follows.
 In other words, we adjust the travel speeds so that the average trip time produced by
 COMSET is consistent with that of the real data.
 
-COMSET provides built-in functions CityMap::travelTimeBetween() and CityMap::shortestTravelTimePath() for computing the shortest travel time and the shortest travel time path between two locations on the map, respectively. It should be noted that the results returned by these functions are based on the speed limits, not the dynamic travel speed. 
+<b>Import Notice:</b> COMSET provides built-in functions CityMap::travelTimeBetween() and CityMap::shortestTravelTimePath() for computing the shortest travel time and the shortest travel time path between two locations on the map, respectively. It should be noted that the results returned by these functions are based on the speed limits, not the dynamic travel speed. 
 
 ## Authors
 ## 2020 Authors
