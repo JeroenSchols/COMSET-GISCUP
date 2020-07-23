@@ -2,14 +2,8 @@ package DataParsing;
 
 import COMSETsystem.*;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.PriorityQueue;
-import java.util.Random;
-
-import org.apache.log4j.jmx.Agent;
+import java.util.*;
 
 /**
  * The MapWithData class is responsible for loading a resource dataset file,
@@ -21,7 +15,7 @@ public class MapWithData {
 	public CityMap map;     
 
 	// Full path of the file containing the resources to be loaded to the simulator
-	private String resourceFile;    
+	private final String resourceFile;
 
 	// Priority queue of events
 	public PriorityQueue<Event> events;
@@ -40,11 +34,13 @@ public class MapWithData {
 	// Time Zone ID of the map; for conversion from the time stamps in a resource dataset file to Linux epochs.
 	protected ZoneId zoneId;
 
+	private ArrayList<Resource> resourcesParsed;
+
 	/**
 	 * Constructor of MapWithData
 	 * @param map reference to the map
 	 * @param resourceFile full path to the resource file
-	 * @param agentPlacementRandomSeed
+	 * @param agentPlacementRandomSeed Seed for randome number that generates agent placements
 	 */
 	public MapWithData(CityMap map, String resourceFile, long agentPlacementRandomSeed) {
 		this.map = map;
@@ -60,52 +56,79 @@ public class MapWithData {
 	 * for each passenger record obtained from the resource file and adds them to the events
 	 * priority queue.
 	 *
+	 * @param configuration configuration object containing run-time parameters
 	 * @param simulator Simulator object with whose methods agent and resource events can
 	 * be created.
 	 * @return long the latest resource time
 	 */
-	public long createMapWithData(Simulator simulator) {
- 
+	// FIXME: Pass in configuration here too instead of accessing it with the singleton.
+	public long createMapWithData(Configuration configuration, Simulator simulator, FleetManager fleetManager) {
+
+
 		CSVNewYorkParser parser = new CSVNewYorkParser(resourceFile, zoneId);
-		ArrayList<Resource> resourcesParsed = parser.parse();
+		resourcesParsed = parser.parse(Configuration.timeResolution);
 		try {
             for (Resource resource : resourcesParsed) {
 				// map matching
 				LocationOnRoad pickupMatch = mapMatch(resource.getPickupLon(), resource.getPickupLat());
 				LocationOnRoad dropoffMatch = mapMatch(resource.getDropoffLon(), resource.getDropoffLat());
 
-				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), simulator);
+				// TODO: won't need trip time
+				long staticTripTime = simulator.mapForAgents.travelTimeBetween(pickupMatch, dropoffMatch);
+
+				resource.setPickupLocation(pickupMatch);
+				resource.setDropoffLocation(dropoffMatch);
+
+				ResourceEvent ev = new ResourceEvent(pickupMatch, dropoffMatch, resource.getTime(), staticTripTime,
+						simulator, fleetManager, configuration.resourceMaximumLifeTime);
 				events.add(ev);
 
 				//  track earliestResourceTime and latestResourceTime
 				if (resource.getTime() < earliestResourceTime) {
 					earliestResourceTime = resource.getTime();
 				}
-				if (resource.getTime() + simulator.ResourceMaximumLifeTime + ev.tripTime > latestResourceTime) {
-					latestResourceTime = resource.getTime() + simulator.ResourceMaximumLifeTime + ev.tripTime;
+
+
+				final long resourceMaximumLifeTime = configuration.resourceMaximumLifeTime;
+				if (resource.getTime() + resourceMaximumLifeTime +ev.staticTripTime > latestResourceTime) {
+					latestResourceTime = resource.getTime() + resourceMaximumLifeTime + ev.staticTripTime;
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	
+
 		return latestResourceTime;
+	}
+
+	public TrafficPattern getTrafficPattern(long trafficPatternEpoch, long trafficPatternStep,
+											boolean dynamicTrafficEnabled) {
+		System.out.println("Building traffic patterns...");
+		return buildSlidingTrafficPattern(resourcesParsed, trafficPatternEpoch, trafficPatternStep,
+				dynamicTrafficEnabled);
+
 	}
 
 	/**
 	 * Match a point to the closest location on the map
-	 * @param longitude
-	 * @param latitude
-	 * @return
 	 */
 	public LocationOnRoad mapMatch(double longitude, double latitude) {
 		Link link = map.getNearestLink(longitude, latitude);
-		double xy[] = map.projector().fromLatLon(latitude, longitude);
+		double [] xy = map.projector().fromLatLon(latitude, longitude);
 		double [] snapResult = snap(link.from.getX(), link.from.getY(), link.to.getX(), link.to.getY(), xy[0], xy[1]);
 		double distanceFromStartVertex = this.distance(snapResult[0], snapResult[1], link.from.getX(), link.from.getY());
-		long travelTimeFromStartVertex = Math.round(distanceFromStartVertex / link.length * link.travelTime);
-		long travelTimeFromStartIntersection = link.beginTime + travelTimeFromStartVertex;
-		return new LocationOnRoad(link.road, travelTimeFromStartIntersection);		
+
+		// find the begin distance of link
+		double distanceFromStartIntersection = 0;
+		for (Link aLink : link.road.links) {
+			if (aLink.id == link.id) {
+				distanceFromStartIntersection += distanceFromStartVertex;
+				break;
+			} else {
+				distanceFromStartIntersection += aLink.length;
+			}
+		}
+		return new LocationOnRoad(link.road, distanceFromStartIntersection);
 	}
 
 	/**
@@ -165,27 +188,23 @@ public class MapWithData {
 	/**
 	 * Creates agent events that are randomly placed on map.
 	 *
+	 * @param numberOfAgents number of agents to be simulated
 	 * @param simulator a reference to the simulator object
 	 */
-	public ArrayList<BaseAgent> placeAgentsRandomly(Simulator simulator) {
-		ArrayList<BaseAgent> agents = new ArrayList<BaseAgent>();
-		long deployTime = earliestResourceTime - 1; 
+	public void placeAgentsRandomly(Simulator simulator, FleetManager fleetManager, long numberOfAgents) {
+		long deployTime = earliestResourceTime - 1;
 
 		Random generator = new Random(agentPlacementRandomSeed);
-		for (int i = 0; i < simulator.totalAgents(); i++) {
-			Road road = map.roads().get(generator.nextInt(map.roads().size()));
-            long travelTimeFromStartIntersection;
-            if (road.travelTime != 0) {
-                travelTimeFromStartIntersection = (long) (generator.nextInt((int) road.travelTime));
-            } else {
-                travelTimeFromStartIntersection = 0L;
-            }
-			LocationOnRoad locationOnRoad = new LocationOnRoad(road, travelTimeFromStartIntersection);
-			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator);
+		for (int i = 0; i < numberOfAgents; i++) {
+			int road_id = generator.nextInt(map.roads().size());
+			Road road = map.roads().get(road_id);
+			double distanceFromStartIntersection = generator.nextDouble() * road.length;
+			LocationOnRoad locationOnRoad = new LocationOnRoad(road, distanceFromStartIntersection);
+
+			AgentEvent ev = new AgentEvent(locationOnRoad, deployTime, simulator, fleetManager);
+			simulator.markAgentEmpty(ev);
 			events.add(ev);
-			agents.add(ev.agent);
 		}
-		return agents;
 	}
 
 	/**
@@ -196,4 +215,101 @@ public class MapWithData {
 		return events;
 	}
 
+	/**
+	 * Build a traffic pattern to adjust travel speed at each road over the time of a day.
+	 * The travel speed is computed based on the road segment's speed limit and the TLC Trip Record data to
+	 * reflect the traffic pattern over the time of a day. The calibration goes as follows.
+	 *
+	 * 1. For every step (e.g., minute) of a day, compute the average trip duration of all trips recorded in the
+	 * TLC Trip Record data that fall into a epoch time window (e.g., 15 minutes) starting at the current minute;
+	 * call it the TLC_average_trip_duration.
+	 * 2. For each trip, compute the shortest travel time from the pickup location of the trip to the
+	 * dropoff location using speed limits.
+	 * 3. Compute the average shortest travel time of all trips; call it the map_average_trip_duration.
+	 * 4. For each road segment, travel_speed_of_current_minute = speed_limit * ((map_average_trip_duration)/(TLC_average_trip_duration)).
+	 *
+	 * In other words, we adjust the travel speeds so that the average trip time produced by COMSET is consistent with that of the real data.
+	 *
+	 * @param resources set of resources that will be used to compute speed factors.
+	 * @param epoch the window of time that determines the speed factor
+	 * @param step the resolution of the time-of-day speed depenence.
+	 * @param dynamicTraffic true if we will be simulated with time-of-day dependent traffic.
+	 * @return traffic pattern
+	 */
+	public TrafficPattern buildSlidingTrafficPattern(ArrayList<Resource> resources, long epoch, long step,
+													 boolean dynamicTraffic) {
+		// sort resources by pickup
+		resources.sort(Comparator.comparingLong(TimestampAbstract::getTime));
+		TrafficPattern trafficPattern = new TrafficPattern(step);
+		long epochBeginTime = resources.get(0).getPickupTime();
+		int beginResourceIndex = 0;
+		double lastKnownSpeedFactor = 0.3; // default to 0.3 if no trip data available
+		while (true) {
+			ArrayList<Resource> epochResources = new ArrayList<>();
+			long epochEndTime = epochBeginTime + epoch;
+			int resourceIndex = beginResourceIndex;
+			while (resourceIndex < resources.size() && resources.get(resourceIndex).getPickupTime() < epochEndTime) {
+				if (resources.get(resourceIndex).getDropoffTime() < epochEndTime) {
+					epochResources.add(resources.get(resourceIndex));
+				}
+				resourceIndex += 1;
+			}
+
+			if (dynamicTraffic) {
+				if (epochResources.size() == 0) {
+					// use the previous epoch if available
+					trafficPattern.addTrafficPatternItem(epochBeginTime, lastKnownSpeedFactor);
+				} else {
+					double speedFactor = getSpeedFactor(epochResources);
+					if (speedFactor < 0.0) { // didn't get a valid speed factor
+						trafficPattern.addTrafficPatternItem(epochBeginTime, lastKnownSpeedFactor);
+					} else {
+						if (speedFactor > 1.0) { // cap speed factor to 1
+							speedFactor = 1.0;
+						}
+						trafficPattern.addTrafficPatternItem(epochBeginTime, speedFactor);
+						lastKnownSpeedFactor = speedFactor;
+					}
+				}
+			} else {
+				trafficPattern.addTrafficPatternItem(epochBeginTime, 1.0);
+			}
+
+			epochBeginTime += step;
+			while (beginResourceIndex < resources.size() && resources.get(beginResourceIndex).getPickupTime() < epochBeginTime) {
+				beginResourceIndex += 1;
+			}
+
+			if (resourceIndex == resources.size()) {
+				break;
+			}
+		}
+		return trafficPattern;
+	}
+
+	/**
+	 * Compute speed factor from a set of resources. Speed factor is based on actual travel times
+	 * compared to ideal travel time between picku and location based on distance.
+	 * @param resources the set of resources that will determine the speed factor.
+	 * @return speed factor
+	 */
+	public double getSpeedFactor(ArrayList<Resource> resources) {
+		long totalActualTravelTime = 0;
+		long totalSimulatedTravelTime = 0;
+		for (Resource r : resources) {
+			long pickupTime = r.getPickupTime();
+			long dropoffTime = r.getDropoffTime();
+			long actualTravelTime = dropoffTime - pickupTime;
+
+			long simulatedTravelTime = map.travelTimeBetween(r.getPickupLocation(), r.getDropoffLocation());
+
+			totalActualTravelTime += actualTravelTime;
+			totalSimulatedTravelTime += simulatedTravelTime;
+		}
+		if (totalActualTravelTime == 0) {
+			return -1.0;
+		} else {
+			return ((double) totalSimulatedTravelTime) / totalActualTravelTime;
+		}
+	}
 }

@@ -8,7 +8,7 @@ package COMSETsystem;
 public abstract class BaseAgent {
 
 	// Every agent gets a reference to the map
-	protected CityMap map;
+	protected final CityMap map;
 
 	// An id that is unique across all agents and resources 
 	protected final long id;
@@ -33,7 +33,7 @@ public abstract class BaseAgent {
 	 * 
 	 * This method must be overridden in every Agent implementation.
 	 */
-	public abstract void planSearchRoute(LocationOnRoad currentLocation, long currentTime); 
+	public abstract void planSearchRoute(LocationOnRoad currentLocation, long currentTime);
 
 	/**
 	 * This method must be overridden in every Agent implementation in order to return an Intersection that the
@@ -47,7 +47,7 @@ public abstract class BaseAgent {
 	 * @param currentTime The time at which the method is invoked
 	 * @return Intersection that the Agent is going to move to
 	 */
-	public abstract Intersection nextIntersection(LocationOnRoad currentLocation, long currentTime); 
+	public abstract Intersection nextIntersection(LocationOnRoad currentLocation, long currentTime);
 
 	/**
 	 * This method is to inform the agent that it is assigned to a resource. No action is necessary from the agent. The agent

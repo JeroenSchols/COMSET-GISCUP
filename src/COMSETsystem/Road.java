@@ -16,15 +16,17 @@ public class Road implements Comparable<Road> {
 	// length of the road segment in meters
 	public double length;
 	// travel time of the road segment in seconds
-	public long travelTime;
+	public double travelTime;
+	// average speed in m/s
+	public double speed;
 	// a unique id
-	public long id;
+	public final long id;
 
 	// an ID counter to get a unique id
 	private static long maxId = 0;
 	
 	// links that constitute the road
-	public ArrayList<Link> links;
+	public final ArrayList<Link> links;
 
     /**
      * Constructing an "empty" road object.
@@ -47,14 +49,17 @@ public class Road implements Comparable<Road> {
 		this.id = road.id;
 		this.length = road.length;
 		this.travelTime = road.travelTime;
+		this.speed = road.speed;
 		this.from = from;
 		this.to= to;
 		this.links = links;
 	}
 	
 	/**
-	 * Add a link to the road
-	 * @param link
+	 * Add a link to the road and accumulate travel time as a road can consists of
+	 * multiple links. This code assume links are added in order, otherwise the beginTime
+	 * for the link will not be correct.
+	 *
 	 */
 	public void addLink(Link link) {
 		links.add(link);
@@ -64,6 +69,11 @@ public class Road implements Comparable<Road> {
 		this.travelTime += link.travelTime;
 	}
 
+	public void setSpeed() {
+		// compute the average speed
+		this.speed = this.length / this.travelTime;
+	}
+
 	/**
 	 * checks whether this is the same road as some specified road
 	 * 
@@ -71,12 +81,7 @@ public class Road implements Comparable<Road> {
 	 * @return 0 is they are the same, 1 if {@code this.id > other.id} else -1
 	 */
 	public int compareTo(Road other) {
-		if (id == other.id)
-			return 0;
-		else if (id < other.id)
-			return -1;
-		else
-			return 1;
+		return Long.compare(id, other.id);
 	}
 
 	/**
@@ -95,6 +100,6 @@ public class Road implements Comparable<Road> {
 	 * @return string of information
 	 */
 	public String toString() {
-		return from + "," + to + "," + length + "," + travelTime;
+		return from + "," + to + "," + length + "," + travelTime + "," + speed;
 	}
 }

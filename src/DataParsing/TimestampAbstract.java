@@ -11,9 +11,9 @@ package DataParsing;
 public abstract class TimestampAbstract {
 
 
-	private double pickupLat; // latitude at which resource appears
-	private double pickupLon; // longitutde at which agent appears
-	private long time;   // time at which the agent/resource was at (lon,lat) position on map
+	private final double pickupLat; // latitude at which resource appears
+	private final double pickupLon; // longitutde at which agent appears
+	private final long time;   // time at which the agent/resource was at (lon,lat) position on map
 
 
 
