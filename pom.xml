@@ -27,13 +27,13 @@
         <dependency>
           <groupId>com.google.guava</groupId>
           <artifactId>guava</artifactId>
-          <version>27.1-jre</version>
+          <version>32.0.1-jre</version>
         </dependency>
         <!-- For computing the time zone of a map -->
         <dependency>
             <groupId>net.iakovlev</groupId>
             <artifactId>timeshape</artifactId>
-            <version>2018d.6</version>
+            <version>2024a.24</version>
         </dependency>
         <!-- For suppressing warning messages due to timeshape -->
         <dependency>
@@ -44,7 +44,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.5</version>
+            <version>1.7.34</version>
         </dependency>
     </dependencies>
     <build>
